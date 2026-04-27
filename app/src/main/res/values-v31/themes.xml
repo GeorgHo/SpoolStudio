@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.SpoolStudio.Splash"
+        parent="Theme.Material3.DayNight.NoActionBar">
+
+        <item name="android:windowSplashScreenBackground">
+            @color/launcher_background
+        </item>
+
+        <item name="android:windowSplashScreenAnimatedIcon">
+            @drawable/ic_launcher_foreground_centered
+        </item>
+
+        <item name="android:windowSplashScreenIconBackgroundColor">
+            @android:color/transparent
+        </item>
+
+        <item name="postSplashScreenTheme">
+            @style/Theme.SpoolStudio
+        </item>
+
+    </style>
+
+</resources>

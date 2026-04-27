@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.SpoolStudio"
+        parent="Theme.Material3.DayNight.NoActionBar">
+    </style>
+
+
+    <style name="Theme.SpoolStudio.Splash"
+        parent="Theme.Material3.DayNight.NoActionBar">
+
+        <item name="postSplashScreenTheme">
+            @style/Theme.SpoolStudio
+        </item>
+    </style>
+
+
+</resources>

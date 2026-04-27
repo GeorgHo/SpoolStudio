@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- weicher, etwas heller Hintergrund -->
+    <item android:gravity="center">
+        <shape android:shape="oval">
+            <solid android:color="#3A342F"/>
+        </shape>
+    </item>
+
+    <!-- leichter Glow / Aufhellung -->
+    <item android:gravity="center">
+        <shape android:shape="oval">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="90"
+                android:startColor="#33FFFFFF"
+                android:endColor="#00000000"/>
+        </shape>
+    </item>
+
+    <!-- dein Icon -->
+    <item
+        android:drawable="@drawable/ic_launcher_foreground_clean"
+        android:gravity="center"
+        android:width="104dp"
+        android:height="104dp" />
+
+</layer-list>
