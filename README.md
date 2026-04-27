@@ -17,6 +17,65 @@ This project is based on the open-source project **SpoolPainter** by ni4223 and 
 
 ---
 
+---
+
+## 🚀 Quick Start
+
+### 1. Install the App
+- Download the latest APK from the section above
+- Install it on your Android device (enable "Install unknown apps" if needed)
+
+---
+
+### 2. Setup Spoolman (Required for Core Features)
+
+- Open **Settings** in the app
+- Enter your Spoolman URL (e.g. `http://<your-server>:7912`)
+- Test the connection
+
+Once connected, you can:
+- View existing spools
+- Create new spools
+- Edit spool data
+- Sync filament information
+
+---
+
+### 3. Use NFC / OpenSpool Tags
+
+- Tap **Read NFC Tag** to scan an existing tag
+- Tap **Write to NFC** to store spool data on a tag
+- Tags use the OpenSpool format for compatibility
+
+---
+
+### 4. (Optional) Printer Integration — Snapmaker U1
+
+Requirements:
+- Snapmaker U1
+- paxx12 Extended Firmware
+- Moonraker + Spoolman integration
+
+Setup:
+- Enter your Moonraker URL in Settings (e.g. `http://<printer-ip>:7125`)
+- Test the connection
+
+You can then:
+- Load current toolhead ↔ spool mapping
+- Assign spools to toolheads (E0–E3)
+- Sync active spool usage with Spoolman
+
+---
+
+### 5. (Optional) Bambu Lab RFID
+
+- Requires a user-provided key
+- Not included in this project
+
+Use this feature only if you understand the implications.
+
+---
+
 ## ✨ Features
 
 ### 🔗 Spoolman & OpenSpool Integration (Core Features)
