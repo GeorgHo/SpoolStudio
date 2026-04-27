@@ -19,6 +19,22 @@ private fun normalizeUrl(url: String): String {
     return url.trim().removeSuffix("/")
 }
 
+private fun normalizeMoonrakerUrl(url: String): String {
+    var result = url.trim()
+
+    if (result.isBlank()) return ""
+
+    if (!result.startsWith("http://") && !result.startsWith("https://")) {
+        result = "http://$result"
+    }
+
+    result = result.replace(Regex("/(\\d{2,5})(/|$)")) { match ->
+        val port = match.groupValues[1]
+        ":$port/"
+    }
+
+    return result.removeSuffix("/")
+}
 private fun hasSettingsChanges(
     tempSpoolmanUrl: String,
     savedSpoolmanUrl: String,
@@ -250,7 +266,7 @@ fun SettingsScreen(
                     .onFocusChanged { focusState ->
                         if (!focusState.isFocused) {
                             runUrlRetestIfNeeded(
-                                currentValue = tempMoonrakerUrl,
+                                currentValue = normalizeMoonrakerUrl(tempMoonrakerUrl),
                                 lastTestedValue = lastTestedMoonrakerUrl,
                                 isTesting = isTestingMoonraker,
                                 triggeredManually = moonrakerTestTriggeredManually,
@@ -267,8 +283,10 @@ fun SettingsScreen(
             Button(
                 onClick = {
                     moonrakerTestTriggeredManually = true
-                    onTestMoonrakerConnection(tempMoonrakerUrl)
-                    lastTestedMoonrakerUrl = normalizeUrl(tempMoonrakerUrl)
+                    val normalizedMoonrakerUrl = normalizeMoonrakerUrl(tempMoonrakerUrl)
+                    tempMoonrakerUrl = normalizedMoonrakerUrl
+                    onTestMoonrakerConnection(normalizedMoonrakerUrl)
+                    lastTestedMoonrakerUrl = normalizedMoonrakerUrl
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !isTestingMoonraker,
@@ -382,7 +400,7 @@ fun SettingsScreen(
                     onClick = {
                         onSave(
                             normalizeUrl(tempUrl),
-                            normalizeUrl(tempMoonrakerUrl),
+                            normalizeMoonrakerUrl(tempMoonrakerUrl),
                             normalizeSort(tempSort),
                             tempBambuKey,
                             tempShowCommentField

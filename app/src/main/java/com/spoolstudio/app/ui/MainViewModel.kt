@@ -523,7 +523,7 @@ class MainViewModel : ViewModel() {
 
     private fun saveMoonrakerUrl(context: Context, url: String) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().putString(MOONRAKER_URL_KEY, normalizeUrl(url)).apply()
+        prefs.edit().putString(MOONRAKER_URL_KEY, url.trim().removeSuffix("/")).apply()
     }
 
     private fun saveSpoolmanSort(context: Context, sort: String) {
@@ -586,12 +586,20 @@ class MainViewModel : ViewModel() {
                 try {
                     val responseCode = withContext(Dispatchers.IO) { connection.responseCode }
 
-                    if (responseCode in 200..299) {
+                    val responseText = withContext(Dispatchers.IO) {
+                        connection.inputStream.bufferedReader().use { it.readText() }
+                    }
+
+                    if (responseCode in 200..299 && responseText.trim().startsWith("{")) {
                         isMoonrakerReachable = true
                         moonrakerStatus = "Moonraker erreichbar"
                     } else {
                         isMoonrakerReachable = false
-                        moonrakerError = "HTTP $responseCode"
+                        moonrakerError = if (responseText.contains("<html", ignoreCase = true)) {
+                            "Kein direkter Moonraker-Endpunkt"
+                        } else {
+                            "HTTP $responseCode"
+                        }
                     }
                 } finally {
                     connection.disconnect()
