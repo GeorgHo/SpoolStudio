@@ -10,7 +10,29 @@ This project is based on the open-source project **SpoolPainter** by ni4223 and 
 - Spoolman integration
 - Filament management (material, color, temperature, brand)
 - Printer mapping (Moonraker / Klipper)
+- Direct integration with Snapmaker U1 (paxx12 Extended Firmware)
+- Read and write active spools via Moonraker API
+- Synchronization between app, printer and Spoolman
 - Bambu Lab RFID tag support (extended functionality)
+
+## Printer Integration
+
+Spool Studio supports direct communication with a Klipper-based printer via Moonraker.
+
+Tested setup:
+- Snapmaker U1 with paxx12 Extended Firmware
+- Moonraker API
+- Fluidd interface
+- Spoolman backend
+
+The app allows:
+- Reading current toolhead ↔ spool assignments
+- Updating spool mappings (E0–E3 / Toolhead 1–4)
+- Synchronizing active spool information
+- Preparing integration with RFID-based spool detection
+
+This enables a seamless workflow between:
+App ↔ Printer ↔ Spoolman
 
 ## Tech Stack
 
@@ -20,6 +42,8 @@ This project is based on the open-source project **SpoolPainter** by ni4223 and 
 - NFC API
 - Coroutines
 - MVVM architecture
+- Moonraker API
+- Klipper ecosystem
 
 ## Credits
 
@@ -39,6 +63,7 @@ This repository contains modifications and extensions for personal and education
 ## Disclaimer
 
 This is an unofficial project and is not affiliated with the original developer.
+This project is tested with Snapmaker U1 but is not affiliated with Snapmaker.
 
 ## Requirements
 
