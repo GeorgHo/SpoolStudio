@@ -209,7 +209,8 @@ Special thanks to:
 * paxx12 (Snapmaker U1 Extended Firmware)
 * Moonraker Team (Klipper API layer)
 
-This version is extended and maintained by Hovi (unofficial)
+This version is extended and maintained by Hovi (unofficial).
+Permission to publish granted by the original author.
 
 ---
 
@@ -217,10 +218,9 @@ This version is extended and maintained by Hovi (unofficial)
 
 This project is based on the original SpoolPainter project by ni4223.
 
-No license was provided in the original repository.
-All rights remain with the original author.
+Permission to publish this modified version was granted by the original author.
 
-This repository contains modifications and extensions for personal and educational use.
+This project is licensed under the MIT License.
 
 ---
 

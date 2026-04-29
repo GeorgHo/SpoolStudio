@@ -736,10 +736,22 @@ class MainViewModel : ViewModel() {
             printerMappingOperation = "load"
             printerMappingSaveSuccessful = null
             printerMappingStatusMessage = null
+
             try {
                 val service = MoonrakerService(normalizeUrl(url))
                 val mapping = service.getToolMapping()
-                val activeSpoolId = service.getActiveSpoolId()
+
+                val activeSpoolId = try {
+                    service.getActiveSpoolId()
+                } catch (e: Exception) {
+                    if (e.message?.contains("404") == true) {
+                        Log.w("MainViewModel", "Spoolman not active on printer")
+                    } else {
+                        Log.w("MainViewModel", "Active spool error: ${e.message}")
+                    }
+                    null
+                    null
+                }
 
                 printerTool1SpoolId = mapping["T0"]?.takeIf { it > 0 }
                 printerTool2SpoolId = mapping["T1"]?.takeIf { it > 0 }
@@ -749,8 +761,15 @@ class MainViewModel : ViewModel() {
 
                 printerMappingLoadVersion++
                 printerMappingSaveSuccessful = null
-                printerMappingStatusMessage = "Printer mapping loaded"
-                showSnackbarMessage("Printer mapping loaded")
+
+                val message = if (activeSpoolId == null) {
+                    "Printer mapping loaded (active spool not available)"
+                } else {
+                    "Printer mapping loaded"
+                }
+
+                printerMappingStatusMessage = message
+                showSnackbarMessage(message)
             } catch (e: Exception) {
                 printerMappingSaveSuccessful = false
                 printerMappingStatusMessage = "Loading printer mapping failed: ${e.message ?: "Unknown error"}"
