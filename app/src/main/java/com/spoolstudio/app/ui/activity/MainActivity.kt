@@ -46,6 +46,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.padding
 
+
 class MainActivity : ComponentActivity() {
     
     private lateinit var nfcHandler: NfcHandler
@@ -162,8 +163,11 @@ class MainActivity : ComponentActivity() {
 
                     Spacer(modifier = Modifier.height(20.dp))
 
+                    val versionName = packageManager
+                        .getPackageInfo(packageName, 0)
+                        .versionName ?: "unknown"
                     Text(
-                        text = "© 2026 Spool Studio v1.2 by Hovi (unofficial)",
+                        text = "© 2026 Spool Studio v$versionName by Hovi (unofficial)",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
                         color = Color(0xFF4A433F)
