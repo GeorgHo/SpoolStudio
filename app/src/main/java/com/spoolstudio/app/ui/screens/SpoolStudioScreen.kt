@@ -551,12 +551,14 @@ fun SpoolStudioScreen(
                     onClick = onSettingsClick,
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .offset(y = (-20).dp)
+                        .padding(top = 8.dp, end = 8.dp)
+                        .size(48.dp)
                 ) {
                     Icon(
-                        Icons.Default.MoreVert,
+                        imageVector = Icons.Default.MoreVert,
                         contentDescription = "Settings",
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = Color(0xFF1C252B),
+                        modifier = Modifier.size(36.dp)
                     )
                 }
             }

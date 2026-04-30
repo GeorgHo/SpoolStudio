@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.foundation.background
 
 private fun normalizeUrl(url: String): String {
     return url.trim().removeSuffix("/")
@@ -133,7 +134,11 @@ fun SettingsScreen(
         "Location (Z–A)" to "location:desc"
     )
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
 
         Column(
             modifier = Modifier
@@ -332,7 +337,8 @@ fun SettingsScreen(
             ) {
                 Text(
                     text = "Show Lot Number",
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 Switch(
@@ -348,7 +354,11 @@ fun SettingsScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("Show Comment Field")
+                Text(
+                    text = "Show Comment Field",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
 
                 Switch(
                     checked = tempShowCommentField,
@@ -367,8 +377,8 @@ fun SettingsScreen(
                         .take(32)
                     tempBambuKey = cleaned
                 },
-                label = { Text("Bambu Master Key") },
-                supportingText = { Text("32 Hex-Zeichen") },
+                label = { Text("Bambu Lab Master Key") },
+                supportingText = { Text("32 hex characters") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
