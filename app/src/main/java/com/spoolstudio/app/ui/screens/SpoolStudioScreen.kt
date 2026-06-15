@@ -131,7 +131,6 @@ fun SpoolStudioScreen(
     var bambuDialogText by remember { mutableStateOf("") }
     var showBambuDiffDialog by remember { mutableStateOf(false) }
     var bambuDiffDialogText by remember { mutableStateOf("") }
-    var lastShownBambuRawReadVersion by remember { mutableStateOf(-1) }
     var pendingBambuApply by remember { mutableStateOf<(() -> Unit)?>(null) }
     var colorHex by remember { mutableStateOf<String?>(null) }
     var colorName by remember { mutableStateOf("") }
@@ -175,8 +174,16 @@ fun SpoolStudioScreen(
             toolhead4SpoolId
         )
 
-    val spoolColor = colorHex?.let {
-        Color(android.graphics.Color.parseColor("#$it"))
+    val spoolColor = colorHex?.let { hex ->
+
+        val normalized = hex.trim().removePrefix("#")
+
+        if (normalized.matches(Regex("^[A-Fa-f0-9]{6}$"))) {
+            Color(android.graphics.Color.parseColor("#$normalized"))
+        } else {
+            Color(0xFF4A423D)
+        }
+
     } ?: Color(0xFF4A423D)
 
     val printerMappingBusyLabel = when (printerMappingOperation) {

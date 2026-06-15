@@ -14,8 +14,8 @@ android {
         applicationId = "com.spoolstudio.com.spoolstudio.app"
         minSdk = 29
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.2.2"
+        versionCode = 3
+        versionName = "1.2.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

@@ -113,6 +113,11 @@ val knownColors = listOf(
     NamedColor("Ice Blue", "D6F1FF", listOf("Ice Blue", "Eisblau")),
     NamedColor("Powder Blue", "B0E0E6", listOf("Powder Blue", "Puderblau")),
     NamedColor("Azure", "007FFF", listOf("Azure", "Azur", "Azurblau")),
+    NamedColor("Cyan Blue", "00B1E7", listOf("Cyan Blue", "Cyanblau", "Bright Cyan Blue", "Cyan Blue")),
+    NamedColor("Deep Sky Blue", "00BFFF", listOf("Deep Sky Blue", "Kräftiges Himmelblau")),
+    NamedColor("Dodger Blue", "1E90FF", listOf("Dodger Blue", "Leuchtblau")),
+    NamedColor("Azure Blue", "007FFF", listOf("Azure Blue", "Azurblau")),
+    NamedColor("Process Cyan", "00AEEF", listOf("Process Cyan", "Cyanblau")),
 
     NamedColor("Purple", "800080", listOf("Purple", "Lila", "Violett")),
     NamedColor("Violet", "8F00FF", listOf("Violet", "Violett Kräftig")),
