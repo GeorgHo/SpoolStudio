@@ -133,7 +133,7 @@ class MainViewModel : ViewModel() {
         val savedMoonrakerUrl =
             prefs.getString(MOONRAKER_URL_KEY, DEFAULT_MOONRAKER_URL) ?: DEFAULT_MOONRAKER_URL
         val savedShowLotNumber = prefs.getBoolean(SHOW_LOT_NUMBER_KEY, false)
-        val savedShowCommentField = prefs.getBoolean(SHOW_COMMENT_FIELD, false)
+        prefs.getBoolean(SHOW_COMMENT_FIELD, false)
         val savedShowComment = prefs.getBoolean(SHOW_COMMENT_FIELD, false)
         val savedBambuMasterKey = prefs.getString(BAMBU_MASTER_KEY, "") ?: ""
 
@@ -449,7 +449,8 @@ class MainViewModel : ViewModel() {
                             filamentId = targetFilamentId,
                             lotNr = resolvedLotNr,
                             location = location.trim().ifBlank { null },
-                            remainingWeight = selectedSpool?.remainingWeight
+                            remainingWeight = selectedSpool?.remainingWeight,
+                            comment = comment.trim().ifBlank { null }
                         )
 
                         service.findFilamentBySpoolId(spoolId.toString())
@@ -470,7 +471,8 @@ class MainViewModel : ViewModel() {
                             filamentId = filament.id,
                             lotNr = resolvedLotNr,
                             location = location.trim().ifBlank { null },
-                            remainingWeight = selectedSpool?.remainingWeight ?: filament.weight
+                            remainingWeight = selectedSpool?.remainingWeight ?: filament.weight,
+                            comment = comment.trim().ifBlank { null }
                         )
 
                         service.findFilamentBySpoolId(createdSpool.id?.toString() ?: "")

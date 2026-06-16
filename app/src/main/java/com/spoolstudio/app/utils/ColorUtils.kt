@@ -312,6 +312,19 @@ private fun baseHueName(h: Float): String = when {
     else -> "Rose"
 }
 
+fun normalizeHexColor(value: String?): String? {
+    val cleaned = value
+        ?.trim()
+        ?.removePrefix("#")
+        ?.uppercase()
+        ?: return null
+
+    return when {
+        cleaned.matches(Regex("^[0-9A-F]{6}$")) -> cleaned
+        cleaned.matches(Regex("^[0-9A-F]{8}$")) -> cleaned.substring(0, 6)
+        else -> null
+    }
+}
 fun suggestColorName(hex: String?): String {
     return buildColorSuggestionDebug(hex).suggestedName
 }
@@ -327,10 +340,30 @@ fun buildColorSuggestionDebug(hex: String?): ColorSuggestionDebug {
         nearest = emptyList()
     )
 
-    val upper = value.removePrefix("#").uppercase().padStart(6, '0').take(6)
+    val upper = normalizeHexColor(value) ?: "000000"
     val hsl = toHsl(upper)
     val scored = scoreCatalogColors(upper)
     val nearest = scored.first()
+
+    // 🔥 WICHTIG: Grau-Erkennung VOR allem anderen
+    if (hsl.s < 0.10f) {
+        val neutralName = when {
+            hsl.l < 0.12f -> "Black"
+            hsl.l < 0.28f -> "Dark Gray"
+            hsl.l < 0.72f -> "Gray"
+            hsl.l < 0.90f -> "Light Gray"
+            else -> "White"
+        }
+        return ColorSuggestionDebug(
+            inputHex = upper,
+            suggestedName = neutralName,
+            reason = "Very low saturation fallback",
+            targetHue = hsl.h,
+            targetSaturation = hsl.s,
+            targetLightness = hsl.l,
+            nearest = scored.take(5).map { it.toDebugEntry() }
+        )
+    }
 
     knownColors.firstOrNull { it.hex.equals(upper, ignoreCase = true) }?.let { exact ->
         return ColorSuggestionDebug(
@@ -361,25 +394,6 @@ fun buildColorSuggestionDebug(hex: String?): ColorSuggestionDebug {
         )
     }
 
-    if (hsl.s < 0.10f) {
-        val neutralName = when {
-            hsl.l < 0.12f -> "Black"
-            hsl.l < 0.28f -> "Dark Gray"
-            hsl.l < 0.72f -> "Gray"
-            hsl.l < 0.90f -> "Light Gray"
-            else -> "White"
-        }
-        return ColorSuggestionDebug(
-            inputHex = upper,
-            suggestedName = neutralName,
-            reason = "Very low saturation fallback",
-            targetHue = hsl.h,
-            targetSaturation = hsl.s,
-            targetLightness = hsl.l,
-            nearest = scored.take(5).map { it.toDebugEntry() }
-        )
-    }
-
     if (hsl.h in 18f..42f && hsl.s in 0.08f..0.45f && hsl.l in 0.48f..0.85f) {
         val warmNeutralName = when {
             hsl.l > 0.75f && hsl.s < 0.18f -> "Warm Beige"
@@ -391,6 +405,18 @@ fun buildColorSuggestionDebug(hex: String?): ColorSuggestionDebug {
             inputHex = upper,
             suggestedName = warmNeutralName,
             reason = "Warm neutral fallback",
+            targetHue = hsl.h,
+            targetSaturation = hsl.s,
+            targetLightness = hsl.l,
+            nearest = scored.take(5).map { it.toDebugEntry() }
+        )
+    }
+
+    if (hsl.h in 45f..80f && hsl.l < 0.45f && hsl.s in 0.15f..0.55f) {
+        return ColorSuggestionDebug(
+            inputHex = upper,
+            suggestedName = if (hsl.l < 0.28f) "Dark Olive" else "Olive Brown",
+            reason = "Dark olive fallback",
             targetHue = hsl.h,
             targetSaturation = hsl.s,
             targetLightness = hsl.l,

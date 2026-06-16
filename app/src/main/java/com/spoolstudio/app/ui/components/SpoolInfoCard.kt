@@ -98,21 +98,27 @@ fun SpoolInfoCard(
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             spool.colorHex?.let { hex ->
-                                runCatching {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(22.dp)
-                                            .background(
-                                                Color(android.graphics.Color.parseColor("#$hex")),
-                                                CircleShape
-                                            )
-                                            .border(
-                                                1.dp,
-                                                MaterialTheme.colorScheme.outline,
-                                                CircleShape
-                                            )
-                                    )
+                                val normalizedHex = hex.trim().removePrefix("#")
+
+                                val color = if (normalizedHex.matches(Regex("^[A-Fa-f0-9]{6}$"))) {
+                                    Color(android.graphics.Color.parseColor("#$normalizedHex"))
+                                } else {
+                                    Color.Gray
                                 }
+
+                                Box(
+                                    modifier = Modifier
+                                        .size(22.dp)
+                                        .background(
+                                            color,
+                                            CircleShape
+                                        )
+                                        .border(
+                                            1.dp,
+                                            MaterialTheme.colorScheme.outline,
+                                            CircleShape
+                                        )
+                                )
                             }
 
                             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {

@@ -77,7 +77,7 @@ data class FilamentSpool(
                 material = baseMaterial,
                 variant = variant,
                 brand = spool.filament.vendor?.name ?: "Unknown",
-                colorHex = spool.filament.color_hex?.takeIf { it.isNotEmpty() },
+                colorHex = normalizeHexColor(spool.filament.color_hex),
                 minTemp = minTemp,
                 maxTemp = maxTemp,
                 bedMinTemp = bedMinTemp,
@@ -97,9 +97,7 @@ data class FilamentSpool(
             val material = MaterialDatabase.getMaterial(spool.type)
             return FilamentSpool(
                 id = spool.spoolId?.toIntOrNull(),
-                // material = spool.type,
                 material = spool.type?.ifBlank { "PLA" } ?: "PLA",
-                // variant = spool.subtype?.trim().orEmpty().ifBlank { "Basic" },
                 variant = spool.subtype?.ifBlank { "Basic" } ?: "Basic",
                 brand = spool.brand,
                 location = null,

@@ -238,6 +238,7 @@ fun SpoolStudioScreen(
             bedMinTemp = sourceSpool.bedMinTemp?.toString() ?: bedMinTemp
             bedMaxTemp = sourceSpool.bedMaxTemp?.toString() ?: bedMaxTemp
             lotNr = sourceSpool.lotNr ?: OpenSpoolData.generateLotNr()
+            comment = sourceSpool.comment ?: ""
             colorHexInput = colorHex ?: ""
             colorNameWasManuallyEdited = false
         } else if (spoolMode == SpoolMode.CREATE) {
