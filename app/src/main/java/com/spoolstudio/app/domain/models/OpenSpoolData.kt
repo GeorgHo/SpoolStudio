@@ -1,6 +1,7 @@
 package com.spoolstudio.app.domain.models
 
 import com.spoolstudio.app.data.local.MaterialDatabase
+import com.spoolstudio.app.utils.OpenSpoolMaterialMapper
 import org.json.JSONObject
 
 data class OpenSpoolData(
@@ -62,6 +63,7 @@ data class OpenSpoolData(
             }
         }
 
+        /*
         fun toOpenSpoolData(spool: FilamentSpool): OpenSpoolData {
             return OpenSpoolData(
                 type = spool.material,
@@ -76,7 +78,29 @@ data class OpenSpoolData(
                 lotNr = spool.lotNr
             )
         }
+        */
+        fun toOpenSpoolData(spool: FilamentSpool): OpenSpoolData {
+            val openSpoolType = OpenSpoolMaterialMapper.toOpenSpoolType(
+                material = spool.material,
+                variant = spool.variant
+            ) ?: throw IllegalArgumentException(
+                "Material '${spool.material}' mit Variante '${spool.variant}' " +
+                        "kann nicht auf einen OpenSpool-Tag geschrieben werden."
+            )
 
+            return OpenSpoolData(
+                type = openSpoolType,
+                colorHex = spool.colorHex,
+                brand = spool.brand,
+                minTemp = spool.minTemp?.toString() ?: "200",
+                maxTemp = spool.maxTemp?.toString() ?: "220",
+                bedMinTemp = spool.bedMinTemp?.toString(),
+                bedMaxTemp = spool.bedMaxTemp?.toString(),
+                subtype = spool.variant.ifBlank { "Basic" },
+                spoolId = spool.id?.toString(),
+                lotNr = spool.lotNr
+            )
+        }
         fun generateLotNr(): String =
             java.util.UUID.randomUUID().toString().replace("-", "").take(12).uppercase()
     }

@@ -861,19 +861,34 @@ fun SpoolStudioScreen(
                     WriteTagButton(
                         enabled = isFormValid(),
                         onClick = {
-                            val tagData = OpenSpoolData(
-                                type = currentMaterialName(),
-                                colorHex = colorHex,
-                                brand = currentBrandName(),
-                                minTemp = minTemp,
-                                maxTemp = maxTemp,
-                                bedMinTemp = bedMinTemp.ifBlank { null },
-                                bedMaxTemp = bedMaxTemp.ifBlank { null },
-                                subtype = currentVariantName().ifBlank { "Basic" },
-                                spoolId = if (spoolMode == SpoolMode.UPDATE) selectedSpool?.id?.toString() else null,
-                                lotNr = lotNr
+                            val materialName = currentMaterialName()
+                            val variantName = currentVariantName()
+
+                            val openSpoolType = OpenSpoolMaterialMapper.toOpenSpoolType(
+                                material = materialName,
+                                variant = variantName
                             )
-                            onWriteTag(tagData.toJson())
+
+                            if (openSpoolType != null) {
+                                val tagData = OpenSpoolData(
+                                    type = openSpoolType,
+                                    colorHex = colorHex,
+                                    brand = currentBrandName(),
+                                    minTemp = minTemp,
+                                    maxTemp = maxTemp,
+                                    bedMinTemp = bedMinTemp.ifBlank { null },
+                                    bedMaxTemp = bedMaxTemp.ifBlank { null },
+                                    subtype = variantName.ifBlank { "Basic" },
+                                    spoolId = if (spoolMode == SpoolMode.UPDATE) {
+                                        selectedSpool?.id?.toString()
+                                    } else {
+                                        null
+                                    },
+                                    lotNr = lotNr
+                                )
+
+                                onWriteTag(tagData.toJson())
+                            }
                         }
                     )
 

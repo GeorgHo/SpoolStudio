@@ -19,7 +19,9 @@ data class FilamentSpool(
     val archived: Boolean = false,
     val spoolmanName: String?,
     val filamentId: Int? = null,
-    val comment: String? = null
+    val comment: String? = null,
+    val firstUsed: String? = null,
+    val lastUsed: String? = null
 ) {
     val displayName: String
         get() = if (variant.isNotEmpty()) "$material $variant" else material
@@ -89,7 +91,9 @@ data class FilamentSpool(
                 archived = spool.archived,
                 spoolmanName = spool.filament.name,
                 filamentId = spool.filament.id,
-                comment = spool.comment
+                comment = spool.comment,
+                firstUsed = spool.first_used,
+                lastUsed = spool.last_used
             )
         }
 

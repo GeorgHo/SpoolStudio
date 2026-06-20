@@ -12,7 +12,9 @@ data class SpoolmanSpool(
     val lot_nr: String? = null,
     val archived: Boolean = false,
     val extra: Map<String, JsonElement>? = null,
-    val comment: String? = null
+    val comment: String? = null,
+    val first_used: String? = null,
+    val last_used: String? = null
 )
 
 data class SpoolmanFilament(

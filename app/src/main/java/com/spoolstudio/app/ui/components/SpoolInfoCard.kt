@@ -251,6 +251,7 @@ fun SpoolInfoCard(
                         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                     ) {
                         val lotValue = spool.lotNr?.takeIf { it.isNotBlank() } ?: "-"
+                        /*
                         val firstUseValue = extractUsageDate(
                             spool,
                             "firstUsed",
@@ -265,6 +266,13 @@ fun SpoolInfoCard(
                             "lastUse",
                             "last_use"
                         )?.let { formatUsageValue(it) } ?: "-"
+                        */
+                        val firstUseValue =
+                            spool.firstUsed?.let { formatUsageValue(it) } ?: "-"
+
+                        val lastUseValue =
+                            spool.lastUsed?.let { formatUsageValue(it) } ?: "-"
+
                         val commentValue = spool.comment?.takeIf { it.isNotBlank() } ?: "-"
 
                         Column(
