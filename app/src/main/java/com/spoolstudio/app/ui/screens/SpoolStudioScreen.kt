@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -55,6 +56,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -63,6 +65,7 @@ import com.spoolstudio.app.data.local.MaterialDatabase
 import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.domain.models.OpenSpoolData
 import com.spoolstudio.app.ui.SpoolMode
+import com.spoolstudio.app.ui.SpoolmanSaveRequest
 import com.spoolstudio.app.ui.components.FilamentForm
 import com.spoolstudio.app.ui.components.SpoolStudioLogo
 import com.spoolstudio.app.ui.components.SpoolmanFilamentDropdown
@@ -124,8 +127,8 @@ fun SpoolStudioScreen(
     showLotNumber: Boolean = false,
     showCommentField: Boolean = false,
     onCreateNewSpool: () -> Unit = {},
-    onCreateInSpoolman: (material: String, variant: String, brand: String, location: String, colorHex: String?, colorName: String, minTemp: String, maxTemp: String, bedMinTemp: String, bedMaxTemp: String, lotNr: String, comment: String, existingSpoolId: Int?) -> Unit = { _, _, _, _, _, _, _, _, _, _, _, _, _ -> },
-    onCreateAndWriteTag: (material: String, variant: String, brand: String, location: String, colorHex: String?, colorName: String, minTemp: String, maxTemp: String, bedMinTemp: String, bedMaxTemp: String, lotNr: String, comment: String, existingSpoolId: Int?) -> Unit = { _, _, _, _, _, _, _, _, _, _, _, _, _ -> },
+    onCreateInSpoolman: (SpoolmanSaveRequest) -> Unit = {},
+    onCreateAndWriteTag: (SpoolmanSaveRequest) -> Unit = {},
 ) {
     var showBambuDialog by remember { mutableStateOf(false) }
     var bambuDialogText by remember { mutableStateOf("") }
@@ -148,6 +151,7 @@ fun SpoolStudioScreen(
     var bedMaxTemp by remember { mutableStateOf(defaultMaterial.defaultBedMaxTemp.toString()) }
     var lotNr by remember { mutableStateOf(OpenSpoolData.generateLotNr()) }
     var comment by remember { mutableStateOf("Created by Spool Studio") }
+    var remainingWeight by remember { mutableStateOf("") }
     var colorHexInput by remember { mutableStateOf(colorHex ?: "") }
     var colorNameWasManuallyEdited by remember { mutableStateOf(false) }
     var isHexManuallySet by remember { mutableStateOf(false) }
@@ -239,6 +243,12 @@ fun SpoolStudioScreen(
             bedMaxTemp = sourceSpool.bedMaxTemp?.toString() ?: bedMaxTemp
             lotNr = sourceSpool.lotNr ?: OpenSpoolData.generateLotNr()
             comment = sourceSpool.comment ?: ""
+            remainingWeight = sourceSpool.remainingWeight
+                ?.takeIf { it >= 0f }
+                ?.let { weight ->
+                    if (weight % 1f == 0f) weight.toInt().toString() else weight.toString()
+                }
+                ?: ""
             colorHexInput = colorHex ?: ""
             colorNameWasManuallyEdited = false
         } else if (spoolMode == SpoolMode.CREATE) {
@@ -314,14 +324,36 @@ fun SpoolStudioScreen(
     fun isVariantValid(): Boolean = variant != "Other"
     fun isBrandValid(): Boolean = brand != "Other" || customBrand.isNotBlank()
     fun isMaterialValid(): Boolean = filamentType != "Other" || customMaterial.isNotBlank()
+    fun isRemainingWeightValid(): Boolean {
+        val normalized = remainingWeight.trim().replace(",", ".")
+        return normalized.isBlank() || normalized.toFloatOrNull()?.let { it >= 0f } == true
+    }
     fun isFormValid(): Boolean =
-        isVariantValid() && isBrandValid() && isMaterialValid()
+        isVariantValid() && isBrandValid() && isMaterialValid() && isRemainingWeightValid()
     fun validationMessage(): String? = when {
         !isMaterialValid() -> "Please enter a custom filament type"
         !isVariantValid() -> "Please enter a custom variant"
         !isBrandValid() -> "Please enter a custom brand"
+        !isRemainingWeightValid() -> "Please enter a valid remaining weight"
         else -> null
     }
+    fun buildSaveRequest(): SpoolmanSaveRequest =
+        SpoolmanSaveRequest(
+            material = currentMaterialName(),
+            variant = currentVariantName(),
+            brand = currentBrandName(),
+            location = currentLocationName(),
+            colorHex = colorHex,
+            colorName = colorName,
+            minTemp = minTemp,
+            maxTemp = maxTemp,
+            bedMinTemp = bedMinTemp,
+            bedMaxTemp = bedMaxTemp,
+            lotNr = lotNr,
+            comment = comment,
+            remainingWeight = remainingWeight,
+            existingSpoolId = if (spoolMode == SpoolMode.UPDATE) selectedSpool?.id else null
+        )
 
     fun parsedValue(label: String): String? {
         return bambuDialogText
@@ -784,6 +816,23 @@ fun SpoolStudioScreen(
                                 )
                             }
 
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            OutlinedTextField(
+                                value = remainingWeight,
+                                onValueChange = { input ->
+                                    if (input.length <= 8 && input.all { it.isDigit() || it == '.' || it == ',' }) {
+                                        remainingWeight = input
+                                    }
+                                },
+                                label = { Text("Remaining filament (g)") },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                                isError = !isRemainingWeightValid(),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                shape = RoundedCornerShape(16.dp)
+                            )
+
                             if (showCommentField) {
                                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -840,21 +889,7 @@ fun SpoolStudioScreen(
                         text = primaryActionLabel,
                         enabled = isFormValid(),
                         onClick = {
-                            onCreateInSpoolman(
-                                currentMaterialName(),
-                                currentVariantName(),
-                                currentBrandName(),
-                                currentLocationName(),
-                                colorHex,
-                                colorName,
-                                minTemp,
-                                maxTemp,
-                                bedMinTemp,
-                                bedMaxTemp,
-                                lotNr,
-                                comment,
-                                if (spoolMode == SpoolMode.UPDATE) selectedSpool?.id else null
-                            )
+                            onCreateInSpoolman(buildSaveRequest())
                         }
                     )
 
@@ -896,21 +931,7 @@ fun SpoolStudioScreen(
                         text = combinedActionLabel,
                         enabled = isFormValid(),
                         onClick = {
-                            onCreateAndWriteTag(
-                                currentMaterialName(),
-                                currentVariantName(),
-                                currentBrandName(),
-                                currentLocationName(),
-                                colorHex,
-                                colorName,
-                                minTemp,
-                                maxTemp,
-                                bedMinTemp,
-                                bedMaxTemp,
-                                lotNr,
-                                comment,
-                                if (spoolMode == SpoolMode.UPDATE) selectedSpool?.id else null
-                            )
+                            onCreateAndWriteTag(buildSaveRequest())
                         }
                     )
 

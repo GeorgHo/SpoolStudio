@@ -285,47 +285,15 @@ class MainViewModel : ViewModel() {
         showSnackbarMessage("Create new spool mode enabled")
     }
 
-    fun saveToSpoolman(
-        material: String,
-        variant: String,
-        brand: String,
-        location: String,
-        colorHex: String?,
-        colorName: String,
-        minTemp: String,
-        maxTemp: String,
-        bedMinTemp: String,
-        bedMaxTemp: String,
-        lotNr: String,
-        comment: String,
-        existingSpoolId: Int?
-    ) {
-        saveSpoolmanInternal(
-            material, variant, brand, location, colorHex, colorName, minTemp, maxTemp,
-            bedMinTemp, bedMaxTemp, lotNr, comment, existingSpoolId, false, null
-        )
+    fun saveToSpoolman(request: SpoolmanSaveRequest) {
+        saveSpoolmanInternal(request, false, null)
     }
 
     fun saveToSpoolmanAndWriteTag(
-        material: String,
-        variant: String,
-        brand: String,
-        location: String,
-        colorHex: String?,
-        colorName: String,
-        minTemp: String,
-        maxTemp: String,
-        bedMinTemp: String,
-        bedMaxTemp: String,
-        lotNr: String,
-        comment: String,
-        existingSpoolId: Int?,
+        request: SpoolmanSaveRequest,
         onWriteTag: (String) -> Unit
     ) {
-        saveSpoolmanInternal(
-            material, variant, brand, location, colorHex, colorName, minTemp, maxTemp,
-            bedMinTemp, bedMaxTemp, lotNr, comment, existingSpoolId, true, onWriteTag
-        )
+        saveSpoolmanInternal(request, true, onWriteTag)
     }
 
     private fun buildMaterialWithVariant(material: String, variant: String): String {
@@ -339,13 +307,41 @@ class MainViewModel : ViewModel() {
 
     private fun normalizeUrl(url: String): String = url.trim().removeSuffix("/")
 
+    private fun parseRemainingWeight(value: String): Float? =
+        value.trim()
+            .replace(",", ".")
+            .takeIf { it.isNotBlank() }
+            ?.toFloatOrNull()
+            ?.takeIf { it >= 0f }
+
+    private fun buildTagData(
+        spool: FilamentSpool,
+        request: SpoolmanSaveRequest,
+        resolvedLotNr: String
+    ): OpenSpoolData? {
+        return try {
+            OpenSpoolData.toOpenSpoolData(spool).copy(
+                minTemp = request.minTemp,
+                maxTemp = request.maxTemp,
+                bedMinTemp = request.bedMinTemp.ifBlank { null },
+                bedMaxTemp = request.bedMaxTemp.ifBlank { null },
+                subtype = request.variant.ifBlank { "Basic" },
+                lotNr = resolvedLotNr.ifBlank { null }
+            )
+        } catch (e: IllegalArgumentException) {
+            Log.w("SpoolStudio", "Saved spool cannot be converted to OpenSpool tag data", e)
+            null
+        }
+    }
+
     private fun validateBeforeSave(
         material: String,
         brand: String,
         colorName: String,
         colorHex: String?,
         minTemp: String,
-        maxTemp: String
+        maxTemp: String,
+        remainingWeight: String
     ): String? {
         if (!isValidSpoolmanUrl(spoolmanUrl)) return "Please configure a valid Spoolman URL first"
         if (material.trim().isBlank()) return "Material is required"
@@ -357,34 +353,26 @@ class MainViewModel : ViewModel() {
 
         if (minTemp.isNotBlank() && minTemp.toIntOrNull() == null) return "Min nozzle temperature is invalid"
         if (maxTemp.isNotBlank() && maxTemp.toIntOrNull() == null) return "Max nozzle temperature is invalid"
+        if (remainingWeight.isNotBlank() && parseRemainingWeight(remainingWeight) == null) {
+            return "Remaining filament weight is invalid"
+        }
 
         return null
     }
 
     private fun saveSpoolmanInternal(
-        material: String,
-        variant: String,
-        brand: String,
-        location: String,
-        colorHex: String?,
-        colorName: String,
-        minTemp: String,
-        maxTemp: String,
-        bedMinTemp: String,
-        bedMaxTemp: String,
-        lotNr: String,
-        comment: String,
-        existingSpoolId: Int?,
+        request: SpoolmanSaveRequest,
         writeTag: Boolean,
         onWriteTag: ((String) -> Unit)?
     ) {
         val validationError = validateBeforeSave(
-            material = material,
-            brand = brand,
-            colorName = colorName,
-            colorHex = colorHex,
-            minTemp = minTemp,
-            maxTemp = maxTemp
+            material = request.material,
+            brand = request.brand,
+            colorName = request.colorName,
+            colorHex = request.colorHex,
+            minTemp = request.minTemp,
+            maxTemp = request.maxTemp,
+            remainingWeight = request.remainingWeight
         )
         if (validationError != null) {
             showSnackbarMessage(validationError)
@@ -397,24 +385,25 @@ class MainViewModel : ViewModel() {
                 val actionMode = spoolMode
 
                 val resolvedLotNr = when (actionMode) {
-                    SpoolMode.UPDATE -> lotNr.trim().ifBlank {
+                    SpoolMode.UPDATE -> request.lotNr.trim().ifBlank {
                         selectedSpool?.lotNr
                             ?: readData?.lotNr
                             ?: ""
                     }
-                    SpoolMode.CREATE, SpoolMode.DUPLICATE -> lotNr.trim()
+                    SpoolMode.CREATE, SpoolMode.DUPLICATE -> request.lotNr.trim()
                 }
 
-                val vendor = service.createOrFindVendor(brand)
-                val composedMaterial = buildMaterialWithVariant(material, variant)
-                val cleanColorName = colorName.trim().ifBlank { "Unknown" }
-                val cleanColorHex = normalizedColorHex(colorHex)
-                val nozzleTemp = minTemp.toIntOrNull()
-                val bedTemp = bedMinTemp.toIntOrNull()
+                val vendor = service.createOrFindVendor(request.brand)
+                val composedMaterial = buildMaterialWithVariant(request.material, request.variant)
+                val cleanColorName = request.colorName.trim().ifBlank { "Unknown" }
+                val cleanColorHex = normalizedColorHex(request.colorHex)
+                val nozzleTemp = request.minTemp.toIntOrNull()
+                val bedTemp = request.bedMinTemp.toIntOrNull()
+                val cleanRemainingWeight = parseRemainingWeight(request.remainingWeight)
 
                 val finalSpool = when (actionMode) {
                     SpoolMode.UPDATE -> {
-                        val spoolId = existingSpoolId
+                        val spoolId = request.existingSpoolId
                             ?: currentSpoolId?.toIntOrNull()
                             ?: throw IllegalStateException("No spool id available for update")
 
@@ -448,9 +437,9 @@ class MainViewModel : ViewModel() {
                             id = spoolId,
                             filamentId = targetFilamentId,
                             lotNr = resolvedLotNr,
-                            location = location.trim().ifBlank { null },
-                            remainingWeight = selectedSpool?.remainingWeight,
-                            comment = comment.trim().ifBlank { null }
+                            location = request.location.trim().ifBlank { null },
+                            remainingWeight = cleanRemainingWeight ?: selectedSpool?.remainingWeight,
+                            comment = request.comment.trim().ifBlank { null }
                         )
 
                         service.findFilamentBySpoolId(spoolId.toString())
@@ -470,9 +459,9 @@ class MainViewModel : ViewModel() {
                         val createdSpool = service.createSpool(
                             filamentId = filament.id,
                             lotNr = resolvedLotNr,
-                            location = location.trim().ifBlank { null },
-                            remainingWeight = selectedSpool?.remainingWeight ?: filament.weight,
-                            comment = comment.trim().ifBlank { null }
+                            location = request.location.trim().ifBlank { null },
+                            remainingWeight = cleanRemainingWeight ?: selectedSpool?.remainingWeight ?: filament.weight,
+                            comment = request.comment.trim().ifBlank { null }
                         )
 
                         service.findFilamentBySpoolId(createdSpool.id?.toString() ?: "")
@@ -482,27 +471,27 @@ class MainViewModel : ViewModel() {
 
                 selectedSpool = finalSpool
                 currentSpoolId = finalSpool.id?.toString()
-                readData = OpenSpoolData.toOpenSpoolData(finalSpool).copy(
-                    minTemp = minTemp,
-                    maxTemp = maxTemp,
-                    bedMinTemp = bedMinTemp.ifBlank { null },
-                    bedMaxTemp = bedMaxTemp.ifBlank { null },
-                    subtype = variant.ifBlank { "Basic" },
-                    lotNr = resolvedLotNr.ifBlank { null }
-                )
+                val tagData = buildTagData(finalSpool, request, resolvedLotNr)
+                if (tagData != null) {
+                    readData = tagData
+                }
                 spoolMode = SpoolMode.UPDATE
                 dataVersion++
                 loadSpoolmanFilaments()
 
                 if (writeTag && onWriteTag != null) {
-                    onWriteTag(readData!!.toJson())
-                    showSnackbarMessage(
-                        if (actionMode == SpoolMode.UPDATE) {
-                            "Spoolman updated. Hold NFC tag to write."
-                        } else {
-                            "Saved to Spoolman with unique lot number. Hold NFC tag to write."
-                        }
-                    )
+                    if (tagData != null) {
+                        onWriteTag(tagData.toJson())
+                        showSnackbarMessage(
+                            if (actionMode == SpoolMode.UPDATE) {
+                                "Spoolman updated. Hold NFC tag to write."
+                            } else {
+                                "Saved to Spoolman with unique lot number. Hold NFC tag to write."
+                            }
+                        )
+                    } else {
+                        showSnackbarMessage("Saved to Spoolman, but this material cannot be written to an OpenSpool tag")
+                    }
                 } else {
                     showSnackbarMessage(
                         if (actionMode == SpoolMode.UPDATE) {

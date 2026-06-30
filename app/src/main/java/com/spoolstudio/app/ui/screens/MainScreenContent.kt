@@ -110,42 +110,14 @@ fun MainScreenContent(
             onBambuExistingSpoolFound = {
                 viewModel.showSnackbarMessage("Identical spool found in Spoolman")
             },
-            onCreateInSpoolman = { material, variant, brand, location, colorHex, colorName, minTemp, maxTemp, bedMinTemp, bedMaxTemp, lotNr, comment, existingSpoolId ->
-                viewModel.saveToSpoolman(
-                    material,
-                    variant,
-                    brand,
-                    location,
-                    colorHex,
-                    colorName,
-                    minTemp,
-                    maxTemp,
-                    bedMinTemp,
-                    bedMaxTemp,
-                    lotNr,
-                    comment,
-                    existingSpoolId
-                )
+            onCreateInSpoolman = { request ->
+                viewModel.saveToSpoolman(request)
             },
             onCreateNewSpool = {
                 viewModel.createNewSpoolFromCurrent()
             },
-            onCreateAndWriteTag = { material, variant, brand, location, colorHex, colorName, minTemp, maxTemp, bedMinTemp, bedMaxTemp, lotNr, comment, existingSpoolId ->
-                viewModel.saveToSpoolmanAndWriteTag(
-                    material,
-                    variant,
-                    brand,
-                    location,
-                    colorHex,
-                    colorName,
-                    minTemp,
-                    maxTemp,
-                    bedMinTemp,
-                    bedMaxTemp,
-                    lotNr,
-                    comment,
-                    existingSpoolId
-                ) { ndefMessage ->
+            onCreateAndWriteTag = { request ->
+                viewModel.saveToSpoolmanAndWriteTag(request) { ndefMessage ->
                     onWriteTag(ndefMessage)
                 }
             }
