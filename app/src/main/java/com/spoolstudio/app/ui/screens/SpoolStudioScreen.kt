@@ -66,9 +66,6 @@ import com.spoolstudio.app.ui.components.FilamentForm
 import com.spoolstudio.app.ui.components.SpoolStudioLogo
 import com.spoolstudio.app.ui.components.SpoolmanFilamentDropdown
 import com.spoolstudio.app.utils.*
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.TextButton
-import com.spoolstudio.app.ui.components.NfcDumpViewer
 import com.spoolstudio.app.data.local.VariantDatabase
 
 @Composable
@@ -1194,69 +1191,30 @@ fun SpoolStudioScreen(
             }
         }
 
-        if (showBambuDialog) {
-            AlertDialog(
-                onDismissRequest = { showBambuDialog = false },
-                confirmButton = {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        TextButton(onClick = { showBambuDialog = false }) {
-                            Text("Schließen")
-                        }
-                        TextButton(onClick = { applyBambuDialogData() }) {
-                            Text("Übernehmen")
-                        }
-                    }
-                },
-                title = {
-                    Text("Bambu RFID Dump")
-                },
-                text = {
-                    NfcDumpViewer(
-                        text = bambuDialogText,
-                        modifier = Modifier.height(320.dp)
-                    )
-                }
-            )
-        }
+        BambuRfidDumpDialog(
+            visible = showBambuDialog,
+            text = bambuDialogText,
+            onDismiss = { showBambuDialog = false },
+            onApply = { applyBambuDialogData() }
+        )
 
-        if (showBambuDiffDialog) {
-            AlertDialog(
-                onDismissRequest = {
-                    showBambuDiffDialog = false
-                    pendingBambuApply = null
-                },
-                title = {
-                    Text("Abweichungen gefunden")
-                },
-                text = {
-                    NfcDumpViewer(
-                        text = bambuDiffDialogText,
-                        modifier = Modifier.height(260.dp)
-                    )
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = {
-                            showBambuDiffDialog = false
-                            pendingBambuApply = null
-                        }
-                    ) {
-                        Text("Vorhandene Spule verwenden")
-                    }
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            showBambuDiffDialog = false
-                            pendingBambuApply?.invoke()
-                            pendingBambuApply = null
-                        }
-                    ) {
-                        Text("Bambu-Daten übernehmen")
-                    }
-                }
-            )
-        }
+        BambuRfidDiffDialog(
+            visible = showBambuDiffDialog,
+            text = bambuDiffDialogText,
+            onDismiss = {
+                showBambuDiffDialog = false
+                pendingBambuApply = null
+            },
+            onUseExisting = {
+                showBambuDiffDialog = false
+                pendingBambuApply = null
+            },
+            onApplyBambuData = {
+                showBambuDiffDialog = false
+                pendingBambuApply?.invoke()
+                pendingBambuApply = null
+            }
+        )
 
         CenteredSnackbarOverlay(
             message = snackbarMessage,
