@@ -11,7 +11,6 @@ import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,13 +27,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -60,7 +57,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.platform.LocalFocusManager
 import com.spoolstudio.app.data.local.MaterialDatabase
 import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.domain.models.OpenSpoolData
@@ -1283,103 +1279,6 @@ fun SpoolStudioScreen(
     }
 }
 
-@Composable
-private fun WriteTagButton(
-    enabled: Boolean = true,
-    onClick: () -> Unit
-) {
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 5.dp)
-            .height(45.dp),
-        shape = RoundedCornerShape(20.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary,
-            disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-            disabledContentColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f)
-        )
-    ) {
-        Text("Write to RFID", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onPrimary)
-    }
-}
-
-@Composable
-private fun ReadTagButton(onClick: () -> Unit) {
-    Button(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 5.dp)
-            .height(45.dp),
-        shape = RoundedCornerShape(20.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-    ) {
-        Text("Read RFID Tag", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
-    }
-}
-
-@Composable
-private fun PrinterMappingButton(onClick: () -> Unit) {
-    Button(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 5.dp)
-            .height(45.dp),
-        shape = RoundedCornerShape(20.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-    ) {
-        Text("Printer Mapping", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
-    }
-}
-
-@Composable
-private fun SaveToSpoolmanButton(text: String, enabled: Boolean = true, onClick: () -> Unit) {
-    OutlinedButton(
-        onClick = onClick,
-        enabled = enabled,
-        border = null,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 5.dp)
-            .height(45.dp),
-        shape = RoundedCornerShape(20.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary,
-            disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-            disabledContentColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f)
-        )
-    ) {
-        Text(text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
-    }
-}
-
-@Composable
-private fun SaveAndWriteTagButton(text: String, enabled: Boolean = true, onClick: () -> Unit) {
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 5.dp)
-            .height(45.dp),
-        shape = RoundedCornerShape(20.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary,
-            disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-            disabledContentColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f)
-        )
-    ) {
-        Text(text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onPrimary)
-    }
-}
-
 @Preview(showBackground = true)
 @Composable
 fun SpoolStudioScreenPreview() {
@@ -1418,196 +1317,6 @@ fun TemperatureSection(
             TemperatureControl(value = bedMin, onValueChange = onBedMinChange, modifier = Modifier.weight(1f))
             Spacer(modifier = Modifier.width(16.dp))
             TemperatureControl(value = bedMax, onValueChange = onBedMaxChange, modifier = Modifier.weight(1f))
-        }
-    }
-}
-
-@Composable
-private fun MappingRowPlaceholder(label: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.titleMedium
-        )
-
-        Text(
-            text = "Keine Spule gewählt",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun MappingRowDropdown(
-    label: String,
-    spools: List<FilamentSpool>,
-    selectedSpoolId: Int?,
-    isActive: Boolean,
-    enabled: Boolean,
-    onSpoolSelected: (Int?) -> Unit,
-    onActiveCheckedChange: (Boolean) -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-    val focusManager = LocalFocusManager.current
-    val selectedSpool = spools.firstOrNull { it.id == selectedSpoolId }
-
-    @Suppress("DEPRECATION")
-    val iconColor = selectedSpool?.colorHex
-        ?.takeIf { it.isNotBlank() }
-        ?.let { hex ->
-            try {
-                Color(android.graphics.Color.parseColor("#$hex"))
-            } catch (_: Exception) {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            }
-        }
-        ?: MaterialTheme.colorScheme.onSurfaceVariant
-
-    val displayText = selectedSpool?.let { spool ->
-        "ID ${spool.id ?: "-"} · ${spool.brand} · ${spool.spoolmanName ?: spool.displayName}"
-    } ?: "Select from Spoolman"
-
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(2.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.offset(y = (-7).dp)
-            )
-
-            SpoolStudioLogo(
-                color = iconColor,
-                logoSize = 52.dp,
-                showTitle = false,
-                modifier = Modifier.width(52.dp)
-            )
-        }
-
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { shouldExpand ->
-                expanded = shouldExpand && spools.isNotEmpty() && enabled
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .offset(y = (-12).dp)
-        ) {
-            OutlinedButton(
-                onClick = {
-                    if (spools.isNotEmpty() && enabled) expanded = true
-                },
-                enabled = spools.isNotEmpty() && enabled,
-                modifier = Modifier
-                    .menuAnchor()
-                    .fillMaxWidth()
-                    .height(50.dp),
-                shape = RoundedCornerShape(20.dp),
-                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp)
-            ) {
-                Text(
-                    text = displayText,
-                    modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (selectedSpool != null) {
-                        MaterialTheme.colorScheme.onSurface
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                    maxLines = 1
-                )
-
-                Icon(
-                    imageVector = Icons.Filled.ArrowDropDown,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                DropdownMenuItem(
-                    text = {
-                        Text(
-                            text = "— Empty —",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    },
-                    onClick = {
-                        onSpoolSelected(null)
-                        expanded = false
-                        focusManager.clearFocus(force = true)
-                    }
-                )
-                Divider()
-
-                spools.forEach { spool ->
-                    val labelText =
-                        "ID ${spool.id ?: "-"} · ${spool.brand} · ${spool.spoolmanName ?: spool.displayName}"
-
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                text = labelText,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        },
-                        onClick = {
-                            onSpoolSelected(spool.id)
-                            expanded = false
-                        }
-                    )
-                }
-            }
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 12.dp)
-                .offset(y = (-8).dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier.size(22.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Checkbox(
-                    checked = isActive,
-                    onCheckedChange = if (selectedSpoolId != null && enabled) {
-                        onActiveCheckedChange
-                    } else {
-                        null
-                    },
-                    modifier = Modifier.size(16.dp),
-                    enabled = selectedSpoolId != null && enabled
-                )
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Text(
-                text = "Active spool",
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (selectedSpoolId != null && enabled) {
-                    MaterialTheme.colorScheme.onSurface
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                }
-            )
         }
     }
 }
