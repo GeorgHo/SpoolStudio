@@ -66,7 +66,6 @@ import com.spoolstudio.app.ui.components.FilamentForm
 import com.spoolstudio.app.ui.components.SpoolStudioLogo
 import com.spoolstudio.app.ui.components.SpoolmanFilamentDropdown
 import com.spoolstudio.app.utils.*
-import com.spoolstudio.app.data.local.VariantDatabase
 
 @Composable
 fun SpoolStudioScreen(
@@ -347,122 +346,17 @@ fun SpoolStudioScreen(
             existingSpoolId = if (spoolMode == SpoolMode.UPDATE) selectedSpool?.id else null
         )
 
-    fun parsedValue(label: String): String? {
-        return bambuDialogText
-            .lineSequence()
-            .firstOrNull { it.startsWith("$label: ") }
-            ?.substringAfter(": ")
-            ?.trim()
-            ?.takeIf { it.isNotBlank() }
-    }
-
-    fun parsedInt(label: String): Int? {
-        return parsedValue(label)
-            ?.replace(" C", "")
-            ?.replace(" g", "")
-            ?.replace(" m", "")
-            ?.replace(" mm", "")
-            ?.trim()
-            ?.toIntOrNull()
-    }
-
-    fun normalizeHexForCompare(value: String?): String {
-        return value
-            ?.trim()
-            ?.removePrefix("#")
-            ?.uppercase()
-            .orEmpty()
-    }
-
-    fun findMatchingSpoolByLotNr(lotNrValue: String?): FilamentSpool? {
-        val normalizedLotNr = lotNrValue?.trim().orEmpty()
-        if (normalizedLotNr.isBlank()) return null
-
-        return spools.firstOrNull { spool ->
-            spool.lotNr?.trim().equals(normalizedLotNr, ignoreCase = true)
-        }
-    }
-
-    fun isSameBambuData(
-        spool: FilamentSpool,
-        material: String?,
-        normalizedVariant: String,
-        colorHexValue: String?
-    ): Boolean {
-        return spool.material.equals(material.orEmpty(), ignoreCase = true) &&
-                spool.variant.equals(normalizedVariant, ignoreCase = true) &&
-                normalizeHexForCompare(spool.colorHex) == normalizeHexForCompare(colorHexValue)
-    }
-
-    fun buildBambuDiffText(
-        spool: FilamentSpool,
-        material: String?,
-        normalizedVariant: String,
-        colorHexValue: String?
-    ): String {
-        val lines = mutableListOf<String>()
-        lines += "Spule mit gleicher Lot Nummer gefunden."
-        lines += ""
-        lines += "ID: ${spool.id ?: "-"}"
-        lines += "Lot Number: ${spool.lotNr ?: "-"}"
-        lines += ""
-
-        if (!spool.material.equals(material.orEmpty(), ignoreCase = true)) {
-            lines += "Material:"
-            lines += "- Datenbank: ${spool.material}"
-            lines += "- Bambu: ${material ?: "-"}"
-            lines += ""
-        }
-
-        if (!spool.variant.equals(normalizedVariant, ignoreCase = true)) {
-            lines += "Variant:"
-            lines += "- Datenbank: ${spool.variant.ifBlank { "Basic" }}"
-            lines += "- Bambu: ${normalizedVariant.ifBlank { "Basic" }}"
-            lines += ""
-        }
-
-        if (normalizeHexForCompare(spool.colorHex) != normalizeHexForCompare(colorHexValue)) {
-            lines += "Color:"
-            lines += "- Datenbank: ${spool.colorHex?.let { "#$it" } ?: "-"}"
-            lines += "- Bambu: ${colorHexValue?.let { "#$it" } ?: "-"}"
-            lines += ""
-        }
-
-        return lines.joinToString("\n").trim()
-    }
-
-    fun normalizeBambuVariant(material: String, detailedType: String?): String {
-        val raw = detailedType.orEmpty().trim()
-        if (raw.isBlank()) return "Basic"
-
-        val cleaned = raw
-            .removePrefix(material)
-            .removePrefix("$material ")
-            .removePrefix("$material-")
-            .removePrefix("$material -")
-            .trim()
-
-        val knownVariants = VariantDatabase.variants.filter { it.isNotBlank() }
-
-        val match = knownVariants.firstOrNull { variant ->
-            cleaned.equals(variant, ignoreCase = true) ||
-                    cleaned.contains(variant, ignoreCase = true)
-        }
-
-        return match ?: cleaned.ifBlank { "Basic" }
-    }
-
     fun applyBambuDialogData() {
-        val material = parsedValue("Filament Type")
-        val detailedType = parsedValue("Detailed Type")
-        val colorRaw = parsedValue("Filament Color")
+        val material = parsedBambuValue(bambuDialogText, "Filament Type")
+        val detailedType = parsedBambuValue(bambuDialogText, "Detailed Type")
+        val colorRaw = parsedBambuValue(bambuDialogText, "Filament Color")
             ?.substringBefore(" / ")
             ?.removePrefix("#")
             ?.uppercase()
-        val minHotend = parsedInt("Min Hotend")
-        val maxHotend = parsedInt("Max Hotend")
-        val bedTemp = parsedInt("Bed Temp")
-        val uid = parsedValue("UID")?.trim()
+        val minHotend = parsedBambuInt(bambuDialogText, "Min Hotend")
+        val maxHotend = parsedBambuInt(bambuDialogText, "Max Hotend")
+        val bedTemp = parsedBambuInt(bambuDialogText, "Bed Temp")
+        val uid = parsedBambuValue(bambuDialogText, "UID")?.trim()
 
         val normalizedVariant = normalizeBambuVariant(
             material = material ?: filamentType,
@@ -516,7 +410,7 @@ fun SpoolStudioScreen(
             onBambuDataApplied()
         }
 
-        val matchingSpool = findMatchingSpoolByLotNr(uid)
+        val matchingSpool = findMatchingSpoolByLotNr(spools, uid)
 
         when {
             matchingSpool == null -> {
