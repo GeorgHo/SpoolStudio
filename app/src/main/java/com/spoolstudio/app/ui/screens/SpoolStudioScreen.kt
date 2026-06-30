@@ -1258,23 +1258,10 @@ fun SpoolStudioScreen(
             )
         }
 
-        if (showSnackbar && snackbarMessage.isNotBlank()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Card(
-                    shape = RoundedCornerShape(20.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-                ) {
-                    Text(
-                        text = snackbarMessage,
-                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
-        }
+        CenteredSnackbarOverlay(
+            message = snackbarMessage,
+            visible = showSnackbar
+        )
     }
 }
 
