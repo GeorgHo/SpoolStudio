@@ -31,6 +31,11 @@
   - Show warning color in the remaining filament field.
   - Show warning color in the Spool Info popup remaining percentage.
 - Improve visibility and wording of Spoolman and RFID read/write feedback.
+- Make action buttons state-aware:
+  - Enable Spoolman update only when Spoolman-relevant fields changed.
+  - Do not enable Spoolman update for RFID-only changes such as tag temperature values.
+  - Enable RFID write actions only when valid tag data is available and write mode makes sense.
+  - Keep disabled states visually clear so users understand which action is currently possible.
 - Add release documentation:
   - Version bump.
   - Android Studio Gradle sync.

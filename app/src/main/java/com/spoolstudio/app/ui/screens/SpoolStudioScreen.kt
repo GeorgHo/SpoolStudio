@@ -65,7 +65,6 @@ import com.spoolstudio.app.ui.SpoolmanSaveRequest
 import com.spoolstudio.app.ui.components.FilamentForm
 import com.spoolstudio.app.ui.components.SpoolStudioLogo
 import com.spoolstudio.app.ui.components.SpoolmanFilamentDropdown
-import com.spoolstudio.app.ui.components.TemperatureControl
 import com.spoolstudio.app.utils.*
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
@@ -1283,40 +1282,4 @@ fun SpoolStudioScreen(
 @Composable
 fun SpoolStudioScreenPreview() {
     MaterialTheme { SpoolStudioScreen(onWriteTag = { }, onReadTag = { }, dataVersion = 0) }
-}
-
-@Composable
-fun TemperatureSection(
-    nozzleMin: String,
-    nozzleMax: String,
-    bedMin: String,
-    bedMax: String,
-    onNozzleMinChange: (String) -> Unit,
-    onNozzleMaxChange: (String) -> Unit,
-    onBedMinChange: (String) -> Unit,
-    onBedMaxChange: (String) -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text("Temperature", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Nozzle", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.width(60.dp))
-            TemperatureControl(value = nozzleMin, onValueChange = onNozzleMinChange, modifier = Modifier.weight(1f))
-            Spacer(modifier = Modifier.width(16.dp))
-            TemperatureControl(value = nozzleMax, onValueChange = onNozzleMaxChange, modifier = Modifier.weight(1f))
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Bed", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.width(60.dp))
-            TemperatureControl(value = bedMin, onValueChange = onBedMinChange, modifier = Modifier.weight(1f))
-            Spacer(modifier = Modifier.width(16.dp))
-            TemperatureControl(value = bedMax, onValueChange = onBedMaxChange, modifier = Modifier.weight(1f))
-        }
-    }
 }
