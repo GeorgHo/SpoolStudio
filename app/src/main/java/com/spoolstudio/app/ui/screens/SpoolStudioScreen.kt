@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
@@ -34,7 +33,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -48,7 +46,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -558,52 +555,17 @@ fun SpoolStudioScreen(
                                 onCustomLocationChange = { form.customLocation = it }
                             )
 
-                            if (showLotNumber) {
-                                Spacer(modifier = Modifier.height(12.dp))
-
-                                OutlinedTextField(
-                                    value = form.lotNr,
-                                    onValueChange = { input ->
-                                        if (input.length <= 32) form.lotNr = input
-                                    },
-                                    label = { Text("Lot Number") },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true,
-                                    shape = RoundedCornerShape(16.dp)
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            OutlinedTextField(
-                                value = form.remainingWeight,
-                                onValueChange = { input ->
-                                    if (input.length <= 8 && input.all { it.isDigit() || it == '.' || it == ',' }) {
-                                        form.remainingWeight = input
-                                    }
-                                },
-                                label = { Text("Remaining filament (g)") },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                                isError = !isRemainingWeightValid(),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                shape = RoundedCornerShape(16.dp)
+                            SpoolDetailsSection(
+                                lotNr = form.lotNr,
+                                remainingWeight = form.remainingWeight,
+                                comment = form.comment,
+                                showLotNumber = showLotNumber,
+                                showCommentField = showCommentField,
+                                isRemainingWeightValid = isRemainingWeightValid(),
+                                onLotNrChange = { form.lotNr = it },
+                                onRemainingWeightChange = { form.remainingWeight = it },
+                                onCommentChange = { form.comment = it }
                             )
-
-                            if (showCommentField) {
-                                Spacer(modifier = Modifier.height(12.dp))
-
-                                OutlinedTextField(
-                                    value = form.comment,
-                                    onValueChange = { input ->
-                                        if (input.length <= 120) form.comment = input
-                                    },
-                                    label = { Text("Comment") },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true,
-                                    shape = RoundedCornerShape(16.dp)
-                                )
-                            }
 
                             Spacer(modifier = Modifier.height(10.dp))
                             key(form.filamentType) {
