@@ -9,7 +9,6 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.spoolstudio.app.data.remote.moonraker.MoonrakerService
-import com.spoolstudio.app.data.remote.spoolman.SpoolmanService
 import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.domain.models.OpenSpoolData
 import kotlinx.coroutines.Dispatchers
@@ -24,6 +23,7 @@ enum class SpoolMode {
 
 class MainViewModel : ViewModel() {
     private val spoolmanCatalogRepository = SpoolmanCatalogRepository()
+    private val spoolmanSaveRepository = SpoolmanSaveRepository()
     private val printerMappingRepository = PrinterMappingRepository()
 
     var readData by mutableStateOf<OpenSpoolData?>(null)
@@ -313,97 +313,20 @@ class MainViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                val service = SpoolmanService(spoolmanUrl)
-                val actionMode = spoolMode
+                val result = spoolmanSaveRepository.save(
+                    SpoolmanSaveInput(
+                        baseUrl = spoolmanUrl,
+                        request = request,
+                        mode = spoolMode,
+                        selectedSpool = selectedSpool,
+                        readData = readData,
+                        currentSpoolId = currentSpoolId
+                    )
+                )
 
-                val resolvedLotNr = when (actionMode) {
-                    SpoolMode.UPDATE -> request.lotNr.trim().ifBlank {
-                        selectedSpool?.lotNr
-                            ?: readData?.lotNr
-                            ?: ""
-                    }
-                    SpoolMode.CREATE, SpoolMode.DUPLICATE -> request.lotNr.trim()
-                }
-
-                val vendor = service.createOrFindVendor(request.brand)
-                val composedMaterial = buildMaterialWithVariant(request.material, request.variant)
-                val cleanColorName = request.colorName.trim().ifBlank { "Unknown" }
-                val cleanColorHex = normalizedColorHex(request.colorHex)
-                val nozzleTemp = request.minTemp.toIntOrNull()
-                val bedTemp = request.bedMinTemp.toIntOrNull()
-                val cleanRemainingWeight = parseRemainingWeight(request.remainingWeight)
-
-                val finalSpool = when (actionMode) {
-                    SpoolMode.UPDATE -> {
-                        val spoolId = request.existingSpoolId
-                            ?: currentSpoolId?.toIntOrNull()
-                            ?: throw IllegalStateException("No spool id available for update")
-
-                        val currentFilamentId = selectedSpool?.filamentId
-                            ?: throw IllegalStateException("Current filament id missing")
-
-                        val usageCount = service.countSpoolsUsingFilament(currentFilamentId)
-
-                        val targetFilamentId = if (usageCount <= 1) {
-                            service.updateFilament(
-                                id = currentFilamentId,
-                                name = cleanColorName,
-                                material = composedMaterial,
-                                vendorId = vendor.id ?: throw IllegalStateException("Vendor id missing"),
-                                colorHex = cleanColorHex,
-                                nozzleTemp = nozzleTemp,
-                                bedTemp = bedTemp
-                            ).id
-                        } else {
-                            service.createOrFindFilament(
-                                name = cleanColorName,
-                                material = composedMaterial,
-                                vendorId = vendor.id ?: throw IllegalStateException("Vendor id missing"),
-                                colorHex = cleanColorHex,
-                                nozzleTemp = nozzleTemp,
-                                bedTemp = bedTemp
-                            ).id
-                        }
-
-                        service.updateSpool(
-                            id = spoolId,
-                            filamentId = targetFilamentId,
-                            lotNr = resolvedLotNr,
-                            location = request.location.trim().ifBlank { null },
-                            remainingWeight = cleanRemainingWeight ?: selectedSpool?.remainingWeight,
-                            comment = request.comment.trim().ifBlank { null }
-                        )
-
-                        service.findFilamentBySpoolId(spoolId.toString())
-                            ?: throw IllegalStateException("Updated spool could not be reloaded")
-                    }
-
-                    SpoolMode.CREATE, SpoolMode.DUPLICATE -> {
-                        val filament = service.createOrFindFilament(
-                            name = cleanColorName,
-                            material = composedMaterial,
-                            vendorId = vendor.id ?: throw IllegalStateException("Vendor id missing"),
-                            colorHex = cleanColorHex,
-                            nozzleTemp = nozzleTemp,
-                            bedTemp = bedTemp
-                        )
-
-                        val createdSpool = service.createSpool(
-                            filamentId = filament.id,
-                            lotNr = resolvedLotNr,
-                            location = request.location.trim().ifBlank { null },
-                            remainingWeight = cleanRemainingWeight ?: selectedSpool?.remainingWeight ?: filament.weight,
-                            comment = request.comment.trim().ifBlank { null }
-                        )
-
-                        service.findFilamentBySpoolId(createdSpool.id?.toString() ?: "")
-                            ?: FilamentSpool.fromSpoolman(createdSpool.copy(filament = filament))
-                    }
-                }
-
-                selectedSpool = finalSpool
-                currentSpoolId = finalSpool.id?.toString()
-                val tagData = buildTagData(finalSpool, request, resolvedLotNr)
+                selectedSpool = result.finalSpool
+                currentSpoolId = result.finalSpool.id?.toString()
+                val tagData = result.tagData
                 if (tagData != null) {
                     readData = tagData
                 }
@@ -415,7 +338,7 @@ class MainViewModel : ViewModel() {
                     if (tagData != null) {
                         onWriteTag(tagData.toJson())
                         showSnackbarMessage(
-                            if (actionMode == SpoolMode.UPDATE) {
+                            if (result.actionMode == SpoolMode.UPDATE) {
                                 "Spoolman updated. Hold NFC tag to write."
                             } else {
                                 "Saved to Spoolman with unique lot number. Hold NFC tag to write."
@@ -426,7 +349,7 @@ class MainViewModel : ViewModel() {
                     }
                 } else {
                     showSnackbarMessage(
-                        if (actionMode == SpoolMode.UPDATE) {
+                        if (result.actionMode == SpoolMode.UPDATE) {
                             "Updated in Spoolman successfully"
                         } else {
                             "Saved to Spoolman successfully"
