@@ -420,17 +420,14 @@ fun SpoolStudioScreen(
             )
         }
 
-        BambuRfidDumpDialog(
-            visible = showBambuDialog,
-            text = bambuDialogText,
-            onDismiss = { showBambuDialog = false },
-            onApply = { applyBambuDialogData() }
-        )
-
-        BambuRfidDiffDialog(
-            visible = showBambuDiffDialog,
-            text = bambuDiffDialogText,
-            onDismiss = {
+        BambuRfidDialogHost(
+            showDumpDialog = showBambuDialog,
+            dumpText = bambuDialogText,
+            showDiffDialog = showBambuDiffDialog,
+            diffText = bambuDiffDialogText,
+            onDismissDump = { showBambuDialog = false },
+            onApplyDump = { applyBambuDialogData() },
+            onDismissDiff = {
                 showBambuDiffDialog = false
                 pendingBambuApply = null
             },

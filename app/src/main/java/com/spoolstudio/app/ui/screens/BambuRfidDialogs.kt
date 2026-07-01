@@ -1,4 +1,4 @@
-package com.spoolstudio.app.ui.screens
+﻿package com.spoolstudio.app.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -10,6 +10,34 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.spoolstudio.app.ui.components.NfcDumpViewer
+
+@Composable
+fun BambuRfidDialogHost(
+    showDumpDialog: Boolean,
+    dumpText: String,
+    showDiffDialog: Boolean,
+    diffText: String,
+    onDismissDump: () -> Unit,
+    onApplyDump: () -> Unit,
+    onDismissDiff: () -> Unit,
+    onUseExisting: () -> Unit,
+    onApplyBambuData: () -> Unit
+) {
+    BambuRfidDumpDialog(
+        visible = showDumpDialog,
+        text = dumpText,
+        onDismiss = onDismissDump,
+        onApply = onApplyDump
+    )
+
+    BambuRfidDiffDialog(
+        visible = showDiffDialog,
+        text = diffText,
+        onDismiss = onDismissDiff,
+        onUseExisting = onUseExisting,
+        onApplyBambuData = onApplyBambuData
+    )
+}
 
 @Composable
 fun BambuRfidDumpDialog(
@@ -25,10 +53,10 @@ fun BambuRfidDumpDialog(
         confirmButton = {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(onClick = onDismiss) {
-                    Text("SchlieÃŸen")
+                    Text("Schliessen")
                 }
                 TextButton(onClick = onApply) {
-                    Text("Ãœbernehmen")
+                    Text("Uebernehmen")
                 }
             }
         },
@@ -72,7 +100,7 @@ fun BambuRfidDiffDialog(
         },
         confirmButton = {
             TextButton(onClick = onApplyBambuData) {
-                Text("Bambu-Daten Ã¼bernehmen")
+                Text("Bambu-Daten uebernehmen")
             }
         }
     )
