@@ -271,32 +271,11 @@ fun SpoolStudioScreen(
         activeDialogSpoolId = activePrinterSpoolId
     }
 
-    fun isRemainingWeightValid(): Boolean = isRemainingWeightValid(form.remainingWeight)
-    fun isFormValid(): Boolean =
-        isSpoolFormValid(form.variant, form.brand, form.customBrand, form.filamentType, form.customMaterial, form.remainingWeight)
-    fun validationMessage(): String? =
-        spoolFormValidationMessage(form.variant, form.brand, form.customBrand, form.filamentType, form.customMaterial, form.remainingWeight)
+    fun isRemainingWeightValid(): Boolean = form.isRemainingWeightValid()
+    fun isFormValid(): Boolean = form.isValid()
+    fun validationMessage(): String? = form.validationMessage()
     fun buildSaveRequest(): SpoolmanSaveRequest =
-        buildSpoolmanSaveRequest(
-            filamentType = form.filamentType,
-            customMaterial = form.customMaterial,
-            variant = form.variant,
-            brand = form.brand,
-            customBrand = form.customBrand,
-            location = form.location,
-            customLocation = form.customLocation,
-            colorHex = form.colorHex,
-            colorName = form.colorName,
-            minTemp = form.minTemp,
-            maxTemp = form.maxTemp,
-            bedMinTemp = form.bedMinTemp,
-            bedMaxTemp = form.bedMaxTemp,
-            lotNr = form.lotNr,
-            comment = form.comment,
-            remainingWeight = form.remainingWeight,
-            spoolMode = spoolMode,
-            selectedSpool = selectedSpool
-        )
+        form.buildSaveRequest(spoolMode, selectedSpool)
 
     fun applyBambuDialogData() {
         val material = parsedBambuValue(bambuDialogText, "Filament Type")
@@ -674,21 +653,7 @@ fun SpoolStudioScreen(
                     WriteTagButton(
                         enabled = isFormValid(),
                         onClick = {
-                            buildOpenSpoolTagData(
-                                filamentType = form.filamentType,
-                                customMaterial = form.customMaterial,
-                                variant = form.variant,
-                                brand = form.brand,
-                                customBrand = form.customBrand,
-                                colorHex = form.colorHex,
-                                minTemp = form.minTemp,
-                                maxTemp = form.maxTemp,
-                                bedMinTemp = form.bedMinTemp,
-                                bedMaxTemp = form.bedMaxTemp,
-                                lotNr = form.lotNr,
-                                spoolMode = spoolMode,
-                                selectedSpool = selectedSpool
-                            )?.let { tagData ->
+                            form.buildOpenSpoolTagData(spoolMode, selectedSpool)?.let { tagData ->
                                 onWriteTag(tagData.toJson())
                             }
                         }

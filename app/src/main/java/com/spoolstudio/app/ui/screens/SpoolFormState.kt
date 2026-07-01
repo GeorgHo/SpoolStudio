@@ -3,8 +3,11 @@ package com.spoolstudio.app.ui.screens
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.domain.models.Material
 import com.spoolstudio.app.domain.models.OpenSpoolData
+import com.spoolstudio.app.ui.SpoolMode
+import com.spoolstudio.app.ui.SpoolmanSaveRequest
 
 class SpoolFormState(defaultMaterial: Material) {
     var colorHex by mutableStateOf<String?>(null)
@@ -31,4 +34,52 @@ class SpoolFormState(defaultMaterial: Material) {
         location = ""
         customLocation = ""
     }
+
+    fun isRemainingWeightValid(): Boolean =
+        isRemainingWeightValid(remainingWeight)
+
+    fun isValid(): Boolean =
+        isSpoolFormValid(variant, brand, customBrand, filamentType, customMaterial, remainingWeight)
+
+    fun validationMessage(): String? =
+        spoolFormValidationMessage(variant, brand, customBrand, filamentType, customMaterial, remainingWeight)
+
+    fun buildSaveRequest(spoolMode: SpoolMode, selectedSpool: FilamentSpool?): SpoolmanSaveRequest =
+        buildSpoolmanSaveRequest(
+            filamentType = filamentType,
+            customMaterial = customMaterial,
+            variant = variant,
+            brand = brand,
+            customBrand = customBrand,
+            location = location,
+            customLocation = customLocation,
+            colorHex = colorHex,
+            colorName = colorName,
+            minTemp = minTemp,
+            maxTemp = maxTemp,
+            bedMinTemp = bedMinTemp,
+            bedMaxTemp = bedMaxTemp,
+            lotNr = lotNr,
+            comment = comment,
+            remainingWeight = remainingWeight,
+            spoolMode = spoolMode,
+            selectedSpool = selectedSpool
+        )
+
+    fun buildOpenSpoolTagData(spoolMode: SpoolMode, selectedSpool: FilamentSpool?): OpenSpoolData? =
+        buildOpenSpoolTagData(
+            filamentType = filamentType,
+            customMaterial = customMaterial,
+            variant = variant,
+            brand = brand,
+            customBrand = customBrand,
+            colorHex = colorHex,
+            minTemp = minTemp,
+            maxTemp = maxTemp,
+            bedMinTemp = bedMinTemp,
+            bedMaxTemp = bedMaxTemp,
+            lotNr = lotNr,
+            spoolMode = spoolMode,
+            selectedSpool = selectedSpool
+        )
 }
