@@ -17,8 +17,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,7 +35,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.spoolstudio.app.data.local.MaterialDatabase
@@ -409,53 +406,24 @@ fun SpoolStudioScreen(
                         }
                     }
 
-                    ReadTagButton(onClick = { onReadTag() })
-
-                    SaveToSpoolmanButton(
-                        text = primaryActionLabel,
-                        enabled = isFormValid(),
-                        onClick = {
+                    SpoolActionSection(
+                        primaryActionLabel = primaryActionLabel,
+                        combinedActionLabel = combinedActionLabel,
+                        isFormValid = isFormValid(),
+                        onReadTag = onReadTag,
+                        onSaveToSpoolman = {
                             onCreateInSpoolman(buildSaveRequest())
-                        }
-                    )
-
-                    WriteTagButton(
-                        enabled = isFormValid(),
-                        onClick = {
+                        },
+                        onWriteTag = {
                             form.buildOpenSpoolTagData(spoolMode, selectedSpool)?.let { tagData ->
                                 onWriteTag(tagData.toJson())
                             }
-                        }
-                    )
-
-                    SaveAndWriteTagButton(
-                        text = combinedActionLabel,
-                        enabled = isFormValid(),
-                        onClick = {
+                        },
+                        onSaveAndWriteTag = {
                             onCreateAndWriteTag(buildSaveRequest())
-                        }
-                    )
-
-                    Button(
-                        onClick = { onCreateNewSpool() },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 5.dp)
-                            .height(45.dp),
-                        shape = RoundedCornerShape(20.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        )
-                    ) {
-                        Text(
-                            "Create New Spool",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-
-                    PrinterMappingButton(
-                        onClick = {
+                        },
+                        onCreateNewSpool = onCreateNewSpool,
+                        onOpenPrinterMapping = {
                             toolhead1SpoolId = printerTool1SpoolId
                             toolhead2SpoolId = printerTool2SpoolId
                             toolhead3SpoolId = printerTool3SpoolId

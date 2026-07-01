@@ -15,6 +15,58 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 @Composable
+fun SpoolActionSection(
+    primaryActionLabel: String,
+    combinedActionLabel: String,
+    isFormValid: Boolean,
+    onReadTag: () -> Unit,
+    onSaveToSpoolman: () -> Unit,
+    onWriteTag: () -> Unit,
+    onSaveAndWriteTag: () -> Unit,
+    onCreateNewSpool: () -> Unit,
+    onOpenPrinterMapping: () -> Unit
+) {
+    ReadTagButton(onClick = onReadTag)
+
+    SaveToSpoolmanButton(
+        text = primaryActionLabel,
+        enabled = isFormValid,
+        onClick = onSaveToSpoolman
+    )
+
+    WriteTagButton(
+        enabled = isFormValid,
+        onClick = onWriteTag
+    )
+
+    SaveAndWriteTagButton(
+        text = combinedActionLabel,
+        enabled = isFormValid,
+        onClick = onSaveAndWriteTag
+    )
+
+    Button(
+        onClick = onCreateNewSpool,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 5.dp)
+            .height(45.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primary
+        )
+    ) {
+        Text(
+            "Create New Spool",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Medium
+        )
+    }
+
+    PrinterMappingButton(onClick = onOpenPrinterMapping)
+}
+
+@Composable
 fun WriteTagButton(
     enabled: Boolean = true,
     onClick: () -> Unit
