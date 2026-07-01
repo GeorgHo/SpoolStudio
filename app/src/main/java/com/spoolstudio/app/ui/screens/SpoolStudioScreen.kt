@@ -297,43 +297,34 @@ fun SpoolStudioScreen(
     }
 
     fun currentMaterialName(): String =
-        if (filamentType == "Other" && customMaterial.isNotBlank()) customMaterial else filamentType
+        resolveMaterialName(filamentType, customMaterial)
     fun currentBrandName(): String =
-        if (brand == "Other" && customBrand.isNotBlank()) customBrand else brand
+        resolveBrandName(brand, customBrand)
     fun currentVariantName(): String =
-        if (variant == "Other") "" else variant
+        resolveVariantName(variant)
     fun currentLocationName(): String =
-        when {
-            location == "Other" -> customLocation.trim()
-            location.isBlank() -> ""
-            else -> location.trim()
-        }
+        resolveLocationName(location, customLocation)
     fun normalizeHexInput(raw: String): String? {
         val cleaned = raw.trim().removePrefix("#").uppercase()
         return if (cleaned.matches(Regex("^[0-9A-F]{6}$"))) cleaned else null
     }
-    fun isVariantValid(): Boolean = variant != "Other"
-    fun isBrandValid(): Boolean = brand != "Other" || customBrand.isNotBlank()
-    fun isMaterialValid(): Boolean = filamentType != "Other" || customMaterial.isNotBlank()
-    fun isRemainingWeightValid(): Boolean {
-        val normalized = remainingWeight.trim().replace(",", ".")
-        return normalized.isBlank() || normalized.toFloatOrNull()?.let { it >= 0f } == true
-    }
+    fun isVariantValid(): Boolean = isSpoolVariantValid(variant)
+    fun isBrandValid(): Boolean = isSpoolBrandValid(brand, customBrand)
+    fun isMaterialValid(): Boolean = isSpoolMaterialValid(filamentType, customMaterial)
+    fun isRemainingWeightValid(): Boolean = isRemainingWeightValid(remainingWeight)
     fun isFormValid(): Boolean =
-        isVariantValid() && isBrandValid() && isMaterialValid() && isRemainingWeightValid()
-    fun validationMessage(): String? = when {
-        !isMaterialValid() -> "Please enter a custom filament type"
-        !isVariantValid() -> "Please enter a custom variant"
-        !isBrandValid() -> "Please enter a custom brand"
-        !isRemainingWeightValid() -> "Please enter a valid remaining weight"
-        else -> null
-    }
+        isSpoolFormValid(variant, brand, customBrand, filamentType, customMaterial, remainingWeight)
+    fun validationMessage(): String? =
+        spoolFormValidationMessage(variant, brand, customBrand, filamentType, customMaterial, remainingWeight)
     fun buildSaveRequest(): SpoolmanSaveRequest =
-        SpoolmanSaveRequest(
-            material = currentMaterialName(),
-            variant = currentVariantName(),
-            brand = currentBrandName(),
-            location = currentLocationName(),
+        buildSpoolmanSaveRequest(
+            filamentType = filamentType,
+            customMaterial = customMaterial,
+            variant = variant,
+            brand = brand,
+            customBrand = customBrand,
+            location = location,
+            customLocation = customLocation,
             colorHex = colorHex,
             colorName = colorName,
             minTemp = minTemp,
@@ -343,7 +334,8 @@ fun SpoolStudioScreen(
             lotNr = lotNr,
             comment = comment,
             remainingWeight = remainingWeight,
-            existingSpoolId = if (spoolMode == SpoolMode.UPDATE) selectedSpool?.id else null
+            spoolMode = spoolMode,
+            selectedSpool = selectedSpool
         )
 
     fun applyBambuDialogData() {
