@@ -16,11 +16,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -50,7 +50,7 @@ fun MappingRowPlaceholder(label: String) {
         )
 
         Text(
-            text = "Keine Spule gewÃ¤hlt",
+            text = "Keine Spule gewaehlt",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -85,7 +85,7 @@ fun MappingRowDropdown(
         ?: MaterialTheme.colorScheme.onSurfaceVariant
 
     val displayText = selectedSpool?.let { spool ->
-        "ID ${spool.id ?: "-"} Â· ${spool.brand} Â· ${spool.spoolmanName ?: spool.displayName}"
+        "ID ${spool.id ?: "-"} - ${spool.brand} - ${spool.spoolmanName ?: spool.displayName}"
     } ?: "Select from Spoolman"
 
     Column(
@@ -158,7 +158,7 @@ fun MappingRowDropdown(
                 DropdownMenuItem(
                     text = {
                         Text(
-                            text = "â€” Empty â€”",
+                            text = "Empty",
                             style = MaterialTheme.typography.bodyMedium
                         )
                     },
@@ -168,11 +168,11 @@ fun MappingRowDropdown(
                         focusManager.clearFocus(force = true)
                     }
                 )
-                Divider()
+                HorizontalDivider()
 
                 spools.forEach { spool ->
                     val labelText =
-                        "ID ${spool.id ?: "-"} Â· ${spool.brand} Â· ${spool.spoolmanName ?: spool.displayName}"
+                        "ID ${spool.id ?: "-"} - ${spool.brand} - ${spool.spoolmanName ?: spool.displayName}"
 
                     DropdownMenuItem(
                         text = {

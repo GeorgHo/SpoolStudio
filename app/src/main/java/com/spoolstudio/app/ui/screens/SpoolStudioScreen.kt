@@ -3,7 +3,6 @@ package com.spoolstudio.app.ui.screens
 import androidx.compose.foundation.layout.Box
 import com.spoolstudio.app.ui.components.SpoolInfoCard
 import android.util.Log
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -27,12 +26,10 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -664,233 +661,32 @@ fun SpoolStudioScreen(
         }
 
         if (showPrinterMappingDialog) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.35f))
-            ) {
-                Card(
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
-                        verticalArrangement = Arrangement.spacedBy(0.dp)
-                    ) {
-                        Text(
-                            text = "Snapmaker U1 Mapping",
-                            style = MaterialTheme.typography.headlineSmall
-                        )
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        Text(
-                            text = if (isMoonrakerReachable)
-                                "Printer connected"
-                            else
-                                "Printer not reachable",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (isMoonrakerReachable)
-                                MaterialTheme.colorScheme.primary
-                            else
-                                MaterialTheme.colorScheme.error
-                        )
-
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(20.dp),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
-                            if (activeSpoolOutsideMapping) {
-                                Text(
-                                    text = "Active spool ID $activePrinterSpoolId is not assigned to Toolhead 1–4",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.error
-                                )
-                            }
-                        }
-
-                        HorizontalDivider(
-                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
-                        )
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        MappingRowDropdown(
-                            label = "Toolhead 1",
-                            spools = spools,
-                            selectedSpoolId = toolhead1SpoolId,
-                            isActive = activeDialogSpoolId != null && activeDialogSpoolId == toolhead1SpoolId,
-                            enabled = !isLoadingPrinterMapping,
-                            onSpoolSelected = { selectedId ->
-                                toolhead1SpoolId = selectedId
-                                if (activeDialogSpoolId != null && activeDialogSpoolId !in listOf(
-                                        toolhead1SpoolId,
-                                        toolhead2SpoolId,
-                                        toolhead3SpoolId,
-                                        toolhead4SpoolId
-                                    )
-                                ) {
-                                    activeDialogSpoolId = null
-                                }
-                            },
-                            onActiveCheckedChange = { checked ->
-                                activeDialogSpoolId = if (checked) toolhead1SpoolId else null
-                            }
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        MappingRowDropdown(
-                            label = "Toolhead 2",
-                            spools = spools,
-                            selectedSpoolId = toolhead2SpoolId,
-                            isActive = activeDialogSpoolId != null && activeDialogSpoolId == toolhead2SpoolId,
-                            enabled = !isLoadingPrinterMapping,
-                            onSpoolSelected = { selectedId ->
-                                toolhead2SpoolId = selectedId
-                                if (activeDialogSpoolId != null && activeDialogSpoolId !in listOf(
-                                        toolhead1SpoolId,
-                                        toolhead2SpoolId,
-                                        toolhead3SpoolId,
-                                        toolhead4SpoolId
-                                    )
-                                ) {
-                                    activeDialogSpoolId = null
-                                }
-                            },
-                            onActiveCheckedChange = { checked ->
-                                activeDialogSpoolId = if (checked) toolhead2SpoolId else null
-                            }
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        MappingRowDropdown(
-                            label = "Toolhead 3",
-                            spools = spools,
-                            selectedSpoolId = toolhead3SpoolId,
-                            isActive = activeDialogSpoolId != null && activeDialogSpoolId == toolhead3SpoolId,
-                            enabled = !isLoadingPrinterMapping,
-                            onSpoolSelected = { selectedId ->
-                                toolhead3SpoolId = selectedId
-                                if (activeDialogSpoolId != null && activeDialogSpoolId !in listOf(
-                                        toolhead1SpoolId,
-                                        toolhead2SpoolId,
-                                        toolhead3SpoolId,
-                                        toolhead4SpoolId
-                                    )
-                                ) {
-                                    activeDialogSpoolId = null
-                                }
-                            },
-                            onActiveCheckedChange = { checked ->
-                                activeDialogSpoolId = if (checked) toolhead3SpoolId else null
-                            }
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        MappingRowDropdown(
-                            label = "Toolhead 4",
-                            spools = spools,
-                            selectedSpoolId = toolhead4SpoolId,
-                            isActive = activeDialogSpoolId != null && activeDialogSpoolId == toolhead4SpoolId,
-                            enabled = !isLoadingPrinterMapping,
-                            onSpoolSelected = { selectedId ->
-                                toolhead4SpoolId = selectedId
-                                if (activeDialogSpoolId != null && activeDialogSpoolId !in listOf(
-                                        toolhead1SpoolId,
-                                        toolhead2SpoolId,
-                                        toolhead3SpoolId,
-                                        toolhead4SpoolId
-                                    )
-                                ) {
-                                    activeDialogSpoolId = null
-                                }
-                            },
-                            onActiveCheckedChange = { checked ->
-                                activeDialogSpoolId = if (checked) toolhead4SpoolId else null
-                            }
-                        )
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        if (inlinePrinterMappingStatusText != null) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                if (isLoadingPrinterMapping) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(14.dp),
-                                        strokeWidth = 2.dp
-                                    )
-                                }
-                                Text(
-                                    text = inlinePrinterMappingStatusText,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = inlinePrinterMappingStatusColor
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(10.dp))
-                        }
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            OutlinedButton(
-                                onClick = {
-                                    onClearPrinterMappingDialogFeedback()
-                                    showPrinterMappingDialog = false
-                                },
-                                shape = RoundedCornerShape(18.dp)
-                            ) {
-                                Text("Cancel")
-                            }
-
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                OutlinedButton(
-                                    onClick = {
-                                        onLoadCurrentPrinterMapping()
-                                    },
-                                    enabled = isMoonrakerReachable && !isLoadingPrinterMapping,
-                                    shape = RoundedCornerShape(18.dp)
-                                ) {
-                                    Text("Load current")
-                                }
-
-                                Button(
-                                    onClick = {
-                                        onSavePrinterMapping(
-                                            toolhead1SpoolId,
-                                            toolhead2SpoolId,
-                                            toolhead3SpoolId,
-                                            toolhead4SpoolId,
-                                            activeDialogSpoolId
-                                        )
-                                    },
-                                    enabled = isMoonrakerReachable && hasPrinterMappingChanges && !isLoadingPrinterMapping,
-                                    shape = RoundedCornerShape(18.dp)
-                                ) {
-                                    Text("Save")
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            PrinterMappingDialog(
+                spools = spools,
+                isMoonrakerReachable = isMoonrakerReachable,
+                isLoadingPrinterMapping = isLoadingPrinterMapping,
+                activeSpoolOutsideMapping = activeSpoolOutsideMapping,
+                activePrinterSpoolId = activePrinterSpoolId,
+                inlineStatusText = inlinePrinterMappingStatusText,
+                inlineStatusColor = inlinePrinterMappingStatusColor,
+                hasPrinterMappingChanges = hasPrinterMappingChanges,
+                toolhead1SpoolId = toolhead1SpoolId,
+                toolhead2SpoolId = toolhead2SpoolId,
+                toolhead3SpoolId = toolhead3SpoolId,
+                toolhead4SpoolId = toolhead4SpoolId,
+                activeDialogSpoolId = activeDialogSpoolId,
+                onToolhead1SpoolIdChange = { toolhead1SpoolId = it },
+                onToolhead2SpoolIdChange = { toolhead2SpoolId = it },
+                onToolhead3SpoolIdChange = { toolhead3SpoolId = it },
+                onToolhead4SpoolIdChange = { toolhead4SpoolId = it },
+                onActiveDialogSpoolIdChange = { activeDialogSpoolId = it },
+                onCancel = {
+                    onClearPrinterMappingDialogFeedback()
+                    showPrinterMappingDialog = false
+                },
+                onLoadCurrentPrinterMapping = onLoadCurrentPrinterMapping,
+                onSavePrinterMapping = onSavePrinterMapping
+            )
         }
 
         BambuRfidDumpDialog(
