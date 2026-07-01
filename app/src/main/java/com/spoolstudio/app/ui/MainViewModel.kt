@@ -23,6 +23,7 @@ enum class SpoolMode {
 }
 
 class MainViewModel : ViewModel() {
+    private val printerMappingRepository = PrinterMappingRepository()
 
     var readData by mutableStateOf<OpenSpoolData?>(null)
         private set
@@ -615,31 +616,13 @@ class MainViewModel : ViewModel() {
             printerMappingStatusMessage = null
 
             try {
-                val service = MoonrakerService(normalizeUrl(url))
-                val mapping = service.getToolMapping()
-
-                val activeSpoolId = try {
-                    service.getActiveSpoolId()
-                } catch (e: Exception) {
-                    if (e.message?.contains("404") == true) {
-                        Log.w("MainViewModel", "Spoolman not active on printer")
-                    } else {
-                        Log.w("MainViewModel", "Active spool error: ${e.message}")
-                    }
-                    null
-                    null
-                }
-
-                printerTool1SpoolId = mapping["T0"]?.takeIf { it > 0 }
-                printerTool2SpoolId = mapping["T1"]?.takeIf { it > 0 }
-                printerTool3SpoolId = mapping["T2"]?.takeIf { it > 0 }
-                printerTool4SpoolId = mapping["T3"]?.takeIf { it > 0 }
-                activePrinterSpoolId = activeSpoolId
+                val result = printerMappingRepository.load(normalizeUrl(url))
+                applyPrinterMappingSnapshot(result.snapshot)
 
                 printerMappingLoadVersion++
                 printerMappingSaveSuccessful = null
 
-                val message = if (activeSpoolId == null) {
+                val message = if (!result.activeSpoolAvailable) {
                     "Printer mapping loaded (active spool not available)"
                 } else {
                     "Printer mapping loaded"
@@ -686,22 +669,15 @@ class MainViewModel : ViewModel() {
             printerMappingSaveSuccessful = null
             printerMappingStatusMessage = null
             try {
-                val service = MoonrakerService(normalizeUrl(url))
-
-                service.setToolSpool("T0", e0)
-                service.setToolSpool("T1", e1)
-                service.setToolSpool("T2", e2)
-                service.setToolSpool("T3", e3)
-                service.setActiveSpoolId(activeSpoolId)
-
-                val mapping = service.getToolMapping()
-                val refreshedActiveSpoolId = service.getActiveSpoolId()
-
-                printerTool1SpoolId = mapping["T0"]?.takeIf { it > 0 }
-                printerTool2SpoolId = mapping["T1"]?.takeIf { it > 0 }
-                printerTool3SpoolId = mapping["T2"]?.takeIf { it > 0 }
-                printerTool4SpoolId = mapping["T3"]?.takeIf { it > 0 }
-                activePrinterSpoolId = refreshedActiveSpoolId
+                val snapshot = printerMappingRepository.save(
+                    baseUrl = normalizeUrl(url),
+                    toolhead1SpoolId = e0,
+                    toolhead2SpoolId = e1,
+                    toolhead3SpoolId = e2,
+                    toolhead4SpoolId = e3,
+                    activeSpoolId = activeSpoolId
+                )
+                applyPrinterMappingSnapshot(snapshot)
 
                 printerMappingLoadVersion++
                 printerMappingSaveSuccessful = true
@@ -716,5 +692,13 @@ class MainViewModel : ViewModel() {
                 isLoadingPrinterMapping = false
             }
         }
+    }
+
+    private fun applyPrinterMappingSnapshot(snapshot: PrinterMappingSnapshot) {
+        printerTool1SpoolId = snapshot.toolhead1SpoolId
+        printerTool2SpoolId = snapshot.toolhead2SpoolId
+        printerTool3SpoolId = snapshot.toolhead3SpoolId
+        printerTool4SpoolId = snapshot.toolhead4SpoolId
+        activePrinterSpoolId = snapshot.activeSpoolId
     }
 }
