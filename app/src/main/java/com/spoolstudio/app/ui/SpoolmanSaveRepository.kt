@@ -161,7 +161,7 @@ class SpoolmanSaveRepository(
 
         val createdSpool = service.createSpool(
             filamentId = filament.id,
-            lotNr = resolvedLotNr,
+            lotNr = resolvedLotNr.ifBlank { null },
             location = request.location.trim().ifBlank { null },
             remainingWeight = cleanRemainingWeight ?: input.selectedSpool?.remainingWeight ?: filament.weight,
             comment = request.comment.trim().ifBlank { null }

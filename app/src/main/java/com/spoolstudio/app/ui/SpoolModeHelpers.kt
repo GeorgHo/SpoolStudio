@@ -8,10 +8,12 @@ fun buildSpoolModeSourceData(
     readData: OpenSpoolData?
 ): OpenSpoolData? = when {
     selectedSpool != null -> OpenSpoolData.toOpenSpoolData(selectedSpool).copy(
-        spoolId = null
+        spoolId = null,
+        lotNr = null
     )
     readData != null -> readData.copy(
-        spoolId = null
+        spoolId = null,
+        lotNr = null
     )
     else -> null
 }

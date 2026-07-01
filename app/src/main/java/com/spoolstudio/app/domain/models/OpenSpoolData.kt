@@ -100,7 +100,5 @@ data class OpenSpoolData(
                 lotNr = spool.lotNr
             )
         }
-        fun generateLotNr(): String =
-            java.util.UUID.randomUUID().toString().replace("-", "").take(12).uppercase()
     }
 }

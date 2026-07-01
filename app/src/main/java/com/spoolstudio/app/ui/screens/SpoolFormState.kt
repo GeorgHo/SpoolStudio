@@ -9,7 +9,7 @@ import com.spoolstudio.app.domain.models.OpenSpoolData
 import com.spoolstudio.app.ui.SpoolMode
 import com.spoolstudio.app.ui.SpoolmanSaveRequest
 
-class SpoolFormState(defaultMaterial: Material) {
+class SpoolFormState(private val defaultMaterial: Material) {
     var colorHex by mutableStateOf<String?>(null)
     var colorName by mutableStateOf("")
     var filamentType by mutableStateOf("PLA")
@@ -23,7 +23,7 @@ class SpoolFormState(defaultMaterial: Material) {
     var maxTemp by mutableStateOf(defaultMaterial.defaultMaxTemp.toString())
     var bedMinTemp by mutableStateOf(defaultMaterial.defaultBedMinTemp.toString())
     var bedMaxTemp by mutableStateOf(defaultMaterial.defaultBedMaxTemp.toString())
-    var lotNr by mutableStateOf(OpenSpoolData.generateLotNr())
+    var lotNr by mutableStateOf("")
     var comment by mutableStateOf("Created by Spool Studio")
     var remainingWeight by mutableStateOf("")
     var colorHexInput by mutableStateOf("")
@@ -33,6 +33,27 @@ class SpoolFormState(defaultMaterial: Material) {
     fun clearLocation() {
         location = ""
         customLocation = ""
+    }
+
+    fun resetForNewSpool() {
+        colorHex = null
+        colorName = ""
+        filamentType = "PLA"
+        customMaterial = ""
+        variant = "Basic"
+        brand = "Generic"
+        customBrand = ""
+        clearLocation()
+        minTemp = defaultMaterial.defaultMinTemp.toString()
+        maxTemp = defaultMaterial.defaultMaxTemp.toString()
+        bedMinTemp = defaultMaterial.defaultBedMinTemp.toString()
+        bedMaxTemp = defaultMaterial.defaultBedMaxTemp.toString()
+        lotNr = ""
+        comment = "Created by Spool Studio"
+        remainingWeight = ""
+        colorHexInput = ""
+        colorNameWasManuallyEdited = false
+        isHexManuallySet = false
     }
 
     fun isRemainingWeightValid(): Boolean =

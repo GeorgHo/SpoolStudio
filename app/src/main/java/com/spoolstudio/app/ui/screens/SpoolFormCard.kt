@@ -44,6 +44,7 @@ fun SpoolFormCard(
     showCommentField: Boolean,
     isRemainingWeightValid: Boolean,
     onSpoolSelected: (FilamentSpool?) -> Unit,
+    onClearAllSpoolFields: () -> Unit,
     onRefreshSelectedSpool: (Int) -> Unit
 ) {
     Card(
@@ -64,6 +65,7 @@ fun SpoolFormCard(
                 currentSpoolId = currentSpoolId,
                 isLoadingSpools = isLoadingSpools,
                 onSpoolSelected = onSpoolSelected,
+                onClearAllSpoolFields = onClearAllSpoolFields,
                 onRefreshSelectedSpool = onRefreshSelectedSpool
             )
 
@@ -163,6 +165,7 @@ private fun SpoolmanSelectionSection(
     currentSpoolId: String?,
     isLoadingSpools: Boolean,
     onSpoolSelected: (FilamentSpool?) -> Unit,
+    onClearAllSpoolFields: () -> Unit,
     onRefreshSelectedSpool: (Int) -> Unit
 ) {
     if (spools.isNotEmpty()) {
@@ -174,6 +177,7 @@ private fun SpoolmanSelectionSection(
             spoolmanUrl = spoolmanUrl,
             currentSpoolId = currentSpoolId,
             isLoading = isLoadingSpools,
+            onClearAll = onClearAllSpoolFields,
             infoButton = {
                 if (selectedSpool != null) {
                     SpoolInfoCard(

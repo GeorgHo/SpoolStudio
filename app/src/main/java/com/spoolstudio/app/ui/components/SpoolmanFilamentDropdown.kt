@@ -17,6 +17,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
@@ -46,6 +47,7 @@ fun SpoolmanFilamentDropdown(
     spoolmanUrl: String,
     currentSpoolId: String?,
     isLoading: Boolean = false,
+    onClearAll: (() -> Unit)? = null,
     infoButton: (@Composable () -> Unit)? = null
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -140,13 +142,16 @@ fun SpoolmanFilamentDropdown(
             onDismissRequest = { expanded = false },
             modifier = Modifier.clip(RoundedCornerShape(20.dp))
         ) {
-            DropdownMenuItem(
-                text = { Text("Clear Selection") },
-                onClick = {
-                    onFilamentSelected(null)
-                    expanded = false
-                }
-            )
+            if (onClearAll != null) {
+                DropdownMenuItem(
+                    text = { Text("Clear all") },
+                    onClick = {
+                        onClearAll()
+                        expanded = false
+                    }
+                )
+                HorizontalDivider()
+            }
 
             filaments.forEach { filament ->
                 DropdownMenuItem(

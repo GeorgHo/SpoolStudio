@@ -177,7 +177,11 @@ fun SpoolStudioScreen(
             form.maxTemp = sourceSpool.maxTemp?.toString() ?: form.maxTemp
             form.bedMinTemp = sourceSpool.bedMinTemp?.toString() ?: form.bedMinTemp
             form.bedMaxTemp = sourceSpool.bedMaxTemp?.toString() ?: form.bedMaxTemp
-            form.lotNr = sourceSpool.lotNr ?: OpenSpoolData.generateLotNr()
+            form.lotNr = if (spoolMode == SpoolMode.UPDATE) {
+                sourceSpool.lotNr.orEmpty()
+            } else {
+                ""
+            }
             form.comment = sourceSpool.comment ?: ""
             form.remainingWeight = sourceSpool.remainingWeight
                 ?.takeIf { it >= 0f }
@@ -245,6 +249,10 @@ fun SpoolStudioScreen(
     fun validationMessage(): String? = form.validationMessage()
     fun buildSaveRequest(): SpoolmanSaveRequest =
         form.buildSaveRequest(spoolMode, selectedSpool)
+    fun clearAllSpoolmanFields() {
+        onSpoolSelected(null)
+        form.resetForNewSpool()
+    }
 
     fun applyBambuDialogData() {
         val bambuData = parseBambuRfidFormData(
@@ -349,6 +357,7 @@ fun SpoolStudioScreen(
                         showCommentField = showCommentField,
                         isRemainingWeightValid = isRemainingWeightValid(),
                         onSpoolSelected = onSpoolSelected,
+                        onClearAllSpoolFields = { clearAllSpoolmanFields() },
                         onRefreshSelectedSpool = onRefreshSelectedSpool
                     )
 
