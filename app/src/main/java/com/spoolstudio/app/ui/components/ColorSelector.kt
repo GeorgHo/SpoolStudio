@@ -21,12 +21,13 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -248,7 +249,7 @@ fun ColorSelector(
                 },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 modifier = Modifier
-                    .menuAnchor()
+                    .menuAnchor(MenuAnchorType.PrimaryNotEditable)
                     .fillMaxWidth(),
                 textStyle = MaterialTheme.typography.bodyLarge.copy(
                     fontWeight = FontWeight.SemiBold
@@ -278,7 +279,7 @@ fun ColorSelector(
                     }
                 )
 
-                Divider()
+                HorizontalDivider()
 
                 commonColors.forEach { (name, hex) ->
                     DropdownMenuItem(
@@ -305,7 +306,7 @@ fun ColorSelector(
                     )
                 }
 
-                Divider()
+                HorizontalDivider()
 
                 DropdownMenuItem(
                     text = { Text("Color Wheel") },
