@@ -271,21 +271,6 @@ fun SpoolStudioScreen(
         activeDialogSpoolId = activePrinterSpoolId
     }
 
-    fun currentMaterialName(): String =
-        resolveMaterialName(form.filamentType, form.customMaterial)
-    fun currentBrandName(): String =
-        resolveBrandName(form.brand, form.customBrand)
-    fun currentVariantName(): String =
-        resolveVariantName(form.variant)
-    fun currentLocationName(): String =
-        resolveLocationName(form.location, form.customLocation)
-    fun normalizeHexInput(raw: String): String? {
-        val cleaned = raw.trim().removePrefix("#").uppercase()
-        return if (cleaned.matches(Regex("^[0-9A-F]{6}$"))) cleaned else null
-    }
-    fun isVariantValid(): Boolean = isSpoolVariantValid(form.variant)
-    fun isBrandValid(): Boolean = isSpoolBrandValid(form.brand, form.customBrand)
-    fun isMaterialValid(): Boolean = isSpoolMaterialValid(form.filamentType, form.customMaterial)
     fun isRemainingWeightValid(): Boolean = isRemainingWeightValid(form.remainingWeight)
     fun isFormValid(): Boolean =
         isSpoolFormValid(form.variant, form.brand, form.customBrand, form.filamentType, form.customMaterial, form.remainingWeight)
@@ -689,32 +674,21 @@ fun SpoolStudioScreen(
                     WriteTagButton(
                         enabled = isFormValid(),
                         onClick = {
-                            val materialName = currentMaterialName()
-                            val variantName = currentVariantName()
-
-                            val openSpoolType = OpenSpoolMaterialMapper.toOpenSpoolType(
-                                material = materialName,
-                                variant = variantName
-                            )
-
-                            if (openSpoolType != null) {
-                                val tagData = OpenSpoolData(
-                                    type = openSpoolType,
-                                    colorHex = form.colorHex,
-                                    brand = currentBrandName(),
-                                    minTemp = form.minTemp,
-                                    maxTemp = form.maxTemp,
-                                    bedMinTemp = form.bedMinTemp.ifBlank { null },
-                                    bedMaxTemp = form.bedMaxTemp.ifBlank { null },
-                                    subtype = variantName.ifBlank { "Basic" },
-                                    spoolId = if (spoolMode == SpoolMode.UPDATE) {
-                                        selectedSpool?.id?.toString()
-                                    } else {
-                                        null
-                                    },
-                                    lotNr = form.lotNr
-                                )
-
+                            buildOpenSpoolTagData(
+                                filamentType = form.filamentType,
+                                customMaterial = form.customMaterial,
+                                variant = form.variant,
+                                brand = form.brand,
+                                customBrand = form.customBrand,
+                                colorHex = form.colorHex,
+                                minTemp = form.minTemp,
+                                maxTemp = form.maxTemp,
+                                bedMinTemp = form.bedMinTemp,
+                                bedMaxTemp = form.bedMaxTemp,
+                                lotNr = form.lotNr,
+                                spoolMode = spoolMode,
+                                selectedSpool = selectedSpool
+                            )?.let { tagData ->
                                 onWriteTag(tagData.toJson())
                             }
                         }

@@ -1,5 +1,6 @@
 package com.spoolstudio.app.ui.screens
 
+import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.ui.SpoolMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -94,5 +95,68 @@ class SpoolFormHelpersTest {
         assertEquals("Shelf A", request.location)
         assertEquals("750", request.remainingWeight)
         assertNull(request.existingSpoolId)
+    }
+
+    @Test
+    fun buildOpenSpoolTagDataMapsFormValuesForUpdateMode() {
+        val selectedSpool = FilamentSpool(
+            id = 42,
+            material = "PLA",
+            variant = "Basic",
+            brand = "Generic",
+            colorHex = "00FF00",
+            minTemp = 190,
+            maxTemp = 220,
+            bedMinTemp = 40,
+            bedMaxTemp = 65,
+            spoolmanName = "PLA Green"
+        )
+
+        val tagData = buildOpenSpoolTagData(
+            filamentType = "PLA",
+            customMaterial = "",
+            variant = "Basic",
+            brand = "Other",
+            customBrand = "CustomBrand",
+            colorHex = "00FF00",
+            minTemp = "190",
+            maxTemp = "220",
+            bedMinTemp = "",
+            bedMaxTemp = "65",
+            lotNr = "LOT-42",
+            spoolMode = SpoolMode.UPDATE,
+            selectedSpool = selectedSpool
+        )
+
+        assertEquals("PLA", tagData?.type)
+        assertEquals("CustomBrand", tagData?.brand)
+        assertEquals("190", tagData?.minTemp)
+        assertEquals("220", tagData?.maxTemp)
+        assertNull(tagData?.bedMinTemp)
+        assertEquals("65", tagData?.bedMaxTemp)
+        assertEquals("Basic", tagData?.subtype)
+        assertEquals("42", tagData?.spoolId)
+        assertEquals("LOT-42", tagData?.lotNr)
+    }
+
+    @Test
+    fun buildOpenSpoolTagDataReturnsNullForUnsupportedMaterial() {
+        val tagData = buildOpenSpoolTagData(
+            filamentType = "Other",
+            customMaterial = "Mystery",
+            variant = "Basic",
+            brand = "Generic",
+            customBrand = "",
+            colorHex = null,
+            minTemp = "190",
+            maxTemp = "220",
+            bedMinTemp = "",
+            bedMaxTemp = "",
+            lotNr = "LOT-X",
+            spoolMode = SpoolMode.CREATE,
+            selectedSpool = null
+        )
+
+        assertNull(tagData)
     }
 }

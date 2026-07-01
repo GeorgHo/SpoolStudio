@@ -1,8 +1,10 @@
 package com.spoolstudio.app.ui.screens
 
 import com.spoolstudio.app.domain.models.FilamentSpool
+import com.spoolstudio.app.domain.models.OpenSpoolData
 import com.spoolstudio.app.ui.SpoolMode
 import com.spoolstudio.app.ui.SpoolmanSaveRequest
+import com.spoolstudio.app.utils.OpenSpoolMaterialMapper
 
 fun resolveMaterialName(filamentType: String, customMaterial: String): String =
     if (filamentType == "Other" && customMaterial.isNotBlank()) customMaterial else filamentType
@@ -97,3 +99,39 @@ fun buildSpoolmanSaveRequest(
         remainingWeight = remainingWeight,
         existingSpoolId = if (spoolMode == SpoolMode.UPDATE) selectedSpool?.id else null
     )
+
+fun buildOpenSpoolTagData(
+    filamentType: String,
+    customMaterial: String,
+    variant: String,
+    brand: String,
+    customBrand: String,
+    colorHex: String?,
+    minTemp: String,
+    maxTemp: String,
+    bedMinTemp: String,
+    bedMaxTemp: String,
+    lotNr: String,
+    spoolMode: SpoolMode,
+    selectedSpool: FilamentSpool?
+): OpenSpoolData? {
+    val materialName = resolveMaterialName(filamentType, customMaterial)
+    val variantName = resolveVariantName(variant)
+    val openSpoolType = OpenSpoolMaterialMapper.toOpenSpoolType(
+        material = materialName,
+        variant = variantName
+    ) ?: return null
+
+    return OpenSpoolData(
+        type = openSpoolType,
+        colorHex = colorHex,
+        brand = resolveBrandName(brand, customBrand),
+        minTemp = minTemp,
+        maxTemp = maxTemp,
+        bedMinTemp = bedMinTemp.ifBlank { null },
+        bedMaxTemp = bedMaxTemp.ifBlank { null },
+        subtype = variantName.ifBlank { "Basic" },
+        spoolId = if (spoolMode == SpoolMode.UPDATE) selectedSpool?.id?.toString() else null,
+        lotNr = lotNr
+    )
+}
