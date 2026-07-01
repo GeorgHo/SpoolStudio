@@ -126,23 +126,14 @@ class MainViewModel : ViewModel() {
     }
 
     fun loadSpoolmanUrl(context: Context) {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val settings = AppSettingsStore.load(context)
 
-        val savedSpoolmanUrl = prefs.getString(SPOOLMAN_URL_KEY, DEFAULT_URL) ?: DEFAULT_URL
-        val savedSort = prefs.getString(SPOOLMAN_SORT_KEY, "") ?: ""
-        val savedMoonrakerUrl =
-            prefs.getString(MOONRAKER_URL_KEY, DEFAULT_MOONRAKER_URL) ?: DEFAULT_MOONRAKER_URL
-        val savedShowLotNumber = prefs.getBoolean(SHOW_LOT_NUMBER_KEY, false)
-        prefs.getBoolean(SHOW_COMMENT_FIELD, false)
-        val savedShowComment = prefs.getBoolean(SHOW_COMMENT_FIELD, false)
-        val savedBambuMasterKey = prefs.getString(BAMBU_MASTER_KEY, "") ?: ""
-
-        showLotNumber = savedShowLotNumber
-        showCommentField = savedShowComment
-        spoolmanUrl = normalizeUrl(savedSpoolmanUrl)
-        spoolmanSortBy = savedSort.ifBlank { "" }
-        moonrakerUrl = normalizeUrl(savedMoonrakerUrl)
-        bambuMasterKey = savedBambuMasterKey.trim().uppercase()
+        showLotNumber = settings.showLotNumber
+        showCommentField = settings.showCommentField
+        spoolmanUrl = settings.spoolmanUrl
+        spoolmanSortBy = settings.spoolmanSortBy
+        moonrakerUrl = settings.moonrakerUrl
+        bambuMasterKey = settings.bambuMasterKey
 
         if (spoolmanUrl.isNotBlank()) {
             loadSpoolmanFilaments()
@@ -210,11 +201,14 @@ class MainViewModel : ViewModel() {
         bambuMasterKey = normalizedBambuMasterKey
         showCommentField = newShowCommentField
 
-        saveSpoolmanUrl(context, normalizedUrl)
-        saveMoonrakerUrl(context, normalizedMoonrakerUrl)
-        saveSpoolmanSort(context, normalizedSort)
-        saveBambuMasterKey(context, normalizedBambuMasterKey)
-        saveShowCommentField(context, newShowCommentField)
+        AppSettingsStore.saveConnectionSettings(
+            context = context,
+            spoolmanUrl = normalizedUrl,
+            moonrakerUrl = normalizedMoonrakerUrl,
+            spoolmanSortBy = normalizedSort,
+            bambuMasterKey = normalizedBambuMasterKey,
+            showCommentField = newShowCommentField
+        )
 
         loadSpoolmanFilaments()
         showSettings = false
@@ -507,35 +501,6 @@ class MainViewModel : ViewModel() {
         }
     }
 
-    private fun saveSpoolmanUrl(context: Context, url: String) {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().putString(SPOOLMAN_URL_KEY, normalizeUrl(url)).apply()
-    }
-
-    private fun saveMoonrakerUrl(context: Context, url: String) {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().putString(MOONRAKER_URL_KEY, url.trim().removeSuffix("/")).apply()
-    }
-
-    private fun saveSpoolmanSort(context: Context, sort: String) {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().putString(SPOOLMAN_SORT_KEY, sort).apply()
-    }
-
-    private fun saveBambuMasterKey(context: Context, key: String) {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().putString(BAMBU_MASTER_KEY, key.trim().uppercase()).apply()
-    }
-
-    private fun saveShowLotNumber(context: Context, value: Boolean) {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().putBoolean(SHOW_LOT_NUMBER_KEY, value).apply()
-    }
-    private fun saveShowCommentField(context: Context, value: Boolean) {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().putBoolean(SHOW_COMMENT_FIELD, value).apply()
-    }
-
     private fun isValidSpoolmanUrl(url: String): Boolean {
         val normalized = normalizeUrl(url)
         return normalized.isNotEmpty() &&
@@ -699,18 +664,6 @@ class MainViewModel : ViewModel() {
         }
     }
 
-    companion object {
-        private const val PREFS_NAME = "spoolstudio_prefs"
-        private const val SPOOLMAN_URL_KEY = "spoolman_url"
-        private const val SPOOLMAN_SORT_KEY = "spoolman_sort"
-        private const val DEFAULT_URL = ""
-        private const val MOONRAKER_URL_KEY = "moonraker_url"
-        private const val SHOW_LOT_NUMBER_KEY = "show_lot_number"
-        private const val SHOW_COMMENT_FIELD = "show_comment_field"
-        private const val DEFAULT_MOONRAKER_URL = ""
-        private const val BAMBU_MASTER_KEY = "bambu_master_key"
-    }
-
     fun loadCurrentPrinterMapping() {
         val url = moonrakerUrl
         if (url.isBlank()) {
@@ -774,7 +727,7 @@ class MainViewModel : ViewModel() {
 
     fun setShowLotNumber(context: Context, value: Boolean) {
         showLotNumber = value
-        saveShowLotNumber(context, value)
+        AppSettingsStore.saveShowLotNumber(context, value)
     }
 
     fun savePrinterMapping(
