@@ -191,8 +191,8 @@ class MainViewModel : ViewModel() {
         newBambuMasterKey: String,
         newShowCommentField: Boolean
     ) {
-        val normalizedUrl = normalizeUrl(newUrl)
-        val normalizedMoonrakerUrl = normalizeUrl(newMoonrakerUrl)
+        val normalizedUrl = normalizeConnectionUrl(newUrl)
+        val normalizedMoonrakerUrl = normalizeConnectionUrl(newMoonrakerUrl)
         val normalizedSort = newSort.ifBlank { "" }
         val normalizedBambuMasterKey = newBambuMasterKey.trim().uppercase()
 
@@ -290,8 +290,6 @@ class MainViewModel : ViewModel() {
     ) {
         saveSpoolmanInternal(request, true, onWriteTag)
     }
-
-    private fun normalizeUrl(url: String): String = url.trim().removeSuffix("/")
 
     private fun saveSpoolmanInternal(
         request: SpoolmanSaveRequest,
@@ -442,20 +440,15 @@ class MainViewModel : ViewModel() {
     }
 
     fun testMoonrakerConnection(inputUrl: String) {
-        val normalizedUrl = normalizeUrl(inputUrl)
+        val normalizedUrl = normalizeConnectionUrl(inputUrl)
 
         moonrakerStatus = null
         moonrakerError = null
 
-        if (normalizedUrl.isBlank()) {
+        val validationError = httpUrlValidationError(normalizedUrl)
+        if (validationError != null) {
             isMoonrakerReachable = false
-            moonrakerError = "URL fehlt"
-            return
-        }
-
-        if (!normalizedUrl.startsWith("http://") && !normalizedUrl.startsWith("https://")) {
-            isMoonrakerReachable = false
-            moonrakerError = "URL muss mit http:// oder https:// beginnen"
+            moonrakerError = validationError
             return
         }
 
@@ -497,11 +490,7 @@ class MainViewModel : ViewModel() {
 
             } catch (e: Exception) {
                 isMoonrakerReachable = false
-                moonrakerError = when {
-                    e.message?.contains("timeout", true) == true -> "Timeout"
-                    e.message?.contains("Unable to resolve host", true) == true -> "Host nicht erreichbar"
-                    else -> "Fehler: ${e.message ?: "Unbekannt"}"
-                }
+                moonrakerError = connectionErrorMessage(e)
 
                 Log.e("MoonrakerTest", "Connection failed", e)
             } finally {
@@ -515,18 +504,14 @@ class MainViewModel : ViewModel() {
     }
 
     fun testSpoolmanConnection(inputUrl: String) {
-        val normalizedUrl = normalizeUrl(inputUrl)
+        val normalizedUrl = normalizeConnectionUrl(inputUrl)
 
         spoolmanStatus = null
         spoolmanError = null
 
-        if (normalizedUrl.isBlank()) {
-            spoolmanError = "URL fehlt"
-            return
-        }
-
-        if (!normalizedUrl.startsWith("http://") && !normalizedUrl.startsWith("https://")) {
-            spoolmanError = "URL muss mit http:// oder https:// beginnen"
+        val validationError = httpUrlValidationError(normalizedUrl)
+        if (validationError != null) {
+            spoolmanError = validationError
             return
         }
 
@@ -538,11 +523,7 @@ class MainViewModel : ViewModel() {
                 service.getCatalog(spoolmanSortBy.ifEmpty { null }, forceRefresh = true)
                 spoolmanStatus = "Spoolman erreichbar"
             } catch (e: Exception) {
-                spoolmanError = when {
-                    e.message?.contains("timeout", true) == true -> "Timeout"
-                    e.message?.contains("Unable to resolve host", true) == true -> "Host nicht erreichbar"
-                    else -> "Fehler: ${e.message ?: "Unbekannt"}"
-                }
+                spoolmanError = connectionErrorMessage(e)
             } finally {
                 isTestingSpoolman = false
             }
@@ -616,7 +597,7 @@ class MainViewModel : ViewModel() {
             printerMappingStatusMessage = null
 
             try {
-                val result = printerMappingRepository.load(normalizeUrl(url))
+                val result = printerMappingRepository.load(normalizeConnectionUrl(url))
                 applyPrinterMappingSnapshot(result.snapshot)
 
                 printerMappingLoadVersion++
@@ -670,7 +651,7 @@ class MainViewModel : ViewModel() {
             printerMappingStatusMessage = null
             try {
                 val snapshot = printerMappingRepository.save(
-                    baseUrl = normalizeUrl(url),
+                    baseUrl = normalizeConnectionUrl(url),
                     toolhead1SpoolId = e0,
                     toolhead2SpoolId = e1,
                     toolhead3SpoolId = e2,
