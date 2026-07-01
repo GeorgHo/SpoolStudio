@@ -1,6 +1,5 @@
 ﻿package com.spoolstudio.app.ui.screens
 
-import androidx.compose.foundation.layout.Box
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,15 +9,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -38,7 +32,6 @@ import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.domain.models.OpenSpoolData
 import com.spoolstudio.app.ui.SpoolMode
 import com.spoolstudio.app.ui.SpoolmanSaveRequest
-import com.spoolstudio.app.ui.components.SpoolStudioLogo
 import com.spoolstudio.app.utils.*
 
 @Composable
@@ -326,31 +319,10 @@ fun SpoolStudioScreen(
             modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding(),
             verticalArrangement = Arrangement.Top
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-            ) {
-                SpoolStudioLogo(
-                    color = spoolColor,
-                    modifier = Modifier.align(Alignment.Center)
-                )
-
-                IconButton(
-                    onClick = onSettingsClick,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(top = 8.dp, end = 8.dp)
-                        .size(48.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.MoreVert,
-                        contentDescription = "Settings",
-                        tint = Color(0xFF1C252B),
-                        modifier = Modifier.size(36.dp)
-                    )
-                }
-            }
+            SpoolStudioHeader(
+                spoolColor = spoolColor,
+                onSettingsClick = onSettingsClick
+            )
 
             Spacer(modifier = Modifier.height(0.dp))
 
