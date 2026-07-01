@@ -226,7 +226,7 @@ class MainViewModel : ViewModel() {
         readData = buildSpoolModeSourceData(sourceSpool, readData)
 
         dataVersion++
-        showSnackbarMessage("Create New Spool mode enabled")
+        showSnackbarMessage("New from selected mode enabled")
     }
 
     fun createNewSpoolFromCurrent() {
@@ -243,7 +243,7 @@ class MainViewModel : ViewModel() {
         readData = buildSpoolModeSourceData(sourceSpool, readData)
 
         dataVersion++
-        showSnackbarMessage("Create new spool mode enabled")
+        showSnackbarMessage("New from selected mode enabled")
     }
 
     fun saveToSpoolman(request: SpoolmanSaveRequest) {

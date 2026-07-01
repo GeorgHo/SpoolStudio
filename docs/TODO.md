@@ -26,16 +26,13 @@
 - Add a `Clear all` action to the Spoolman selection area:
   - Keep `Clear selection` for clearing only the selected Spoolman row.
   - Use `Clear all` to reset the selected spool and the editable fields below it.
-- Rename the `Create New Spool` action so its template behavior is clear:
-  - It keeps filament/material data from the current spool.
-  - It clears Spoolman-specific fields such as selected spool, location, lot number, remaining filament, and comment.
-  - Candidate labels: `New from selected`, `Use as template`, or a concise German equivalent if the UI wording is localized later.
 - Highlight low remaining filament values:
   - Thresholds: `150 g`, `100 g`, `50 g`.
   - Show warning color in the remaining filament field.
   - Show warning color in the Spool Info popup remaining percentage.
 - Improve visibility and wording of Spoolman and RFID read/write feedback.
 - Make action buttons state-aware:
+  - Enable `New from selected` only when a spool or tag data is loaded.
   - Enable Spoolman update only when Spoolman-relevant fields changed.
   - Do not enable Spoolman update for RFID-only changes such as tag temperature values.
   - Enable RFID write actions only when valid tag data is available and write mode makes sense.

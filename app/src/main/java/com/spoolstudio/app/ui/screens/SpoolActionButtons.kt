@@ -57,7 +57,7 @@ fun SpoolActionSection(
         )
     ) {
         Text(
-            "Create New Spool",
+            "New from selected",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Medium
         )
