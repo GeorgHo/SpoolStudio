@@ -126,26 +126,8 @@ fun SpoolStudioScreen(
     var showBambuDiffDialog by remember { mutableStateOf(false) }
     var bambuDiffDialogText by remember { mutableStateOf("") }
     var pendingBambuApply by remember { mutableStateOf<(() -> Unit)?>(null) }
-    var colorHex by remember { mutableStateOf<String?>(null) }
-    var colorName by remember { mutableStateOf("") }
     val defaultMaterial = MaterialDatabase.getMaterial("PLA")!!
-    var filamentType by remember { mutableStateOf("PLA") }
-    var customMaterial by remember { mutableStateOf("") }
-    var variant by remember { mutableStateOf("Basic") }
-    var brand by remember { mutableStateOf("Generic") }
-    var customBrand by remember { mutableStateOf("") }
-    var location by remember { mutableStateOf("") }
-    var customLocation by remember { mutableStateOf("") }
-    var minTemp by remember { mutableStateOf(defaultMaterial.defaultMinTemp.toString()) }
-    var maxTemp by remember { mutableStateOf(defaultMaterial.defaultMaxTemp.toString()) }
-    var bedMinTemp by remember { mutableStateOf(defaultMaterial.defaultBedMinTemp.toString()) }
-    var bedMaxTemp by remember { mutableStateOf(defaultMaterial.defaultBedMaxTemp.toString()) }
-    var lotNr by remember { mutableStateOf(OpenSpoolData.generateLotNr()) }
-    var comment by remember { mutableStateOf("Created by Spool Studio") }
-    var remainingWeight by remember { mutableStateOf("") }
-    var colorHexInput by remember { mutableStateOf(colorHex ?: "") }
-    var colorNameWasManuallyEdited by remember { mutableStateOf(false) }
-    var isHexManuallySet by remember { mutableStateOf(false) }
+    val form = remember { SpoolFormState(defaultMaterial) }
     var showPrinterMappingDialog by remember { mutableStateOf(false) }
     var toolhead1SpoolId by remember { mutableStateOf<Int?>(null) }
     var toolhead2SpoolId by remember { mutableStateOf<Int?>(null) }
@@ -169,7 +151,7 @@ fun SpoolStudioScreen(
             toolhead4SpoolId
         )
 
-    val spoolColor = colorHex?.let { hex ->
+    val spoolColor = form.colorHex?.let { hex ->
 
         val normalized = hex.trim().removePrefix("#")
 
@@ -206,54 +188,52 @@ fun SpoolStudioScreen(
         val sourceSpool = selectedSpool ?: readData?.let { FilamentSpool.fromOpenSpool(it) }
 
         if (sourceSpool != null) {
-            filamentType = sourceSpool.material
-            variant = sourceSpool.variant.ifBlank { "Basic" }
-            colorHex = sourceSpool.colorHex
-            colorName = formatColorName(
+            form.filamentType = sourceSpool.material
+            form.variant = sourceSpool.variant.ifBlank { "Basic" }
+            form.colorHex = sourceSpool.colorHex
+            form.colorName = formatColorName(
                 sourceSpool.spoolmanName?.takeIf { it.isNotBlank() }
                     ?: sourceSpool.colorHex
-                    ?: colorName
+                    ?: form.colorName
             )
-            brand = sourceSpool.brand
+            form.brand = sourceSpool.brand
 
             val loadedLocation = sourceSpool.location.orEmpty().trim()
             if (loadedLocation.isBlank()) {
-                location = ""
-                customLocation = ""
+                form.clearLocation()
             } else if (loadedLocation in availableLocations) {
-                location = loadedLocation
-                customLocation = ""
+                form.location = loadedLocation
+                form.customLocation = ""
             } else {
-                location = "Other"
-                customLocation = loadedLocation
+                form.location = "Other"
+                form.customLocation = loadedLocation
             }
 
-            minTemp = sourceSpool.minTemp?.toString() ?: minTemp
-            maxTemp = sourceSpool.maxTemp?.toString() ?: maxTemp
-            bedMinTemp = sourceSpool.bedMinTemp?.toString() ?: bedMinTemp
-            bedMaxTemp = sourceSpool.bedMaxTemp?.toString() ?: bedMaxTemp
-            lotNr = sourceSpool.lotNr ?: OpenSpoolData.generateLotNr()
-            comment = sourceSpool.comment ?: ""
-            remainingWeight = sourceSpool.remainingWeight
+            form.minTemp = sourceSpool.minTemp?.toString() ?: form.minTemp
+            form.maxTemp = sourceSpool.maxTemp?.toString() ?: form.maxTemp
+            form.bedMinTemp = sourceSpool.bedMinTemp?.toString() ?: form.bedMinTemp
+            form.bedMaxTemp = sourceSpool.bedMaxTemp?.toString() ?: form.bedMaxTemp
+            form.lotNr = sourceSpool.lotNr ?: OpenSpoolData.generateLotNr()
+            form.comment = sourceSpool.comment ?: ""
+            form.remainingWeight = sourceSpool.remainingWeight
                 ?.takeIf { it >= 0f }
                 ?.let { weight ->
                     if (weight % 1f == 0f) weight.toInt().toString() else weight.toString()
                 }
                 ?: ""
-            colorHexInput = colorHex ?: ""
-            colorNameWasManuallyEdited = false
+            form.colorHexInput = form.colorHex ?: ""
+            form.colorNameWasManuallyEdited = false
         } else if (spoolMode == SpoolMode.CREATE) {
-            location = ""
-            customLocation = ""
+            form.clearLocation()
         }
     }
 
-    LaunchedEffect(colorHex) {
-        colorHexInput = colorHex ?: ""
-        if (!colorNameWasManuallyEdited) {
-            val suggested = suggestColorName(colorHex)
+    LaunchedEffect(form.colorHex) {
+        form.colorHexInput = form.colorHex ?: ""
+        if (!form.colorNameWasManuallyEdited) {
+            val suggested = suggestColorName(form.colorHex)
             if (suggested.isNotBlank()) {
-                colorName = suggested
+                form.colorName = suggested
             }
         }
     }
@@ -297,43 +277,43 @@ fun SpoolStudioScreen(
     }
 
     fun currentMaterialName(): String =
-        resolveMaterialName(filamentType, customMaterial)
+        resolveMaterialName(form.filamentType, form.customMaterial)
     fun currentBrandName(): String =
-        resolveBrandName(brand, customBrand)
+        resolveBrandName(form.brand, form.customBrand)
     fun currentVariantName(): String =
-        resolveVariantName(variant)
+        resolveVariantName(form.variant)
     fun currentLocationName(): String =
-        resolveLocationName(location, customLocation)
+        resolveLocationName(form.location, form.customLocation)
     fun normalizeHexInput(raw: String): String? {
         val cleaned = raw.trim().removePrefix("#").uppercase()
         return if (cleaned.matches(Regex("^[0-9A-F]{6}$"))) cleaned else null
     }
-    fun isVariantValid(): Boolean = isSpoolVariantValid(variant)
-    fun isBrandValid(): Boolean = isSpoolBrandValid(brand, customBrand)
-    fun isMaterialValid(): Boolean = isSpoolMaterialValid(filamentType, customMaterial)
-    fun isRemainingWeightValid(): Boolean = isRemainingWeightValid(remainingWeight)
+    fun isVariantValid(): Boolean = isSpoolVariantValid(form.variant)
+    fun isBrandValid(): Boolean = isSpoolBrandValid(form.brand, form.customBrand)
+    fun isMaterialValid(): Boolean = isSpoolMaterialValid(form.filamentType, form.customMaterial)
+    fun isRemainingWeightValid(): Boolean = isRemainingWeightValid(form.remainingWeight)
     fun isFormValid(): Boolean =
-        isSpoolFormValid(variant, brand, customBrand, filamentType, customMaterial, remainingWeight)
+        isSpoolFormValid(form.variant, form.brand, form.customBrand, form.filamentType, form.customMaterial, form.remainingWeight)
     fun validationMessage(): String? =
-        spoolFormValidationMessage(variant, brand, customBrand, filamentType, customMaterial, remainingWeight)
+        spoolFormValidationMessage(form.variant, form.brand, form.customBrand, form.filamentType, form.customMaterial, form.remainingWeight)
     fun buildSaveRequest(): SpoolmanSaveRequest =
         buildSpoolmanSaveRequest(
-            filamentType = filamentType,
-            customMaterial = customMaterial,
-            variant = variant,
-            brand = brand,
-            customBrand = customBrand,
-            location = location,
-            customLocation = customLocation,
-            colorHex = colorHex,
-            colorName = colorName,
-            minTemp = minTemp,
-            maxTemp = maxTemp,
-            bedMinTemp = bedMinTemp,
-            bedMaxTemp = bedMaxTemp,
-            lotNr = lotNr,
-            comment = comment,
-            remainingWeight = remainingWeight,
+            filamentType = form.filamentType,
+            customMaterial = form.customMaterial,
+            variant = form.variant,
+            brand = form.brand,
+            customBrand = form.customBrand,
+            location = form.location,
+            customLocation = form.customLocation,
+            colorHex = form.colorHex,
+            colorName = form.colorName,
+            minTemp = form.minTemp,
+            maxTemp = form.maxTemp,
+            bedMinTemp = form.bedMinTemp,
+            bedMaxTemp = form.bedMaxTemp,
+            lotNr = form.lotNr,
+            comment = form.comment,
+            remainingWeight = form.remainingWeight,
             spoolMode = spoolMode,
             selectedSpool = selectedSpool
         )
@@ -351,7 +331,7 @@ fun SpoolStudioScreen(
         val uid = parsedBambuValue(bambuDialogText, "UID")?.trim()
 
         val normalizedVariant = normalizeBambuVariant(
-            material = material ?: filamentType,
+            material = material ?: form.filamentType,
             detailedType = detailedType
         )
 
@@ -359,43 +339,42 @@ fun SpoolStudioScreen(
             onSpoolSelected(null)
 
             material?.let {
-                filamentType = it
-                customMaterial = ""
+                form.filamentType = it
+                form.customMaterial = ""
             }
 
-            variant = normalizedVariant
+            form.variant = normalizedVariant
 
             colorRaw?.let { hex ->
-                colorHex = hex
-                colorHexInput = hex
-                isHexManuallySet = false
-                colorNameWasManuallyEdited = false
+                form.colorHex = hex
+                form.colorHexInput = hex
+                form.isHexManuallySet = false
+                form.colorNameWasManuallyEdited = false
 
                 val suggested = suggestColorName(hex)
-                colorName = if (suggested.isNotBlank()) suggested else "#$hex"
+                form.colorName = if (suggested.isNotBlank()) suggested else "#$hex"
             }
 
-            brand = "Bambu Lab"
-            customBrand = ""
+            form.brand = "Bambu Lab"
+            form.customBrand = ""
 
-            location = ""
-            customLocation = ""
+            form.clearLocation()
 
-            minHotend?.let { minTemp = it.toString() }
-            maxHotend?.let { maxTemp = it.toString() }
+            minHotend?.let { form.minTemp = it.toString() }
+            maxHotend?.let { form.maxTemp = it.toString() }
 
             if (bedTemp != null) {
                 if (bedTemp <= 0) {
-                    bedMinTemp = "0"
-                    bedMaxTemp = "0"
+                    form.bedMinTemp = "0"
+                    form.bedMaxTemp = "0"
                 } else {
-                    bedMinTemp = (bedTemp - 10).coerceAtLeast(0).toString()
-                    bedMaxTemp = (bedTemp + 10).toString()
+                    form.bedMinTemp = (bedTemp - 10).coerceAtLeast(0).toString()
+                    form.bedMaxTemp = (bedTemp + 10).toString()
                 }
             }
 
             uid?.let {
-                lotNr = it.take(32)
+                form.lotNr = it.take(32)
             }
 
             showBambuDialog = false
@@ -562,52 +541,52 @@ fun SpoolStudioScreen(
                             }
 
                             FilamentForm(
-                                filamentType = filamentType,
-                                customMaterial = customMaterial,
-                                variant = variant,
-                                colorHex = colorHex,
-                                colorName = colorName,
-                                brand = brand,
-                                customBrand = customBrand,
+                                filamentType = form.filamentType,
+                                customMaterial = form.customMaterial,
+                                variant = form.variant,
+                                colorHex = form.colorHex,
+                                colorName = form.colorName,
+                                brand = form.brand,
+                                customBrand = form.customBrand,
                                 availableMaterials = availableMaterials,
                                 availableBrands = availableBrands,
                                 availableVariants = availableVariants,
                                 onFilamentTypeChange = { material, min, max, bedMin, bedMax ->
-                                    filamentType = material
-                                    minTemp = min
-                                    maxTemp = max
-                                    bedMinTemp = bedMin
-                                    bedMaxTemp = bedMax
+                                    form.filamentType = material
+                                    form.minTemp = min
+                                    form.maxTemp = max
+                                    form.bedMinTemp = bedMin
+                                    form.bedMaxTemp = bedMax
                                 },
-                                onCustomMaterialChange = { customMaterial = it },
-                                onVariantChange = { variant = it },
+                                onCustomMaterialChange = { form.customMaterial = it },
+                                onVariantChange = { form.variant = it },
                                 onColorChange = { newHex ->
-                                    colorHex = newHex
-                                    colorHexInput = newHex ?: ""
-                                    isHexManuallySet = false
+                                    form.colorHex = newHex
+                                    form.colorHexInput = newHex ?: ""
+                                    form.isHexManuallySet = false
 
-                                    if (!colorNameWasManuallyEdited) {
+                                    if (!form.colorNameWasManuallyEdited) {
                                         val suggested = suggestColorName(newHex)
                                         if (suggested.isNotBlank()) {
-                                            colorName = suggested
+                                            form.colorName = suggested
                                         }
                                     }
                                 },
                                 onColorNameChange = { newName ->
                                     val formatted = formatColorName(newName.take(40))
-                                    colorName = formatted
-                                    colorNameWasManuallyEdited = formatted.isNotBlank()
+                                    form.colorName = formatted
+                                    form.colorNameWasManuallyEdited = formatted.isNotBlank()
 
-                                    if (!isHexManuallySet) {
+                                    if (!form.isHexManuallySet) {
                                         val matchedHex = suggestHexFromName(formatted)
                                         if (matchedHex != null) {
-                                            colorHex = matchedHex
-                                            colorHexInput = matchedHex
+                                            form.colorHex = matchedHex
+                                            form.colorHexInput = matchedHex
                                         }
                                     }
                                 },
-                                onBrandChange = { brand = it },
-                                onCustomBrandChange = { customBrand = it }
+                                onBrandChange = { form.brand = it },
+                                onCustomBrandChange = { form.customBrand = it }
                             )
 
                             Spacer(modifier = Modifier.height(12.dp))
@@ -620,8 +599,8 @@ fun SpoolStudioScreen(
                             ) {
                                 OutlinedTextField(
                                     value = when {
-                                        location == "Other" -> customLocation
-                                        location.isNotBlank() -> location
+                                        form.location == "Other" -> form.customLocation
+                                        form.location.isNotBlank() -> form.location
                                         else -> "No Location"
                                     },
                                     onValueChange = {},
@@ -629,8 +608,8 @@ fun SpoolStudioScreen(
                                     label = { Text("Location") },
                                     textStyle = MaterialTheme.typography.bodyLarge.copy(
                                         fontWeight = if (
-                                            (location == "Other" && customLocation.isNotBlank()) ||
-                                            (location.isNotBlank() && location != "Other")
+                                            (form.location == "Other" && form.customLocation.isNotBlank()) ||
+                                            (form.location.isNotBlank() && form.location != "Other")
                                         ) FontWeight.Bold else FontWeight.Normal
                                     ),
                                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = locationExpanded) },
@@ -649,8 +628,8 @@ fun SpoolStudioScreen(
                                         DropdownMenuItem(
                                             text = { Text(item) },
                                             onClick = {
-                                                location = item
-                                                customLocation = ""
+                                                form.location = item
+                                                form.customLocation = ""
                                                 locationExpanded = false
                                             }
                                         )
@@ -660,18 +639,18 @@ fun SpoolStudioScreen(
                                     DropdownMenuItem(
                                         text = { Text("Other") },
                                         onClick = {
-                                            location = "Other"
+                                            form.location = "Other"
                                             locationExpanded = false
                                         }
                                     )
                                 }
                             }
 
-                            if (location == "Other") {
+                            if (form.location == "Other") {
                                 Spacer(modifier = Modifier.height(8.dp))
                                 OutlinedTextField(
-                                    value = customLocation,
-                                    onValueChange = { input -> if (input.length <= 60) customLocation = input },
+                                    value = form.customLocation,
+                                    onValueChange = { input -> if (input.length <= 60) form.customLocation = input },
                                     label = { Text("Custom Location") },
                                     modifier = Modifier.fillMaxWidth(),
                                     singleLine = true,
@@ -683,9 +662,9 @@ fun SpoolStudioScreen(
                                 Spacer(modifier = Modifier.height(12.dp))
 
                                 OutlinedTextField(
-                                    value = lotNr,
+                                    value = form.lotNr,
                                     onValueChange = { input ->
-                                        if (input.length <= 32) lotNr = input
+                                        if (input.length <= 32) form.lotNr = input
                                     },
                                     label = { Text("Lot Number") },
                                     modifier = Modifier.fillMaxWidth(),
@@ -697,10 +676,10 @@ fun SpoolStudioScreen(
                             Spacer(modifier = Modifier.height(12.dp))
 
                             OutlinedTextField(
-                                value = remainingWeight,
+                                value = form.remainingWeight,
                                 onValueChange = { input ->
                                     if (input.length <= 8 && input.all { it.isDigit() || it == '.' || it == ',' }) {
-                                        remainingWeight = input
+                                        form.remainingWeight = input
                                     }
                                 },
                                 label = { Text("Remaining filament (g)") },
@@ -715,9 +694,9 @@ fun SpoolStudioScreen(
                                 Spacer(modifier = Modifier.height(12.dp))
 
                                 OutlinedTextField(
-                                    value = comment,
+                                    value = form.comment,
                                     onValueChange = { input ->
-                                        if (input.length <= 120) comment = input
+                                        if (input.length <= 120) form.comment = input
                                     },
                                     label = { Text("Comment") },
                                     modifier = Modifier.fillMaxWidth(),
@@ -727,16 +706,16 @@ fun SpoolStudioScreen(
                             }
 
                             Spacer(modifier = Modifier.height(10.dp))
-                            key(filamentType) {
+                            key(form.filamentType) {
                                 TemperatureSection(
-                                    nozzleMin = minTemp,
-                                    nozzleMax = maxTemp,
-                                    bedMin = bedMinTemp,
-                                    bedMax = bedMaxTemp,
-                                    onNozzleMinChange = { minTemp = it },
-                                    onNozzleMaxChange = { maxTemp = it },
-                                    onBedMinChange = { bedMinTemp = it },
-                                    onBedMaxChange = { bedMaxTemp = it }
+                                    nozzleMin = form.minTemp,
+                                    nozzleMax = form.maxTemp,
+                                    bedMin = form.bedMinTemp,
+                                    bedMax = form.bedMaxTemp,
+                                    onNozzleMinChange = { form.minTemp = it },
+                                    onNozzleMaxChange = { form.maxTemp = it },
+                                    onBedMinChange = { form.bedMinTemp = it },
+                                    onBedMaxChange = { form.bedMaxTemp = it }
                                 )
                             }
                         }
@@ -785,19 +764,19 @@ fun SpoolStudioScreen(
                             if (openSpoolType != null) {
                                 val tagData = OpenSpoolData(
                                     type = openSpoolType,
-                                    colorHex = colorHex,
+                                    colorHex = form.colorHex,
                                     brand = currentBrandName(),
-                                    minTemp = minTemp,
-                                    maxTemp = maxTemp,
-                                    bedMinTemp = bedMinTemp.ifBlank { null },
-                                    bedMaxTemp = bedMaxTemp.ifBlank { null },
+                                    minTemp = form.minTemp,
+                                    maxTemp = form.maxTemp,
+                                    bedMinTemp = form.bedMinTemp.ifBlank { null },
+                                    bedMaxTemp = form.bedMaxTemp.ifBlank { null },
                                     subtype = variantName.ifBlank { "Basic" },
                                     spoolId = if (spoolMode == SpoolMode.UPDATE) {
                                         selectedSpool?.id?.toString()
                                     } else {
                                         null
                                     },
-                                    lotNr = lotNr
+                                    lotNr = form.lotNr
                                 )
 
                                 onWriteTag(tagData.toJson())
