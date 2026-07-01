@@ -8,12 +8,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.spoolstudio.app.data.remote.moonraker.MoonrakerService
 import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.domain.models.OpenSpoolData
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 enum class SpoolMode {
     CREATE,
@@ -24,6 +21,7 @@ enum class SpoolMode {
 class MainViewModel : ViewModel() {
     private val spoolmanCatalogRepository = SpoolmanCatalogRepository()
     private val spoolmanSaveRepository = SpoolmanSaveRepository()
+    private val moonrakerConnectionRepository = MoonrakerConnectionRepository()
     private val printerMappingRepository = PrinterMappingRepository()
 
     var readData by mutableStateOf<OpenSpoolData?>(null)
@@ -379,38 +377,10 @@ class MainViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                val testUrl = "$normalizedUrl/printer/info"
-
-                val connection = withContext(Dispatchers.IO) {
-                    (java.net.URL(testUrl).openConnection() as java.net.HttpURLConnection).apply {
-                        connectTimeout = 5000
-                        readTimeout = 5000
-                        requestMethod = "GET"
-                    }
-                }
-
-                try {
-                    val responseCode = withContext(Dispatchers.IO) { connection.responseCode }
-
-                    val responseText = withContext(Dispatchers.IO) {
-                        connection.inputStream.bufferedReader().use { it.readText() }
-                    }
-
-                    if (responseCode in 200..299 && responseText.trim().startsWith("{")) {
-                        isMoonrakerReachable = true
-                        moonrakerStatus = "Moonraker erreichbar"
-                    } else {
-                        isMoonrakerReachable = false
-                        moonrakerError = if (responseText.contains("<html", ignoreCase = true)) {
-                            "Kein direkter Moonraker-Endpunkt"
-                        } else {
-                            "HTTP $responseCode"
-                        }
-                    }
-                } finally {
-                    connection.disconnect()
-                }
-
+                val result = moonrakerConnectionRepository.test(normalizedUrl)
+                isMoonrakerReachable = result.reachable
+                moonrakerStatus = result.status
+                moonrakerError = result.error
             } catch (e: Exception) {
                 isMoonrakerReachable = false
                 moonrakerError = connectionErrorMessage(e)
