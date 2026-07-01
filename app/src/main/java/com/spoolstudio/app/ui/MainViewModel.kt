@@ -23,6 +23,7 @@ enum class SpoolMode {
 }
 
 class MainViewModel : ViewModel() {
+    private val spoolmanCatalogRepository = SpoolmanCatalogRepository()
     private val printerMappingRepository = PrinterMappingRepository()
 
     var readData by mutableStateOf<OpenSpoolData?>(null)
@@ -519,8 +520,11 @@ class MainViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                val service = SpoolmanService(normalizedUrl)
-                service.getCatalog(spoolmanSortBy.ifEmpty { null }, forceRefresh = true)
+                spoolmanCatalogRepository.load(
+                    baseUrl = normalizedUrl,
+                    sortBy = spoolmanSortBy,
+                    forceRefresh = true
+                )
                 spoolmanStatus = "Spoolman erreichbar"
             } catch (e: Exception) {
                 spoolmanError = connectionErrorMessage(e)
@@ -560,8 +564,11 @@ class MainViewModel : ViewModel() {
         isLoadingSpools = true
         viewModelScope.launch {
             try {
-                val service = SpoolmanService(spoolmanUrl)
-                val catalog = service.getCatalog(spoolmanSortBy.ifEmpty { null }, forceRefresh = true)
+                val catalog = spoolmanCatalogRepository.load(
+                    baseUrl = spoolmanUrl,
+                    sortBy = spoolmanSortBy,
+                    forceRefresh = true
+                )
                 spools = catalog.spools
                 availableBrands = catalog.vendorNames
                 availableMaterials = catalog.materialNames
