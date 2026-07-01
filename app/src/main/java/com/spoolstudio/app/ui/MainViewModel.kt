@@ -138,18 +138,15 @@ class MainViewModel : ViewModel() {
         rawReadText = data
         rawReadVersion++
 
-        data?.let {
-            OpenSpoolData.fromJson(it)?.let { openSpoolData ->
-                readData = openSpoolData
-                currentSpoolId = openSpoolData.spoolId
-                selectedSpool = null
-                spoolMode = if (openSpoolData.spoolId.isNullOrBlank()) {
-                    SpoolMode.CREATE
-                } else {
-                    SpoolMode.UPDATE
-                }
-                dataVersion++
-            } ?: Log.d("MainViewModel", "Raw RFID data is not OpenSpool JSON")
+        val tagData = parseNfcTagData(data)
+        if (tagData != null) {
+            readData = tagData.readData
+            currentSpoolId = tagData.currentSpoolId
+            selectedSpool = null
+            spoolMode = tagData.spoolMode
+            dataVersion++
+        } else {
+            Log.d("MainViewModel", "Raw RFID data is not OpenSpool JSON")
         }
     }
     fun showSnackbarMessage(message: String) {
