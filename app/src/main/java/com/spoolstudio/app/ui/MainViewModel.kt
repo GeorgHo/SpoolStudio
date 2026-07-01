@@ -215,15 +215,10 @@ class MainViewModel : ViewModel() {
 
     fun handleFilamentSelection(filament: FilamentSpool?) {
         selectedSpool = filament
-        if (filament != null) {
-            readData = OpenSpoolData.toOpenSpoolData(filament)
-            currentSpoolId = filament.id?.toString()
-            spoolMode = SpoolMode.UPDATE
-        } else {
-            readData = null
-            currentSpoolId = null
-            spoolMode = SpoolMode.CREATE
-        }
+        val selection = buildSpoolSelectionResult(filament)
+        readData = selection.readData
+        currentSpoolId = selection.currentSpoolId
+        spoolMode = selection.spoolMode
         dataVersion++
     }
 
