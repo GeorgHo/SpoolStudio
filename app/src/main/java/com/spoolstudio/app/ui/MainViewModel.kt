@@ -116,8 +116,7 @@ class MainViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                val service = SpoolmanService(spoolmanUrl)
-                val refreshed = service.findFilamentBySpoolId(spoolId.toString())
+                val refreshed = spoolmanCatalogRepository.findBySpoolId(spoolmanUrl, spoolId)
                 if (refreshed != null) {
                     selectedSpool = refreshed
                 }
