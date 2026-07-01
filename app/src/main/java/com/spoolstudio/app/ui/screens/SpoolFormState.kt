@@ -82,4 +82,42 @@ class SpoolFormState(defaultMaterial: Material) {
             spoolMode = spoolMode,
             selectedSpool = selectedSpool
         )
+
+    fun applyBambuRfidData(data: BambuRfidFormData, suggestedColorName: String) {
+        data.material?.let {
+            filamentType = it
+            customMaterial = ""
+        }
+
+        variant = data.normalizedVariant
+
+        data.colorHex?.let { hex ->
+            colorHex = hex
+            colorHexInput = hex
+            isHexManuallySet = false
+            colorNameWasManuallyEdited = false
+            colorName = if (suggestedColorName.isNotBlank()) suggestedColorName else "#$hex"
+        }
+
+        brand = "Bambu Lab"
+        customBrand = ""
+        clearLocation()
+
+        data.minHotend?.let { minTemp = it.toString() }
+        data.maxHotend?.let { maxTemp = it.toString() }
+
+        data.bedTemp?.let { temp ->
+            if (temp <= 0) {
+                bedMinTemp = "0"
+                bedMaxTemp = "0"
+            } else {
+                bedMinTemp = (temp - 10).coerceAtLeast(0).toString()
+                bedMaxTemp = (temp + 10).toString()
+            }
+        }
+
+        data.uid?.let {
+            lotNr = it.take(32)
+        }
+    }
 }

@@ -51,4 +51,37 @@ class SpoolFormStateTest {
 
         assertEquals("Please enter a valid remaining weight", form.validationMessage())
     }
+
+    @Test
+    fun applyBambuRfidDataUpdatesFormState() {
+        val form = formState()
+        val data = BambuRfidFormData(
+            material = "PETG",
+            detailedType = "PETG Basic",
+            colorHex = "00AACC",
+            minHotend = 230,
+            maxHotend = 250,
+            bedTemp = 80,
+            uid = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+            normalizedVariant = "Basic"
+        )
+
+        form.applyBambuRfidData(data, suggestedColorName = "Cyan")
+
+        assertEquals("PETG", form.filamentType)
+        assertEquals("", form.customMaterial)
+        assertEquals("Basic", form.variant)
+        assertEquals("00AACC", form.colorHex)
+        assertEquals("00AACC", form.colorHexInput)
+        assertEquals("Cyan", form.colorName)
+        assertEquals("Bambu Lab", form.brand)
+        assertEquals("", form.customBrand)
+        assertEquals("", form.location)
+        assertEquals("", form.customLocation)
+        assertEquals("230", form.minTemp)
+        assertEquals("250", form.maxTemp)
+        assertEquals("70", form.bedMinTemp)
+        assertEquals("90", form.bedMaxTemp)
+        assertEquals("1234567890ABCDEFGHIJKLMNOPQRSTUV", form.lotNr)
+    }
 }

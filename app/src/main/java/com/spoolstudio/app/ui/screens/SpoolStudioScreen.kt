@@ -272,69 +272,23 @@ fun SpoolStudioScreen(
         form.buildSaveRequest(spoolMode, selectedSpool)
 
     fun applyBambuDialogData() {
-        val material = parsedBambuValue(bambuDialogText, "Filament Type")
-        val detailedType = parsedBambuValue(bambuDialogText, "Detailed Type")
-        val colorRaw = parsedBambuValue(bambuDialogText, "Filament Color")
-            ?.substringBefore(" / ")
-            ?.removePrefix("#")
-            ?.uppercase()
-        val minHotend = parsedBambuInt(bambuDialogText, "Min Hotend")
-        val maxHotend = parsedBambuInt(bambuDialogText, "Max Hotend")
-        val bedTemp = parsedBambuInt(bambuDialogText, "Bed Temp")
-        val uid = parsedBambuValue(bambuDialogText, "UID")?.trim()
-
-        val normalizedVariant = normalizeBambuVariant(
-            material = material ?: form.filamentType,
-            detailedType = detailedType
+        val bambuData = parseBambuRfidFormData(
+            text = bambuDialogText,
+            fallbackMaterial = form.filamentType
         )
 
         val applyIntoForm = {
             onSpoolSelected(null)
-
-            material?.let {
-                form.filamentType = it
-                form.customMaterial = ""
-            }
-
-            form.variant = normalizedVariant
-
-            colorRaw?.let { hex ->
-                form.colorHex = hex
-                form.colorHexInput = hex
-                form.isHexManuallySet = false
-                form.colorNameWasManuallyEdited = false
-
-                val suggested = suggestColorName(hex)
-                form.colorName = if (suggested.isNotBlank()) suggested else "#$hex"
-            }
-
-            form.brand = "Bambu Lab"
-            form.customBrand = ""
-
-            form.clearLocation()
-
-            minHotend?.let { form.minTemp = it.toString() }
-            maxHotend?.let { form.maxTemp = it.toString() }
-
-            if (bedTemp != null) {
-                if (bedTemp <= 0) {
-                    form.bedMinTemp = "0"
-                    form.bedMaxTemp = "0"
-                } else {
-                    form.bedMinTemp = (bedTemp - 10).coerceAtLeast(0).toString()
-                    form.bedMaxTemp = (bedTemp + 10).toString()
-                }
-            }
-
-            uid?.let {
-                form.lotNr = it.take(32)
-            }
+            form.applyBambuRfidData(
+                data = bambuData,
+                suggestedColorName = bambuData.colorHex?.let(::suggestColorName).orEmpty()
+            )
 
             showBambuDialog = false
             onBambuDataApplied()
         }
 
-        val matchingSpool = findMatchingSpoolByLotNr(spools, uid)
+        val matchingSpool = findMatchingSpoolByLotNr(spools, bambuData.uid)
 
         when {
             matchingSpool == null -> {
@@ -343,9 +297,9 @@ fun SpoolStudioScreen(
 
             isSameBambuData(
                 spool = matchingSpool,
-                material = material,
-                normalizedVariant = normalizedVariant,
-                colorHexValue = colorRaw
+                material = bambuData.material,
+                normalizedVariant = bambuData.normalizedVariant,
+                colorHexValue = bambuData.colorHex
             ) -> {
                 onSpoolSelected(matchingSpool)
                 showBambuDialog = false
@@ -355,9 +309,9 @@ fun SpoolStudioScreen(
             else -> {
                 bambuDiffDialogText = buildBambuDiffText(
                     spool = matchingSpool,
-                    material = material,
-                    normalizedVariant = normalizedVariant,
-                    colorHexValue = colorRaw
+                    material = bambuData.material,
+                    normalizedVariant = bambuData.normalizedVariant,
+                    colorHexValue = bambuData.colorHex
                 )
                 pendingBambuApply = applyIntoForm
                 showBambuDialog = false

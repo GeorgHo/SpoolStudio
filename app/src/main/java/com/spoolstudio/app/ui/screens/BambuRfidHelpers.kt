@@ -3,6 +3,40 @@ package com.spoolstudio.app.ui.screens
 import com.spoolstudio.app.data.local.VariantDatabase
 import com.spoolstudio.app.domain.models.FilamentSpool
 
+data class BambuRfidFormData(
+    val material: String?,
+    val detailedType: String?,
+    val colorHex: String?,
+    val minHotend: Int?,
+    val maxHotend: Int?,
+    val bedTemp: Int?,
+    val uid: String?,
+    val normalizedVariant: String
+)
+
+fun parseBambuRfidFormData(text: String, fallbackMaterial: String): BambuRfidFormData {
+    val material = parsedBambuValue(text, "Filament Type")
+    val detailedType = parsedBambuValue(text, "Detailed Type")
+    val colorHex = parsedBambuValue(text, "Filament Color")
+        ?.substringBefore(" / ")
+        ?.removePrefix("#")
+        ?.uppercase()
+
+    return BambuRfidFormData(
+        material = material,
+        detailedType = detailedType,
+        colorHex = colorHex,
+        minHotend = parsedBambuInt(text, "Min Hotend"),
+        maxHotend = parsedBambuInt(text, "Max Hotend"),
+        bedTemp = parsedBambuInt(text, "Bed Temp"),
+        uid = parsedBambuValue(text, "UID")?.trim(),
+        normalizedVariant = normalizeBambuVariant(
+            material = material ?: fallbackMaterial,
+            detailedType = detailedType
+        )
+    )
+}
+
 fun parsedBambuValue(text: String, label: String): String? {
     return text
         .lineSequence()
