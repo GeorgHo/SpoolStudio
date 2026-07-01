@@ -32,6 +32,7 @@
   - Show warning color in the Spool Info popup remaining percentage.
 - Improve visibility and wording of Spoolman and RFID read/write feedback.
 - Make action buttons state-aware:
+  - Apply this to every action button where usage prerequisites can be determined reliably.
   - Enable `New from selected` only when a spool or tag data is loaded.
   - Enable Spoolman update only when Spoolman-relevant fields changed.
   - Do not enable Spoolman update for RFID-only changes such as tag temperature values.
