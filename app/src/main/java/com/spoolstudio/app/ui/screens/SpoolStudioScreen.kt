@@ -1,10 +1,5 @@
 package com.spoolstudio.app.ui.screens
 
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.foundation.layout.Box
 import com.spoolstudio.app.ui.components.SpoolInfoCard
 import android.util.Log
@@ -591,72 +586,13 @@ fun SpoolStudioScreen(
 
                             Spacer(modifier = Modifier.height(12.dp))
 
-                            var locationExpanded by remember { mutableStateOf(false) }
-
-                            ExposedDropdownMenuBox(
-                                expanded = locationExpanded,
-                                onExpandedChange = { locationExpanded = !locationExpanded }
-                            ) {
-                                OutlinedTextField(
-                                    value = when {
-                                        form.location == "Other" -> form.customLocation
-                                        form.location.isNotBlank() -> form.location
-                                        else -> "No Location"
-                                    },
-                                    onValueChange = {},
-                                    readOnly = true,
-                                    label = { Text("Location") },
-                                    textStyle = MaterialTheme.typography.bodyLarge.copy(
-                                        fontWeight = if (
-                                            (form.location == "Other" && form.customLocation.isNotBlank()) ||
-                                            (form.location.isNotBlank() && form.location != "Other")
-                                        ) FontWeight.Bold else FontWeight.Normal
-                                    ),
-                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = locationExpanded) },
-                                    modifier = Modifier
-                                        .menuAnchor()
-                                        .fillMaxWidth(),
-                                    singleLine = true,
-                                    shape = RoundedCornerShape(16.dp)
-                                )
-
-                                DropdownMenu(
-                                    expanded = locationExpanded,
-                                    onDismissRequest = { locationExpanded = false }
-                                ) {
-                                    availableLocations.forEach { item ->
-                                        DropdownMenuItem(
-                                            text = { Text(item) },
-                                            onClick = {
-                                                form.location = item
-                                                form.customLocation = ""
-                                                locationExpanded = false
-                                            }
-                                        )
-                                    }
-                                    HorizontalDivider()
-
-                                    DropdownMenuItem(
-                                        text = { Text("Other") },
-                                        onClick = {
-                                            form.location = "Other"
-                                            locationExpanded = false
-                                        }
-                                    )
-                                }
-                            }
-
-                            if (form.location == "Other") {
-                                Spacer(modifier = Modifier.height(8.dp))
-                                OutlinedTextField(
-                                    value = form.customLocation,
-                                    onValueChange = { input -> if (input.length <= 60) form.customLocation = input },
-                                    label = { Text("Custom Location") },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true,
-                                    shape = RoundedCornerShape(16.dp)
-                                )
-                            }
+                            LocationSection(
+                                location = form.location,
+                                customLocation = form.customLocation,
+                                availableLocations = availableLocations,
+                                onLocationChange = { form.location = it },
+                                onCustomLocationChange = { form.customLocation = it }
+                            )
 
                             if (showLotNumber) {
                                 Spacer(modifier = Modifier.height(12.dp))
