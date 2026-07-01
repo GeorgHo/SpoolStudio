@@ -19,7 +19,6 @@ data class OpenSpoolData(
     val lotNr: String? = null
 ) {
     fun toJson(): String {
-        android.util.Log.d("OpenSpoolData", "toJson() called with: protocol=$protocol, version=$version, type=$type, colorHex=$colorHex, brand=$brand, minTemp=$minTemp, maxTemp=$maxTemp, bedMinTemp=$bedMinTemp, bedMaxTemp=$bedMaxTemp, subtype=$subtype, spoolId=$spoolId, lotNr=$lotNr")
         return JSONObject().apply {
             put("protocol", protocol)
             put("version", version)

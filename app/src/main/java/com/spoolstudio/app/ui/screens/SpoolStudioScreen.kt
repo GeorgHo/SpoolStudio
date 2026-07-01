@@ -1,6 +1,5 @@
 ﻿package com.spoolstudio.app.ui.screens
 
-import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -150,8 +149,6 @@ fun SpoolStudioScreen(
     }
 
     LaunchedEffect(readData, dataVersion, selectedSpool, spoolMode, availableLocations) {
-        Log.d("SpoolStudioScreen", "LaunchedEffect triggered - readData: $readData, dataVersion: $dataVersion, selectedSpool: $selectedSpool, spoolMode: $spoolMode")
-
         val sourceSpool = selectedSpool ?: readData?.let { FilamentSpool.fromOpenSpool(it) }
 
         if (sourceSpool != null) {
