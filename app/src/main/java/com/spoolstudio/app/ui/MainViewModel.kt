@@ -12,12 +12,6 @@ import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.domain.models.OpenSpoolData
 import kotlinx.coroutines.launch
 
-enum class SpoolMode {
-    CREATE,
-    UPDATE,
-    DUPLICATE
-}
-
 class MainViewModel : ViewModel() {
     private val spoolmanCatalogRepository = SpoolmanCatalogRepository()
     private val spoolmanSaveRepository = SpoolmanSaveRepository()
