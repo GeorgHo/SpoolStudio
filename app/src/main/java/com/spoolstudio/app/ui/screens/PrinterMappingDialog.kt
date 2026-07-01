@@ -28,6 +28,58 @@ import androidx.compose.ui.unit.dp
 import com.spoolstudio.app.domain.models.FilamentSpool
 
 @Composable
+fun PrinterMappingDialogHost(
+    visible: Boolean,
+    spools: List<FilamentSpool>,
+    isMoonrakerReachable: Boolean,
+    isLoadingPrinterMapping: Boolean,
+    activeSpoolOutsideMapping: Boolean,
+    activePrinterSpoolId: Int?,
+    inlineStatusText: String?,
+    inlineStatusColor: Color,
+    hasPrinterMappingChanges: Boolean,
+    toolhead1SpoolId: Int?,
+    toolhead2SpoolId: Int?,
+    toolhead3SpoolId: Int?,
+    toolhead4SpoolId: Int?,
+    activeDialogSpoolId: Int?,
+    onToolhead1SpoolIdChange: (Int?) -> Unit,
+    onToolhead2SpoolIdChange: (Int?) -> Unit,
+    onToolhead3SpoolIdChange: (Int?) -> Unit,
+    onToolhead4SpoolIdChange: (Int?) -> Unit,
+    onActiveDialogSpoolIdChange: (Int?) -> Unit,
+    onCancel: () -> Unit,
+    onLoadCurrentPrinterMapping: () -> Unit,
+    onSavePrinterMapping: (Int?, Int?, Int?, Int?, Int?) -> Unit
+) {
+    if (!visible) return
+
+    PrinterMappingDialog(
+        spools = spools,
+        isMoonrakerReachable = isMoonrakerReachable,
+        isLoadingPrinterMapping = isLoadingPrinterMapping,
+        activeSpoolOutsideMapping = activeSpoolOutsideMapping,
+        activePrinterSpoolId = activePrinterSpoolId,
+        inlineStatusText = inlineStatusText,
+        inlineStatusColor = inlineStatusColor,
+        hasPrinterMappingChanges = hasPrinterMappingChanges,
+        toolhead1SpoolId = toolhead1SpoolId,
+        toolhead2SpoolId = toolhead2SpoolId,
+        toolhead3SpoolId = toolhead3SpoolId,
+        toolhead4SpoolId = toolhead4SpoolId,
+        activeDialogSpoolId = activeDialogSpoolId,
+        onToolhead1SpoolIdChange = onToolhead1SpoolIdChange,
+        onToolhead2SpoolIdChange = onToolhead2SpoolIdChange,
+        onToolhead3SpoolIdChange = onToolhead3SpoolIdChange,
+        onToolhead4SpoolIdChange = onToolhead4SpoolIdChange,
+        onActiveDialogSpoolIdChange = onActiveDialogSpoolIdChange,
+        onCancel = onCancel,
+        onLoadCurrentPrinterMapping = onLoadCurrentPrinterMapping,
+        onSavePrinterMapping = onSavePrinterMapping
+    )
+}
+
+@Composable
 fun PrinterMappingDialog(
     spools: List<FilamentSpool>,
     isMoonrakerReachable: Boolean,

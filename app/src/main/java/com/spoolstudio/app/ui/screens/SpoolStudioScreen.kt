@@ -391,34 +391,33 @@ fun SpoolStudioScreen(
             }
         }
 
-        if (showPrinterMappingDialog) {
-            PrinterMappingDialog(
-                spools = spools,
-                isMoonrakerReachable = isMoonrakerReachable,
-                isLoadingPrinterMapping = isLoadingPrinterMapping,
-                activeSpoolOutsideMapping = activeSpoolOutsideMapping,
-                activePrinterSpoolId = activePrinterSpoolId,
-                inlineStatusText = inlinePrinterMappingStatusText,
-                inlineStatusColor = inlinePrinterMappingStatusColor,
-                hasPrinterMappingChanges = hasPrinterMappingChanges,
-                toolhead1SpoolId = toolhead1SpoolId,
-                toolhead2SpoolId = toolhead2SpoolId,
-                toolhead3SpoolId = toolhead3SpoolId,
-                toolhead4SpoolId = toolhead4SpoolId,
-                activeDialogSpoolId = activeDialogSpoolId,
-                onToolhead1SpoolIdChange = { toolhead1SpoolId = it },
-                onToolhead2SpoolIdChange = { toolhead2SpoolId = it },
-                onToolhead3SpoolIdChange = { toolhead3SpoolId = it },
-                onToolhead4SpoolIdChange = { toolhead4SpoolId = it },
-                onActiveDialogSpoolIdChange = { activeDialogSpoolId = it },
-                onCancel = {
-                    onClearPrinterMappingDialogFeedback()
-                    showPrinterMappingDialog = false
-                },
-                onLoadCurrentPrinterMapping = onLoadCurrentPrinterMapping,
-                onSavePrinterMapping = onSavePrinterMapping
-            )
-        }
+        PrinterMappingDialogHost(
+            visible = showPrinterMappingDialog,
+            spools = spools,
+            isMoonrakerReachable = isMoonrakerReachable,
+            isLoadingPrinterMapping = isLoadingPrinterMapping,
+            activeSpoolOutsideMapping = activeSpoolOutsideMapping,
+            activePrinterSpoolId = activePrinterSpoolId,
+            inlineStatusText = inlinePrinterMappingStatusText,
+            inlineStatusColor = inlinePrinterMappingStatusColor,
+            hasPrinterMappingChanges = hasPrinterMappingChanges,
+            toolhead1SpoolId = toolhead1SpoolId,
+            toolhead2SpoolId = toolhead2SpoolId,
+            toolhead3SpoolId = toolhead3SpoolId,
+            toolhead4SpoolId = toolhead4SpoolId,
+            activeDialogSpoolId = activeDialogSpoolId,
+            onToolhead1SpoolIdChange = { toolhead1SpoolId = it },
+            onToolhead2SpoolIdChange = { toolhead2SpoolId = it },
+            onToolhead3SpoolIdChange = { toolhead3SpoolId = it },
+            onToolhead4SpoolIdChange = { toolhead4SpoolId = it },
+            onActiveDialogSpoolIdChange = { activeDialogSpoolId = it },
+            onCancel = {
+                onClearPrinterMappingDialogFeedback()
+                showPrinterMappingDialog = false
+            },
+            onLoadCurrentPrinterMapping = onLoadCurrentPrinterMapping,
+            onSavePrinterMapping = onSavePrinterMapping
+        )
 
         BambuRfidDialogHost(
             showDumpDialog = showBambuDialog,
