@@ -93,7 +93,7 @@ fun SpoolStudioScreen(
     var showBambuDiffDialog by remember { mutableStateOf(false) }
     var bambuDiffDialogText by remember { mutableStateOf("") }
     var pendingBambuApply by remember { mutableStateOf<(() -> Unit)?>(null) }
-    val defaultMaterial = MaterialDatabase.getMaterial("PLA")!!
+    val defaultMaterial = MaterialDatabase.getMaterial("PLA") ?: MaterialDatabase.materials.first()
     val form = remember { SpoolFormState(defaultMaterial) }
     var showPrinterMappingDialog by remember { mutableStateOf(false) }
     var toolhead1SpoolId by remember { mutableStateOf<Int?>(null) }
