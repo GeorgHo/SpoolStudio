@@ -237,16 +237,7 @@ class MainViewModel : ViewModel() {
         currentSpoolId = null
         selectedSpool = null
         spoolMode = SpoolMode.DUPLICATE
-
-        readData = when {
-            sourceSpool != null -> OpenSpoolData.toOpenSpoolData(sourceSpool).copy(
-                spoolId = null
-            )
-            readData != null -> readData!!.copy(
-                spoolId = null
-            )
-            else -> null
-        }
+        readData = buildSpoolModeSourceData(sourceSpool, readData)
 
         dataVersion++
         showSnackbarMessage("Create New Spool mode enabled")
@@ -263,16 +254,7 @@ class MainViewModel : ViewModel() {
         currentSpoolId = null
         selectedSpool = null
         spoolMode = SpoolMode.CREATE
-
-        readData = when {
-            sourceSpool != null -> OpenSpoolData.toOpenSpoolData(sourceSpool).copy(
-                spoolId = null
-            )
-            readData != null -> readData!!.copy(
-                spoolId = null
-            )
-            else -> null
-        }
+        readData = buildSpoolModeSourceData(sourceSpool, readData)
 
         dataVersion++
         showSnackbarMessage("Create new spool mode enabled")
