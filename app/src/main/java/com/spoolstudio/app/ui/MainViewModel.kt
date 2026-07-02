@@ -277,6 +277,14 @@ class MainViewModel : ViewModel() {
             return
         }
 
+        showSnackbarMessage(
+            if (spoolMode == SpoolMode.UPDATE) {
+                "Updating spool in Spoolman..."
+            } else {
+                "Saving spool to Spoolman..."
+            }
+        )
+
         viewModelScope.launch {
             try {
                 val result = spoolmanSaveRepository.save(
@@ -316,14 +324,14 @@ class MainViewModel : ViewModel() {
                 } else {
                     showSnackbarMessage(
                         if (result.actionMode == SpoolMode.UPDATE) {
-                            "Updated in Spoolman successfully"
+                            "Spoolman update complete"
                         } else {
-                            "Saved to Spoolman successfully"
+                            "Spool saved to Spoolman"
                         }
                     )
                 }
             } catch (e: Exception) {
-                showSnackbarMessage("Spoolman action failed: ${e.message}")
+                showSnackbarMessage("Spoolman action failed: ${e.message ?: "Unknown error"}")
             }
         }
     }

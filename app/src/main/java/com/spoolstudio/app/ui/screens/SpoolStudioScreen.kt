@@ -218,7 +218,7 @@ fun SpoolStudioScreen(
 
     LaunchedEffect(showSnackbar, snackbarMessage) {
         if (showSnackbar && snackbarMessage.isNotBlank()) {
-            kotlinx.coroutines.delay(2500)
+            kotlinx.coroutines.delay(5500)
             onSnackbarDismiss()
         }
     }

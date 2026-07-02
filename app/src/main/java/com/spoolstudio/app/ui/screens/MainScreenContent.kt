@@ -65,7 +65,10 @@ fun MainScreenContent(
         )
     } else {
         SpoolStudioScreen(
-            onWriteTag = onWriteTag,
+            onWriteTag = { data ->
+                viewModel.showSnackbarMessage("RFID write ready. Hold tag near the phone.")
+                onWriteTag(data)
+            },
             onReadTag = onReadTag,
             readData = viewModel.readData,
             rawReadText = viewModel.rawReadText,
