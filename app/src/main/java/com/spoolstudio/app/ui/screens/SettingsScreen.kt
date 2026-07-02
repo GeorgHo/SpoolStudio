@@ -6,13 +6,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.spoolstudio.app.ui.components.CustomSnackbar
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.Color
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.Icon
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.foundation.background
 
@@ -120,41 +114,16 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            ExposedDropdownMenuBox(
+            SettingsSortDropdown(
+                sortOptions = sortOptions,
+                selectedSort = tempSort,
                 expanded = sortExpanded,
-                onExpandedChange = { sortExpanded = !sortExpanded }
-            ) {
-                OutlinedTextField(
-                    value = sortOptions.find { it.second == tempSort }?.first ?: "Default (ID)",
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Sort (optional)") },
-                    trailingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.ArrowDropDown,
-                            contentDescription = null
-                        )
-                    },
-                    modifier = Modifier
-                        .menuAnchor(MenuAnchorType.PrimaryNotEditable)
-                        .fillMaxWidth()
-                )
-
-                ExposedDropdownMenu(
-                    expanded = sortExpanded,
-                    onDismissRequest = { sortExpanded = false }
-                ) {
-                    sortOptions.forEach { (label, value) ->
-                        DropdownMenuItem(
-                            text = { Text(label) },
-                            onClick = {
-                                tempSort = value
-                                sortExpanded = false
-                            }
-                        )
-                    }
+                onExpandedChange = { sortExpanded = !sortExpanded },
+                onSortSelected = {
+                    tempSort = it
+                    sortExpanded = false
                 }
-            }
+            )
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -174,28 +143,10 @@ fun SettingsScreen(
             val spoolmanMessage = spoolmanError ?: spoolmanStatus
             if (spoolmanMessage != null) {
                 Spacer(modifier = Modifier.height(8.dp))
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (spoolmanError == null) {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = null,
-                            tint = Color(0xFF2E7D32),
-                            modifier = Modifier.size(16.dp)
-                        )
-
-                        Spacer(modifier = Modifier.width(6.dp))
-                    }
-
-                    Text(
-                        text = spoolmanMessage,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (spoolmanError != null)
-                            MaterialTheme.colorScheme.error
-                        else
-                            Color(0xFF2E7D32)
-                    )
-                }
+                SettingsConnectionStatus(
+                    message = spoolmanMessage,
+                    isError = spoolmanError != null
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -245,67 +196,27 @@ fun SettingsScreen(
 
             if (moonrakerMessage != null) {
                 Spacer(modifier = Modifier.height(8.dp))
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (moonrakerError == null) {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = null,
-                            tint = Color(0xFF2E7D32),
-                            modifier = Modifier.size(16.dp)
-                        )
-
-                        Spacer(modifier = Modifier.width(6.dp))
-                    }
-
-                    Text(
-                        text = moonrakerMessage,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (moonrakerError != null)
-                            MaterialTheme.colorScheme.error
-                        else
-                            Color(0xFF2E7D32)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Show Lot Number",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                Switch(
-                    checked = showLotNumber,
-                    onCheckedChange = { onShowLotNumberChanged(it) }
+                SettingsConnectionStatus(
+                    message = moonrakerMessage,
+                    isError = moonrakerError != null
                 )
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "Show Comment Field",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+            SettingsSwitchRow(
+                label = "Show Lot Number",
+                checked = showLotNumber,
+                onCheckedChange = onShowLotNumberChanged
+            )
 
-                Switch(
-                    checked = tempShowCommentField,
-                    onCheckedChange = { tempShowCommentField = it }
-                )
-            }
+            Spacer(modifier = Modifier.height(12.dp))
+
+            SettingsSwitchRow(
+                label = "Show Comment Field",
+                checked = tempShowCommentField,
+                onCheckedChange = { tempShowCommentField = it }
+            )
 
             Spacer(modifier = Modifier.height(12.dp))
 
