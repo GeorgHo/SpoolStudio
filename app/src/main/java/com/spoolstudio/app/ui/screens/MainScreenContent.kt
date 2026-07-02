@@ -115,11 +115,6 @@ fun MainScreenContent(
             },
             onCreateNewSpool = {
                 viewModel.createNewSpoolFromCurrent()
-            },
-            onCreateAndWriteTag = { request ->
-                viewModel.saveToSpoolmanAndWriteTag(request) { ndefMessage ->
-                    onWriteTag(ndefMessage)
-                }
             }
         )
     }

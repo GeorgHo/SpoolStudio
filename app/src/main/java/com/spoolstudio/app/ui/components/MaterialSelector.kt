@@ -36,9 +36,11 @@ fun MaterialSelector(
     var expanded by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
-    val materialNames = (MaterialDatabase.materials.map { it.name } + dynamicMaterials + listOf("Other"))
+    val regularMaterialNames = (MaterialDatabase.materials.map { it.name } + dynamicMaterials)
         .distinct()
-        .sortedWith(compareBy<String> { it == "Other" }.thenBy { it })
+        .filterNot { it == "PLA" || it == "Other" }
+        .sorted()
+    val materialNames = listOf("PLA") + regularMaterialNames + listOf("Other")
 
     LaunchedEffect(selectedMaterial) {
         if (selectedMaterial == "Other") {
@@ -82,7 +84,7 @@ fun MaterialSelector(
             ) {
                 materialNames.forEach { materialName ->
 
-                    if (materialName == "Other") {
+                    if (materialName != "PLA" && materialName == regularMaterialNames.firstOrNull()) {
                         HorizontalDivider()
                     }
 

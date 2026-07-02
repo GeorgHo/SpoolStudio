@@ -36,12 +36,10 @@ fun BrandSelector(
     var expanded by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
-    val brands = (BrandDatabase.brands + dynamicBrands)
+    val regularBrands = (BrandDatabase.brands + dynamicBrands)
         .distinct()
-        .toMutableList()
-        .apply {
-            if (!contains("Other")) add("Other")
-        }
+        .filterNot { it == "Other" || it == "Generic" }
+    val brands = listOf("Other", "Generic") + regularBrands
 
     LaunchedEffect(selectedBrand) {
         if (selectedBrand == "Other") {
@@ -93,7 +91,7 @@ fun BrandSelector(
                         }
                     )
 
-                    if (brand == "Other") {
+                    if (brand == "Generic") {
                         HorizontalDivider()
                     }
                 }

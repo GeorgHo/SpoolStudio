@@ -17,12 +17,12 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun SpoolActionSection(
     primaryActionLabel: String,
-    combinedActionLabel: String,
-    isFormValid: Boolean,
+    isSaveToSpoolmanEnabled: Boolean,
+    isWriteTagEnabled: Boolean,
     onReadTag: () -> Unit,
     onSaveToSpoolman: () -> Unit,
     onWriteTag: () -> Unit,
-    onSaveAndWriteTag: () -> Unit,
+    isNewFromSelectedEnabled: Boolean,
     onCreateNewSpool: () -> Unit,
     onOpenPrinterMapping: () -> Unit
 ) {
@@ -30,30 +30,28 @@ fun SpoolActionSection(
 
     SaveToSpoolmanButton(
         text = primaryActionLabel,
-        enabled = isFormValid,
+        enabled = isSaveToSpoolmanEnabled,
         onClick = onSaveToSpoolman
     )
 
     WriteTagButton(
-        enabled = isFormValid,
+        enabled = isWriteTagEnabled,
         onClick = onWriteTag
-    )
-
-    SaveAndWriteTagButton(
-        text = combinedActionLabel,
-        enabled = isFormValid,
-        onClick = onSaveAndWriteTag
     )
 
     Button(
         onClick = onCreateNewSpool,
+        enabled = isNewFromSelectedEnabled,
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 5.dp)
             .height(45.dp),
         shape = RoundedCornerShape(20.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primary
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+            disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+            disabledContentColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f)
         )
     ) {
         Text(
@@ -139,26 +137,5 @@ fun SaveToSpoolmanButton(text: String, enabled: Boolean = true, onClick: () -> U
         )
     ) {
         Text(text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
-    }
-}
-
-@Composable
-fun SaveAndWriteTagButton(text: String, enabled: Boolean = true, onClick: () -> Unit) {
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 5.dp)
-            .height(45.dp),
-        shape = RoundedCornerShape(20.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary,
-            disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-            disabledContentColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f)
-        )
-    ) {
-        Text(text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onPrimary)
     }
 }

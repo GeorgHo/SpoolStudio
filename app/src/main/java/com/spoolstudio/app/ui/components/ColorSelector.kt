@@ -388,7 +388,7 @@ fun ColorSelector(
                 val normalized = sanitized.ifBlank { null }
                 onColorSelected(normalized)
             },
-            label = { Text("HEX (optional)") },
+            label = { Text("HEX") },
             placeholder = { Text("RRGGBB") },
             prefix = { Text("#") },
             singleLine = true,
@@ -405,13 +405,6 @@ fun ColorSelector(
             ),
             shape = RoundedCornerShape(16.dp)
         )
-
-        Text(
-            text = "Suggested: ${suggestColorName(selectedColor ?: "FFFFFF")}",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
 
     }
 

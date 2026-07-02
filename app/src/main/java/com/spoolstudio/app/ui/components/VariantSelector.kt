@@ -46,7 +46,6 @@ fun VariantSelector(
         .sortedBy { it.lowercase() }
 
     val options = buildList {
-        add(VariantOption("leer", ""))
         add(VariantOption("Basic", "Basic"))
 
         normalized.forEach { value ->
@@ -112,7 +111,7 @@ fun VariantSelector(
                             expanded = false
                         }
                     )
-                    if (option.value == "") {   // ← "leer"
+                    if (option.value == "Basic") {
                         HorizontalDivider()
                     }
                 }

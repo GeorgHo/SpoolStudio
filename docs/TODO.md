@@ -20,12 +20,8 @@
 
 - Add a clear Spoolman sync status for the selected spool.
 - Normalize remaining filament input:
-  - Empty value defaults to `1000 g`.
   - Round or format to two decimal places.
 - Add searchable or autocomplete selection fields for materials, variants, brands, and locations.
-- Add a `Clear all` action to the Spoolman selection area:
-  - Keep `Clear selection` for clearing only the selected Spoolman row.
-  - Use `Clear all` to reset the selected spool and the editable fields below it.
 - Highlight low remaining filament values:
   - Thresholds: `150 g`, `100 g`, `50 g`.
   - Show warning color in the remaining filament field.
@@ -33,9 +29,7 @@
 - Improve visibility and wording of Spoolman and RFID read/write feedback.
 - Make action buttons state-aware:
   - Apply this to every action button where usage prerequisites can be determined reliably.
-  - Enable `New from selected` only when a spool or tag data is loaded.
-  - Enable Spoolman update only when Spoolman-relevant fields changed.
-  - Do not enable Spoolman update for RFID-only changes such as tag temperature values.
+  - Enable Spoolman update only when form values changed.
   - Enable RFID write actions only when valid tag data is available and write mode makes sense.
   - Keep disabled states visually clear so users understand which action is currently possible.
 - Add release documentation:

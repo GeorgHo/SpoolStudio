@@ -4,6 +4,8 @@ import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.domain.models.OpenSpoolData
 import com.spoolstudio.app.ui.SpoolMode
 import com.spoolstudio.app.ui.SpoolmanSaveRequest
+import com.spoolstudio.app.ui.normalizedColorHex
+import com.spoolstudio.app.ui.parseRemainingWeight
 import com.spoolstudio.app.utils.OpenSpoolMaterialMapper
 
 fun resolveMaterialName(filamentType: String, customMaterial: String): String =
@@ -99,6 +101,37 @@ fun buildSpoolmanSaveRequest(
         remainingWeight = remainingWeight,
         existingSpoolId = if (spoolMode == SpoolMode.UPDATE) selectedSpool?.id else null
     )
+
+fun hasSpoolmanSaveChanges(request: SpoolmanSaveRequest, selectedSpool: FilamentSpool?): Boolean {
+    if (selectedSpool == null) return true
+
+    fun normalizedInt(value: String): Int? = value.trim().toIntOrNull()
+
+    val requestedRemainingWeight = parseRemainingWeight(request.remainingWeight)
+        ?: selectedSpool.remainingWeight
+    val selectedRemainingWeight = selectedSpool.remainingWeight
+    val remainingWeightChanged = when {
+        requestedRemainingWeight == null && selectedRemainingWeight == null -> false
+        requestedRemainingWeight == null || selectedRemainingWeight == null -> true
+        else -> kotlin.math.abs(requestedRemainingWeight - selectedRemainingWeight) > 0.01f
+    }
+
+    val requestedLotNr = request.lotNr.trim()
+        .ifBlank { selectedSpool.lotNr.orEmpty().trim() }
+
+    return request.material.trim() != selectedSpool.material.trim() ||
+        request.variant.trim().ifBlank { "Basic" } != selectedSpool.variant.trim().ifBlank { "Basic" } ||
+        request.brand.trim() != selectedSpool.brand.trim() ||
+        normalizedColorHex(request.colorHex) != normalizedColorHex(selectedSpool.colorHex) ||
+        normalizedInt(request.minTemp) != selectedSpool.minTemp ||
+        normalizedInt(request.maxTemp) != selectedSpool.maxTemp ||
+        normalizedInt(request.bedMinTemp) != selectedSpool.bedMinTemp ||
+        normalizedInt(request.bedMaxTemp) != selectedSpool.bedMaxTemp ||
+        request.location.trim().ifBlank { null } != selectedSpool.location?.trim()?.ifBlank { null } ||
+        requestedLotNr != selectedSpool.lotNr.orEmpty().trim() ||
+        request.comment.trim().ifBlank { null } != selectedSpool.comment?.trim()?.ifBlank { null } ||
+        remainingWeightChanged
+}
 
 fun buildOpenSpoolTagData(
     filamentType: String,

@@ -85,7 +85,6 @@ fun SpoolStudioScreen(
     showCommentField: Boolean = false,
     onCreateNewSpool: () -> Unit = {},
     onCreateInSpoolman: (SpoolmanSaveRequest) -> Unit = {},
-    onCreateAndWriteTag: (SpoolmanSaveRequest) -> Unit = {},
 ) {
     var showBambuDialog by remember { mutableStateOf(false) }
     var bambuDialogText by remember { mutableStateOf("") }
@@ -135,6 +134,13 @@ fun SpoolStudioScreen(
         else -> null
     }
 
+    val isWriteActionEnabled = form.isValid() && !form.colorHex.isNullOrBlank()
+    val hasSpoolmanChanges = spoolMode != SpoolMode.UPDATE ||
+        (selectedSpool != null && hasSpoolmanSaveChanges(form.buildSaveRequest(spoolMode, selectedSpool), selectedSpool))
+    val isSaveToSpoolmanEnabled = isWriteActionEnabled && hasSpoolmanChanges
+    val isNewFromSelectedEnabled =
+        spoolMode != SpoolMode.CREATE && (selectedSpool != null || readData != null)
+
     val inlinePrinterMappingStatusColor = when {
         isLoadingPrinterMapping -> MaterialTheme.colorScheme.primary
         printerMappingSaveSuccessful == true -> MaterialTheme.colorScheme.primary
@@ -182,7 +188,11 @@ fun SpoolStudioScreen(
             } else {
                 ""
             }
-            form.comment = sourceSpool.comment ?: ""
+            form.comment = if (spoolMode == SpoolMode.UPDATE) {
+                sourceSpool.comment ?: ""
+            } else {
+                "Created by Spool Studio"
+            }
             form.remainingWeight = sourceSpool.remainingWeight
                 ?.takeIf { it >= 0f }
                 ?.let { weight ->
@@ -310,12 +320,6 @@ fun SpoolStudioScreen(
         SpoolMode.DUPLICATE -> "Duplicate in Spoolman"
     }
 
-    val combinedActionLabel = when (spoolMode) {
-        SpoolMode.CREATE -> "Write to Spoolman + RFID"
-        SpoolMode.UPDATE -> "Update in Spoolman + RFID"
-        SpoolMode.DUPLICATE -> "Duplicate in Spoolman + RFID"
-    }
-
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = Color(0xFFF3E7DE)
@@ -367,8 +371,8 @@ fun SpoolStudioScreen(
 
                     SpoolActionSection(
                         primaryActionLabel = primaryActionLabel,
-                        combinedActionLabel = combinedActionLabel,
-                        isFormValid = isFormValid(),
+                        isSaveToSpoolmanEnabled = isSaveToSpoolmanEnabled,
+                        isWriteTagEnabled = isWriteActionEnabled,
                         onReadTag = onReadTag,
                         onSaveToSpoolman = {
                             onCreateInSpoolman(buildSaveRequest())
@@ -378,9 +382,7 @@ fun SpoolStudioScreen(
                                 onWriteTag(tagData.toJson())
                             }
                         },
-                        onSaveAndWriteTag = {
-                            onCreateAndWriteTag(buildSaveRequest())
-                        },
+                        isNewFromSelectedEnabled = isNewFromSelectedEnabled,
                         onCreateNewSpool = onCreateNewSpool,
                         onOpenPrinterMapping = {
                             toolhead1SpoolId = printerTool1SpoolId
