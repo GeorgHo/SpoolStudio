@@ -19,10 +19,6 @@
 ## Features after structure cleanup
 
 - Add a clear Spoolman sync status for the selected spool.
-- Highlight low remaining filament values:
-  - Thresholds: `150 g`, `100 g`, `50 g`.
-  - Show warning color in the remaining filament field.
-  - Show warning color in the Spool Info popup remaining percentage.
 - Improve visibility and wording of Spoolman and RFID read/write feedback.
 - Make action buttons state-aware:
   - Apply this to every action button where usage prerequisites can be determined reliably.

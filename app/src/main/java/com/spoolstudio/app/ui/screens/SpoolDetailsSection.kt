@@ -6,7 +6,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -19,6 +21,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.spoolstudio.app.ui.remainingWeightWarningThreshold
 
 @Composable
 fun SpoolDetailsSection(
@@ -33,10 +36,21 @@ fun SpoolDetailsSection(
     onCommentChange: (String) -> Unit
 ) {
     val focusManager = LocalFocusManager.current
-    var remainingWeightHadFocus by remember { mutableStateOf(false) }
+    var remainingWeightWasFocused by remember { mutableStateOf(false) }
+    val remainingWarningColor = when (remainingWeightWarningThreshold(remainingWeight)) {
+        150 -> MaterialTheme.colorScheme.tertiary
+        100 -> MaterialTheme.colorScheme.error.copy(alpha = 0.82f)
+        50 -> MaterialTheme.colorScheme.error
+        else -> null
+    }
+    val remainingTextColor = remainingWarningColor ?: MaterialTheme.colorScheme.onSurface
+    val remainingLabelColor = remainingWarningColor ?: MaterialTheme.colorScheme.onSurfaceVariant
 
     fun normalizeRemainingWeight() {
-        formatRemainingWeightInput(remainingWeight)?.let(onRemainingWeightChange)
+        val formatted = formatRemainingWeightInput(remainingWeight) ?: return
+        if (formatted != remainingWeight) {
+            onRemainingWeightChange(formatted)
+        }
     }
 
     if (showLotNumber) {
@@ -70,14 +84,21 @@ fun SpoolDetailsSection(
         modifier = Modifier
             .fillMaxWidth()
             .onFocusChanged { focusState ->
-                if (focusState.isFocused) {
-                    remainingWeightHadFocus = true
-                } else if (remainingWeightHadFocus) {
+                if (remainingWeightWasFocused && !focusState.isFocused) {
                     normalizeRemainingWeight()
                 }
+                remainingWeightWasFocused = focusState.isFocused
             },
         singleLine = true,
         isError = !isRemainingWeightValid,
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedTextColor = remainingTextColor,
+            unfocusedTextColor = remainingTextColor,
+            focusedLabelColor = remainingLabelColor,
+            unfocusedLabelColor = remainingLabelColor,
+            focusedBorderColor = remainingWarningColor ?: MaterialTheme.colorScheme.primary,
+            unfocusedBorderColor = remainingWarningColor ?: MaterialTheme.colorScheme.outline
+        ),
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Decimal,
             imeAction = ImeAction.Done

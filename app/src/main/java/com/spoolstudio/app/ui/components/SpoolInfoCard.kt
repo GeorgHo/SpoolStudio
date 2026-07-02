@@ -41,6 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.spoolstudio.app.domain.models.FilamentSpool
+import com.spoolstudio.app.ui.remainingWeightWarningThreshold
 import kotlinx.coroutines.delay
 
 @Composable
@@ -174,8 +175,21 @@ fun SpoolInfoCard(
                                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
                             )
 
+                            val remainingWarningColor = when (
+                                remainingWeightWarningThreshold(spool.remainingWeight)
+                            ) {
+                                150 -> MaterialTheme.colorScheme.tertiary
+                                100 -> MaterialTheme.colorScheme.error.copy(alpha = 0.82f)
+                                50 -> MaterialTheme.colorScheme.error
+                                else -> null
+                            }
+
                             InfoRow("Used", "${spool.usedWeight.toInt()} g")
-                            InfoRow("Remaining", "${(spool.remainingWeight ?: 0f).toInt()} g")
+                            InfoRow(
+                                "Remaining",
+                                "${(spool.remainingWeight ?: 0f).toInt()} g",
+                                valueColor = remainingWarningColor
+                            )
 
                             val initialWeight = calculateInitialWeight(spool)
                             if (initialWeight != null) {
@@ -232,7 +246,8 @@ fun SpoolInfoCard(
 
                             Text(
                                 text = "$remainingPercent% remaining",
-                                style = MaterialTheme.typography.bodyMedium
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = remainingWarningColor ?: MaterialTheme.colorScheme.onSurface
                             )
 
                             spool.location?.takeIf { it.isNotBlank() }?.let {
@@ -300,7 +315,7 @@ fun SpoolInfoCard(
 }
 
 @Composable
-private fun InfoRow(label: String, value: String) {
+private fun InfoRow(label: String, value: String, valueColor: Color? = null) {
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(
             text = label,
@@ -313,7 +328,7 @@ private fun InfoRow(label: String, value: String) {
             style = MaterialTheme.typography.bodyLarge.copy(
                 fontWeight = FontWeight.Medium
             ),
-            color = if (value == "-") {
+            color = valueColor ?: if (value == "-") {
                 MaterialTheme.colorScheme.onSurfaceVariant
             } else {
                 MaterialTheme.colorScheme.onSurface

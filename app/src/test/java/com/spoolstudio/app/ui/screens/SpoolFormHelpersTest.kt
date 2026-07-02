@@ -2,6 +2,7 @@ package com.spoolstudio.app.ui.screens
 
 import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.ui.SpoolMode
+import com.spoolstudio.app.ui.remainingWeightWarningThreshold
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -36,6 +37,15 @@ class SpoolFormHelpersTest {
         assertEquals("123.46", formatRemainingWeightInput("123,456"))
         assertEquals("123.46", formatRemainingWeightInput("123.456"))
         assertNull(formatRemainingWeightInput("abc"))
+    }
+
+    @Test
+    fun remainingWeightWarningThresholdUsesLowFilamentLimits() {
+        assertNull(remainingWeightWarningThreshold(151f))
+        assertEquals(150, remainingWeightWarningThreshold(150f))
+        assertEquals(100, remainingWeightWarningThreshold("100,00"))
+        assertEquals(50, remainingWeightWarningThreshold("49.99"))
+        assertNull(remainingWeightWarningThreshold(""))
     }
 
     @Test

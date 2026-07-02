@@ -20,6 +20,17 @@ fun parseRemainingWeight(value: String): Float? =
         ?.toFloatOrNull()
         ?.takeIf { it >= 0f }
 
+fun remainingWeightWarningThreshold(value: Float?): Int? = when {
+    value == null -> null
+    value <= 50f -> 50
+    value <= 100f -> 100
+    value <= 150f -> 150
+    else -> null
+}
+
+fun remainingWeightWarningThreshold(value: String): Int? =
+    remainingWeightWarningThreshold(parseRemainingWeight(value))
+
 fun buildTagData(
     spool: FilamentSpool,
     request: SpoolmanSaveRequest,
