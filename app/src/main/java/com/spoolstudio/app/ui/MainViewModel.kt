@@ -412,21 +412,21 @@ class MainViewModel : ViewModel() {
                     sortBy = spoolmanSortBy,
                     forceRefresh = true
                 )
-                spools = catalog.spools
-                availableBrands = catalog.vendorNames
-                availableMaterials = catalog.materialNames
-                availableVariants = catalog.variantNames
-                availableLocations = catalog.locationNames
+                applySpoolmanCatalogState(buildSpoolmanCatalogState(catalog))
             } catch (_: Exception) {
-                spools = emptyList()
-                availableBrands = emptyList()
-                availableMaterials = emptyList()
-                availableVariants = emptyList()
-                availableLocations = emptyList()
+                applySpoolmanCatalogState(emptySpoolmanCatalogState())
             } finally {
                 isLoadingSpools = false
             }
         }
+    }
+
+    private fun applySpoolmanCatalogState(state: SpoolmanCatalogState) {
+        spools = state.spools
+        availableBrands = state.availableBrands
+        availableMaterials = state.availableMaterials
+        availableVariants = state.availableVariants
+        availableLocations = state.availableLocations
     }
 
     fun loadCurrentPrinterMapping() {
