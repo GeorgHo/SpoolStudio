@@ -16,7 +16,7 @@ class MainViewModel : ViewModel() {
     private val spoolmanCatalogRepository = SpoolmanCatalogRepository()
     private val saveOrUpdateSpoolmanSpoolUseCase = SaveOrUpdateSpoolmanSpoolUseCase()
     private val moonrakerConnectionRepository = MoonrakerConnectionRepository()
-    private val printerMappingRepository = PrinterMappingRepository()
+    private val printerMappingUseCase = PrinterMappingUseCase()
 
     var readData by mutableStateOf<OpenSpoolData?>(null)
         private set
@@ -438,25 +438,23 @@ class MainViewModel : ViewModel() {
             printerMappingStatusMessage = null
 
             try {
-                val result = printerMappingRepository.load(normalizeConnectionUrl(url))
-                applyPrinterMappingSnapshot(result.snapshot)
+                when (val result = printerMappingUseCase.load(normalizeConnectionUrl(url))) {
+                    is PrinterMappingOperationResult.Loaded -> {
+                        applyPrinterMappingSnapshot(result.snapshot)
+                        printerMappingLoadVersion++
+                        printerMappingSaveSuccessful = null
+                        printerMappingStatusMessage = result.message
+                        showSnackbarMessage(result.message)
+                    }
 
-                printerMappingLoadVersion++
-                printerMappingSaveSuccessful = null
+                    is PrinterMappingOperationResult.Failed -> {
+                        printerMappingSaveSuccessful = false
+                        printerMappingStatusMessage = result.message
+                        showSnackbarMessage(result.message)
+                    }
 
-                val message = if (!result.activeSpoolAvailable) {
-                    "Printer mapping loaded (active spool not available)"
-                } else {
-                    "Printer mapping loaded"
+                    is PrinterMappingOperationResult.Saved -> Unit
                 }
-
-                printerMappingStatusMessage = message
-                showSnackbarMessage(message)
-            } catch (e: Exception) {
-                val message = printerMappingLoadErrorMessage(e)
-                printerMappingSaveSuccessful = false
-                printerMappingStatusMessage = message
-                showSnackbarMessage(message)
             } finally {
                 printerMappingOperation = null
                 isLoadingPrinterMapping = false
@@ -492,25 +490,30 @@ class MainViewModel : ViewModel() {
             printerMappingSaveSuccessful = null
             printerMappingStatusMessage = null
             try {
-                val snapshot = printerMappingRepository.save(
+                when (val result = printerMappingUseCase.save(
                     baseUrl = normalizeConnectionUrl(url),
                     toolhead1SpoolId = e0,
                     toolhead2SpoolId = e1,
                     toolhead3SpoolId = e2,
                     toolhead4SpoolId = e3,
                     activeSpoolId = activeSpoolId
-                )
-                applyPrinterMappingSnapshot(snapshot)
+                )) {
+                    is PrinterMappingOperationResult.Saved -> {
+                        applyPrinterMappingSnapshot(result.snapshot)
+                        printerMappingLoadVersion++
+                        printerMappingSaveSuccessful = true
+                        printerMappingStatusMessage = result.message
+                        showSnackbarMessage(result.message)
+                    }
 
-                printerMappingLoadVersion++
-                printerMappingSaveSuccessful = true
-                printerMappingStatusMessage = "Mapping saved to printer"
-                showSnackbarMessage("Mapping saved to printer")
-            } catch (e: Exception) {
-                val message = printerMappingSaveErrorMessage(e)
-                printerMappingSaveSuccessful = false
-                printerMappingStatusMessage = message
-                showSnackbarMessage(message)
+                    is PrinterMappingOperationResult.Failed -> {
+                        printerMappingSaveSuccessful = false
+                        printerMappingStatusMessage = result.message
+                        showSnackbarMessage(result.message)
+                    }
+
+                    is PrinterMappingOperationResult.Loaded -> Unit
+                }
             } finally {
                 printerMappingOperation = null
                 isLoadingPrinterMapping = false
