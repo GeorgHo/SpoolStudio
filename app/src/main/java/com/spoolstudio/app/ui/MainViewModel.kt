@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 
 class MainViewModel : ViewModel() {
     private val spoolmanCatalogRepository = SpoolmanCatalogRepository()
-    private val spoolmanSaveRepository = SpoolmanSaveRepository()
+    private val saveOrUpdateSpoolmanSpoolUseCase = SaveOrUpdateSpoolmanSpoolUseCase()
     private val moonrakerConnectionRepository = MoonrakerConnectionRepository()
     private val printerMappingRepository = PrinterMappingRepository()
 
@@ -247,36 +247,6 @@ class MainViewModel : ViewModel() {
     }
 
     fun saveToSpoolman(request: SpoolmanSaveRequest) {
-        saveSpoolmanInternal(request, false, null)
-    }
-
-    fun saveToSpoolmanAndWriteTag(
-        request: SpoolmanSaveRequest,
-        onWriteTag: (String) -> Unit
-    ) {
-        saveSpoolmanInternal(request, true, onWriteTag)
-    }
-
-    private fun saveSpoolmanInternal(
-        request: SpoolmanSaveRequest,
-        writeTag: Boolean,
-        onWriteTag: ((String) -> Unit)?
-    ) {
-        val validationError = validateBeforeSave(
-            spoolmanUrl = spoolmanUrl,
-            material = request.material,
-            brand = request.brand,
-            colorName = request.colorName,
-            colorHex = request.colorHex,
-            minTemp = request.minTemp,
-            maxTemp = request.maxTemp,
-            remainingWeight = request.remainingWeight
-        )
-        if (validationError != null) {
-            showSnackbarMessage(validationError)
-            return
-        }
-
         showSnackbarMessage(
             if (spoolMode == SpoolMode.UPDATE) {
                 "Updating spool in Spoolman..."
@@ -287,7 +257,7 @@ class MainViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                val result = spoolmanSaveRepository.save(
+                when (val saveResult = saveOrUpdateSpoolmanSpoolUseCase.execute(
                     SpoolmanSaveInput(
                         baseUrl = spoolmanUrl,
                         request = request,
@@ -296,39 +266,25 @@ class MainViewModel : ViewModel() {
                         readData = readData,
                         currentSpoolId = currentSpoolId
                     )
-                )
-
-                selectedSpool = result.finalSpool
-                currentSpoolId = result.finalSpool.id?.toString()
-                val tagData = result.tagData
-                if (tagData != null) {
-                    readData = tagData
-                }
-                spoolMode = SpoolMode.UPDATE
-                dataVersion++
-                loadSpoolmanFilaments()
-
-                if (writeTag && onWriteTag != null) {
-                    if (tagData != null) {
-                        onWriteTag(tagData.toJson())
-                        showSnackbarMessage(
-                            if (result.actionMode == SpoolMode.UPDATE) {
-                                "Spoolman updated. Hold NFC tag to write."
-                            } else {
-                                "Saved to Spoolman with unique lot number. Hold NFC tag to write."
-                            }
-                        )
-                    } else {
-                        showSnackbarMessage("Saved to Spoolman, but this material cannot be written to an OpenSpool tag")
+                )) {
+                    is SaveOrUpdateSpoolmanSpoolResult.ValidationFailed -> {
+                        showSnackbarMessage(saveResult.message)
                     }
-                } else {
-                    showSnackbarMessage(
-                        if (result.actionMode == SpoolMode.UPDATE) {
-                            "Spoolman update complete"
-                        } else {
-                            "Spool saved to Spoolman"
+
+                    is SaveOrUpdateSpoolmanSpoolResult.Saved -> {
+                        val result = saveResult.result
+                        selectedSpool = result.finalSpool
+                        currentSpoolId = result.finalSpool.id?.toString()
+                        val tagData = result.tagData
+                        if (tagData != null) {
+                            readData = tagData
                         }
-                    )
+                        spoolMode = SpoolMode.UPDATE
+                        dataVersion++
+                        loadSpoolmanFilaments()
+
+                        showSnackbarMessage(saveResult.successMessage)
+                    }
                 }
             } catch (e: Exception) {
                 showSnackbarMessage("Spoolman action failed: ${e.message ?: "Unknown error"}")
