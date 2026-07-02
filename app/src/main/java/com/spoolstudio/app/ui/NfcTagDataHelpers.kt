@@ -8,6 +8,16 @@ data class NfcTagDataResult(
     val spoolMode: SpoolMode
 )
 
+data class NfcTagReadStateUpdate(
+    val rawReadText: String?,
+    val rawReadVersion: Int,
+    val readData: OpenSpoolData?,
+    val currentSpoolId: String?,
+    val spoolMode: SpoolMode?,
+    val clearSelectedSpool: Boolean,
+    val incrementDataVersion: Boolean
+)
+
 fun parseNfcTagData(data: String?): NfcTagDataResult? {
     val openSpoolData = data?.let { OpenSpoolData.fromJson(it) } ?: return null
 
@@ -21,3 +31,18 @@ fun parseNfcTagData(data: String?): NfcTagDataResult? {
         }
     )
 }
+
+fun buildNfcTagReadStateUpdate(
+    rawData: String?,
+    currentRawReadVersion: Int,
+    parsedTagData: NfcTagDataResult?
+): NfcTagReadStateUpdate =
+    NfcTagReadStateUpdate(
+        rawReadText = rawData,
+        rawReadVersion = currentRawReadVersion + 1,
+        readData = parsedTagData?.readData,
+        currentSpoolId = parsedTagData?.currentSpoolId,
+        spoolMode = parsedTagData?.spoolMode,
+        clearSelectedSpool = parsedTagData != null,
+        incrementDataVersion = parsedTagData != null
+    )

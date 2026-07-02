@@ -135,16 +135,26 @@ class MainViewModel : ViewModel() {
     fun handleNfcTagDetected(data: String?) {
         Log.d("MainViewModel", "handleNfcTagDetected called with data: $data")
 
-        rawReadText = data
-        rawReadVersion++
-
         val tagData = parseNfcTagData(data)
+        val stateUpdate = buildNfcTagReadStateUpdate(
+            rawData = data,
+            currentRawReadVersion = rawReadVersion,
+            parsedTagData = tagData
+        )
+
+        rawReadText = stateUpdate.rawReadText
+        rawReadVersion = stateUpdate.rawReadVersion
+
         if (tagData != null) {
-            readData = tagData.readData
-            currentSpoolId = tagData.currentSpoolId
-            selectedSpool = null
-            spoolMode = tagData.spoolMode
-            dataVersion++
+            readData = stateUpdate.readData
+            currentSpoolId = stateUpdate.currentSpoolId
+            if (stateUpdate.clearSelectedSpool) {
+                selectedSpool = null
+            }
+            stateUpdate.spoolMode?.let { spoolMode = it }
+            if (stateUpdate.incrementDataVersion) {
+                dataVersion++
+            }
         } else {
             Log.d("MainViewModel", "Raw RFID data is not OpenSpool JSON")
         }
