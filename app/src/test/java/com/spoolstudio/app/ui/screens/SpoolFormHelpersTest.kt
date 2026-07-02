@@ -30,6 +30,15 @@ class SpoolFormHelpersTest {
     }
 
     @Test
+    fun formatRemainingWeightDefaultsBlankAndRoundsToTwoDecimals() {
+        assertEquals("1000.00", formatRemainingWeightInput(""))
+        assertEquals("123.00", formatRemainingWeightInput("123"))
+        assertEquals("123.46", formatRemainingWeightInput("123,456"))
+        assertEquals("123.46", formatRemainingWeightInput("123.456"))
+        assertNull(formatRemainingWeightInput("abc"))
+    }
+
+    @Test
     fun validationMessageReportsFirstInvalidField() {
         assertEquals(
             "Please enter a custom filament type",

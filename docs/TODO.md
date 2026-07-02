@@ -19,8 +19,6 @@
 ## Features after structure cleanup
 
 - Add a clear Spoolman sync status for the selected spool.
-- Normalize remaining filament input:
-  - Round or format to two decimal places.
 - Add searchable or autocomplete selection fields for materials, variants, brands, and locations.
 - Highlight low remaining filament values:
   - Thresholds: `150 g`, `100 g`, `50 g`.

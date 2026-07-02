@@ -7,6 +7,7 @@ import com.spoolstudio.app.ui.SpoolmanSaveRequest
 import com.spoolstudio.app.ui.normalizedColorHex
 import com.spoolstudio.app.ui.parseRemainingWeight
 import com.spoolstudio.app.utils.OpenSpoolMaterialMapper
+import java.util.Locale
 
 fun resolveMaterialName(filamentType: String, customMaterial: String): String =
     if (filamentType == "Other" && customMaterial.isNotBlank()) customMaterial else filamentType
@@ -35,6 +36,16 @@ fun isSpoolMaterialValid(filamentType: String, customMaterial: String): Boolean 
 fun isRemainingWeightValid(remainingWeight: String): Boolean {
     val normalized = remainingWeight.trim().replace(",", ".")
     return normalized.isBlank() || normalized.toFloatOrNull()?.let { it >= 0f } == true
+}
+
+fun formatRemainingWeightInput(remainingWeight: String): String? {
+    val parsed = if (remainingWeight.isBlank()) {
+        1000f
+    } else {
+        parseRemainingWeight(remainingWeight) ?: return null
+    }
+
+    return String.format(Locale.US, "%.2f", parsed)
 }
 
 fun isSpoolFormValid(

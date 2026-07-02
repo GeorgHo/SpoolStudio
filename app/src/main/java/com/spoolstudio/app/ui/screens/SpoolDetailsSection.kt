@@ -35,10 +35,8 @@ fun SpoolDetailsSection(
     val focusManager = LocalFocusManager.current
     var remainingWeightHadFocus by remember { mutableStateOf(false) }
 
-    fun applyDefaultRemainingWeightIfBlank() {
-        if (remainingWeight.isBlank()) {
-            onRemainingWeightChange("1000")
-        }
+    fun normalizeRemainingWeight() {
+        formatRemainingWeightInput(remainingWeight)?.let(onRemainingWeightChange)
     }
 
     if (showLotNumber) {
@@ -75,7 +73,7 @@ fun SpoolDetailsSection(
                 if (focusState.isFocused) {
                     remainingWeightHadFocus = true
                 } else if (remainingWeightHadFocus) {
-                    applyDefaultRemainingWeightIfBlank()
+                    normalizeRemainingWeight()
                 }
             },
         singleLine = true,
@@ -86,7 +84,7 @@ fun SpoolDetailsSection(
         ),
         keyboardActions = KeyboardActions(
             onDone = {
-                applyDefaultRemainingWeightIfBlank()
+                normalizeRemainingWeight()
                 focusManager.clearFocus()
             }
         ),
