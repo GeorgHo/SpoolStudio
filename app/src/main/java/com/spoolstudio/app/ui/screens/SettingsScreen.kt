@@ -16,65 +16,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.foundation.background
 
-private fun normalizeUrl(url: String): String {
-    return url.trim().removeSuffix("/")
-}
-
-private fun normalizeMoonrakerUrl(url: String): String {
-    var result = url.trim()
-
-    if (result.isBlank()) return ""
-
-    if (!result.startsWith("http://") && !result.startsWith("https://")) {
-        result = "http://$result"
-    }
-
-    result = result.replace(Regex("/(\\d{2,5})(/|$)")) { match ->
-        val port = match.groupValues[1]
-        ":$port/"
-    }
-
-    return result.removeSuffix("/")
-}
-private fun hasSettingsChanges(
-    tempSpoolmanUrl: String,
-    savedSpoolmanUrl: String,
-    tempMoonrakerUrl: String,
-    savedMoonrakerUrl: String,
-    tempSort: String,
-    savedSort: String,
-    tempBambuKey: String,
-    savedBambuKey: String,
-    tempShowCommentField: Boolean,
-    savedShowCommentField: Boolean
-): Boolean {
-    return normalizeUrl(tempSpoolmanUrl) != normalizeUrl(savedSpoolmanUrl) ||
-            normalizeUrl(tempMoonrakerUrl) != normalizeUrl(savedMoonrakerUrl) ||
-            normalizeSort(tempSort) != normalizeSort(savedSort) ||
-            tempBambuKey.trim().uppercase() != savedBambuKey.trim().uppercase() ||
-            tempShowCommentField != savedShowCommentField
-}
-
-private fun runUrlRetestIfNeeded(
-    currentValue: String,
-    lastTestedValue: String,
-    isTesting: Boolean,
-    triggeredManually: Boolean,
-    onTest: (String) -> Unit,
-    onLastTestedChange: (String) -> Unit
-) {
-    if (isTesting || triggeredManually) return
-
-    val normalized = normalizeUrl(currentValue)
-    if (normalized.isNotBlank() && normalized != lastTestedValue) {
-        onTest(currentValue)
-        onLastTestedChange(normalized)
-    }
-}
-private fun normalizeSort(sort: String): String {
-    return sort.ifBlank { "" }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
@@ -116,10 +57,10 @@ fun SettingsScreen(
     var moonrakerTestTriggeredManually by remember { mutableStateOf(false) }
 
     var lastTestedSpoolmanUrl by remember(spoolmanUrl) {
-        mutableStateOf(normalizeUrl(spoolmanUrl))
+        mutableStateOf(normalizeSettingsUrl(spoolmanUrl))
     }
     var lastTestedMoonrakerUrl by remember(moonrakerUrl) {
-        mutableStateOf(normalizeUrl(moonrakerUrl))
+        mutableStateOf(normalizeSettingsUrl(moonrakerUrl))
     }
 
     val sortOptions = listOf(
@@ -221,7 +162,7 @@ fun SettingsScreen(
                 onClick = {
                     spoolmanTestTriggeredManually = true
                     onTestSpoolmanConnection(tempUrl)
-                    lastTestedSpoolmanUrl = normalizeUrl(tempUrl)
+                    lastTestedSpoolmanUrl = normalizeSettingsUrl(tempUrl)
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !isTestingSpoolman,
@@ -271,7 +212,7 @@ fun SettingsScreen(
                     .onFocusChanged { focusState ->
                         if (!focusState.isFocused) {
                             runUrlRetestIfNeeded(
-                                currentValue = normalizeMoonrakerUrl(tempMoonrakerUrl),
+                                currentValue = normalizeMoonrakerSettingsUrl(tempMoonrakerUrl),
                                 lastTestedValue = lastTestedMoonrakerUrl,
                                 isTesting = isTestingMoonraker,
                                 triggeredManually = moonrakerTestTriggeredManually,
@@ -288,7 +229,7 @@ fun SettingsScreen(
             Button(
                 onClick = {
                     moonrakerTestTriggeredManually = true
-                    val normalizedMoonrakerUrl = normalizeMoonrakerUrl(tempMoonrakerUrl)
+                    val normalizedMoonrakerUrl = normalizeMoonrakerSettingsUrl(tempMoonrakerUrl)
                     tempMoonrakerUrl = normalizedMoonrakerUrl
                     onTestMoonrakerConnection(normalizedMoonrakerUrl)
                     lastTestedMoonrakerUrl = normalizedMoonrakerUrl
@@ -409,9 +350,9 @@ fun SettingsScreen(
                 Button(
                     onClick = {
                         onSave(
-                            normalizeUrl(tempUrl),
-                            normalizeMoonrakerUrl(tempMoonrakerUrl),
-                            normalizeSort(tempSort),
+                            normalizeSettingsUrl(tempUrl),
+                            normalizeMoonrakerSettingsUrl(tempMoonrakerUrl),
+                            normalizeSettingsSort(tempSort),
                             tempBambuKey,
                             tempShowCommentField
                         )
