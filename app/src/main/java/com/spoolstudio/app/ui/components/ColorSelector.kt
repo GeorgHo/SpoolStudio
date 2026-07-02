@@ -176,21 +176,8 @@ fun ColorSelector(
         detectedPhotoName = suggestColorName(detectedHex)
     }
 
-    val commonColors = mapOf(
-        "White" to "FFFFFF",
-        "Red" to "FF0000",
-        "Blue" to "0000FF",
-        "Green" to "00FF00",
-        "Yellow" to "FFFF00",
-        "Orange" to "FFA500",
-        "Pink" to "FFC0CB",
-        "Black" to "000000"
-    )
-
     val normalizedColor = normalizeHexColor(selectedColor)
-    val presetName = normalizedColor?.let { color ->
-        commonColors.entries.find { it.value.equals(color, ignoreCase = true) }?.key
-    }
+    val presetName = presetNameForColor(normalizedColor)
     val isPresetColor = presetName != null
 
     LaunchedEffect(selectedColor) {
@@ -205,12 +192,7 @@ fun ColorSelector(
         colorNameInput = colorName
     }
 
-    val displayValue = when {
-        selectedColor == null -> "No Color"
-        isPresetColor -> presetName!!
-        colorName.isNotBlank() -> colorName
-        else -> suggestColorName(normalizedColor ?: "FFFFFF")
-    }
+    val displayValue = displayNameForSelectedColor(selectedColor, colorName)
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         ExposedDropdownMenuBox(
@@ -281,7 +263,7 @@ fun ColorSelector(
 
                 HorizontalDivider()
 
-                commonColors.forEach { (name, hex) ->
+                commonColorPresets.forEach { (name, hex) ->
                     DropdownMenuItem(
                         text = {
                             Row(
@@ -378,15 +360,7 @@ fun ColorSelector(
         OutlinedTextField(
             value = selectedColor ?: "",
             onValueChange = { input ->
-                val sanitized = input
-                    .trim()
-                    .removePrefix("#")
-                    .uppercase()
-                    .filter { it in "0123456789ABCDEF" }
-                    .take(6)
-
-                val normalized = sanitized.ifBlank { null }
-                onColorSelected(normalized)
+                onColorSelected(sanitizeHexColorInput(input))
             },
             label = { Text("HEX") },
             placeholder = { Text("RRGGBB") },
@@ -449,19 +423,7 @@ fun ColorSelector(
                             onClick = {
                                 onColorSelected(originalColor)
 
-                                val selectedOriginalColor = originalColor
-
-                                if (selectedOriginalColor.isNullOrBlank()) {
-                                    onColorNameChange("")
-                                } else {
-                                    val originalPreset = commonColors.entries.find {
-                                        it.value.equals(selectedOriginalColor, ignoreCase = true)
-                                    }?.key
-
-                                    onColorNameChange(
-                                        originalPreset ?: suggestColorName(selectedOriginalColor)
-                                    )
-                                }
+                                onColorNameChange(colorNameForSelectedColor(originalColor))
 
                                 showColorPicker = false
                             },
