@@ -52,6 +52,8 @@ fun SpoolmanFilamentDropdown(
 ) {
     var expanded by remember { mutableStateOf(false) }
     var suppressNextToggle by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    val filteredFilaments = filterSpoolmanDropdownFilaments(filaments, searchQuery)
 
     LaunchedEffect(currentSpoolId, filaments, selectedFilament?.id) {
         val targetId = currentSpoolId?.toIntOrNull() ?: return@LaunchedEffect
@@ -71,12 +73,15 @@ fun SpoolmanFilamentDropdown(
             } else {
                 expanded = shouldExpand && filaments.isNotEmpty() && !isLoading
             }
+            if (!expanded) {
+                searchQuery = ""
+            }
         },
         modifier = modifier
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
             OutlinedTextField(
-                value = selectedFilament?.let { "${it.brand} - ${it.spoolmanName} - ${it.material}" } ?: "",
+                value = selectedFilament?.let(::spoolmanDropdownLabel) ?: "",
                 onValueChange = { },
                 readOnly = true,
                 label = { Text("Select from Spoolman") },
@@ -139,7 +144,10 @@ fun SpoolmanFilamentDropdown(
 
         DropdownMenu(
             expanded = expanded,
-            onDismissRequest = { expanded = false },
+            onDismissRequest = {
+                expanded = false
+                searchQuery = ""
+            },
             modifier = Modifier.clip(RoundedCornerShape(20.dp))
         ) {
             if (onClearAll != null) {
@@ -153,14 +161,27 @@ fun SpoolmanFilamentDropdown(
                 HorizontalDivider()
             }
 
-            filaments.forEach { filament ->
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it.take(60) },
+                label = { Text("Search") },
+                singleLine = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                textStyle = MaterialTheme.typography.bodyMedium,
+                shape = RoundedCornerShape(16.dp)
+            )
+
+            filteredFilaments.forEach { filament ->
                 DropdownMenuItem(
                     text = {
-                        Text("${filament.brand} - ${filament.spoolmanName} - ${filament.material}")
+                        Text(spoolmanDropdownLabel(filament))
                     },
                     onClick = {
                         onFilamentSelected(filament)
                         expanded = false
+                        searchQuery = ""
                     }
                 )
             }
