@@ -3,10 +3,8 @@ package com.spoolstudio.app.ui.components
 import com.spoolstudio.app.utils.formatColorName
 import com.spoolstudio.app.utils.suggestColorName
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,14 +29,10 @@ import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -47,18 +41,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.zIndex
-import kotlin.math.PI
-import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.sin
-import kotlin.math.sqrt
 import androidx.compose.ui.focus.onFocusChanged
 import com.spoolstudio.app.utils.normalizeHexColor
 import android.graphics.Bitmap
@@ -559,210 +547,4 @@ private fun Bitmap.rotate90IfLandscape(): Bitmap {
     }
 
     return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
-}
-
-@Composable
-private fun NoColorIcon(size: androidx.compose.ui.unit.Dp) {
-    val outlineColor = MaterialTheme.colorScheme.outline
-    Canvas(
-        modifier = Modifier
-            .size(size)
-    ) {
-        drawCircle(color = outlineColor, style = Stroke(1.dp.toPx()))
-        drawLine(
-            color = outlineColor,
-            start = Offset(this.size.width * 0.15f, this.size.height * 0.85f),
-            end = Offset(this.size.width * 0.85f, this.size.height * 0.15f),
-            strokeWidth = 1.5.dp.toPx()
-        )
-    }
-}
-
-@Composable
-private fun ColorWheel(
-    selectedColor: String,
-    onColorSelected: (String) -> Unit
-) {
-    var hue by remember { mutableFloatStateOf(0f) }
-    var saturation by remember { mutableFloatStateOf(1f) }
-    var brightness by remember { mutableFloatStateOf(1f) }
-
-    var redValue by remember { mutableIntStateOf(255) }
-    var greenValue by remember { mutableIntStateOf(0) }
-    var blueValue by remember { mutableIntStateOf(0) }
-
-    // Initialize sliders with current selected color
-    LaunchedEffect(selectedColor) {
-        val currentColor = android.graphics.Color.parseColor("#$selectedColor")
-        val hsv = FloatArray(3)
-        android.graphics.Color.colorToHSV(currentColor, hsv)
-        hue = hsv[0]
-        saturation = hsv[1]
-        brightness = hsv[2]
-
-        redValue = android.graphics.Color.red(currentColor)
-        greenValue = android.graphics.Color.green(currentColor)
-        blueValue = android.graphics.Color.blue(currentColor)
-    }
-
-    fun updateFromHSV() {
-        val color = android.graphics.Color.HSVToColor(floatArrayOf(hue, saturation, brightness))
-        val hex = String.format("%06X", 0xFFFFFF and color)
-        onColorSelected(hex)
-    }
-
-    fun updateFromRGB() {
-        val color = android.graphics.Color.rgb(redValue, greenValue, blueValue)
-        val hex = String.format("%06X", 0xFFFFFF and color)
-        onColorSelected(hex)
-    }
-
-    fun updateBrightnessOnly() {
-        // Just update brightness without affecting RGB sliders
-        val color = android.graphics.Color.HSVToColor(floatArrayOf(hue, saturation, brightness))
-        val hex = String.format("%06X", 0xFFFFFF and color)
-        onColorSelected(hex)
-    }
-
-    fun updateRedOnly() {
-        val color = android.graphics.Color.rgb(redValue, greenValue, blueValue)
-        val hex = String.format("%06X", 0xFFFFFF and color)
-        onColorSelected(hex)
-    }
-
-    fun updateGreenOnly() {
-        val color = android.graphics.Color.rgb(redValue, greenValue, blueValue)
-        val hex = String.format("%06X", 0xFFFFFF and color)
-        onColorSelected(hex)
-    }
-
-    fun updateBlueOnly() {
-        val color = android.graphics.Color.rgb(redValue, greenValue, blueValue)
-        val hex = String.format("%06X", 0xFFFFFF and color)
-        onColorSelected(hex)
-    }
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        // HSV Color Wheel
-        Box(
-            modifier = Modifier.size(180.dp), // Smaller wheel
-            contentAlignment = Alignment.Center
-        ) {
-            Canvas(
-                modifier = Modifier
-                    .size(160.dp) // Smaller visual size
-                    .pointerInput(Unit) {
-                        detectDragGestures(
-                            onDragStart = { offset ->
-                                val center = Offset(size.width / 2f, size.height / 2f)
-                                val deltaOffset = offset - center
-                                val distance =
-                                    sqrt(deltaOffset.x * deltaOffset.x + deltaOffset.y * deltaOffset.y)
-                                val radius = minOf(size.width, size.height) / 2f
-
-                                // Allow selection even outside the visual circle
-                                val clampedDistance = distance.coerceAtMost(radius)
-                                hue = (atan2(
-                                    deltaOffset.y,
-                                    deltaOffset.x
-                                ) * 180 / PI + 360).toFloat() % 360f
-                                saturation = (clampedDistance / radius).coerceIn(0f, 1f)
-                                updateFromHSV()
-                            }
-                        ) { change, _ ->
-                            val center = Offset(size.width / 2f, size.height / 2f)
-                            val offset = change.position - center
-                            val distance = sqrt(offset.x * offset.x + offset.y * offset.y)
-                            val radius = minOf(size.width, size.height) / 2f
-
-                            // Allow selection even outside the visual circle
-                            val clampedDistance = distance.coerceAtMost(radius)
-                            hue = (atan2(offset.y, offset.x) * 180 / PI + 360).toFloat() % 360f
-                            saturation = (clampedDistance / radius).coerceIn(0f, 1f)
-                            updateFromHSV()
-                        }
-                    }
-            ) {
-                val center = Offset(size.width / 2, size.height / 2)
-                val radius = minOf(size.width, size.height) / 2
-
-                // Draw HSV wheel
-                for (angle in 0..360 step 2) {
-                    for (r in 0..radius.toInt() step 4) {
-                        val sat = r / radius
-                        val color = Color.hsv(angle.toFloat(), sat, brightness)
-                        val x = center.x + r * cos(angle * PI / 180).toFloat()
-                        val y = center.y + r * sin(angle * PI / 180).toFloat()
-                        drawCircle(color, 2.dp.toPx(), Offset(x, y))
-                    }
-                }
-
-                // Draw selector
-                val selectorRadius = saturation * radius
-                val selectorX = center.x + selectorRadius * cos(hue * PI / 180).toFloat()
-                val selectorY = center.y + selectorRadius * sin(hue * PI / 180).toFloat()
-
-                drawCircle(
-                    Color.White,
-                    12.dp.toPx(),
-                    Offset(selectorX, selectorY),
-                    style = Stroke(3.dp.toPx())
-                )
-                drawCircle(
-                    Color(
-                        android.graphics.Color.HSVToColor(
-                            floatArrayOf(
-                                hue,
-                                saturation,
-                                brightness
-                            )
-                        )
-                    ),
-                    8.dp.toPx(),
-                    Offset(selectorX, selectorY)
-                )
-            }
-        }
-
-        // Brightness slider
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Brightness", style = MaterialTheme.typography.labelLarge)
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(20.dp)
-                        .background(Color.Black, RoundedCornerShape(4.dp))
-                )
-                Slider(
-                    value = brightness,
-                    onValueChange = { newValue ->
-                        brightness = newValue
-                        updateBrightnessOnly()
-                    },
-                    valueRange = 0f..1f,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(56.dp)
-                        .padding(horizontal = 7.dp),
-                    colors = SliderDefaults.colors(
-                        thumbColor = MaterialTheme.colorScheme.primary,
-                        activeTrackColor = MaterialTheme.colorScheme.primary,
-                        inactiveTrackColor = MaterialTheme.colorScheme.outline
-                    )
-                )
-                Box(
-                    modifier = Modifier
-                        .size(20.dp)
-                        .background(Color.White, RoundedCornerShape(4.dp))
-                        .border(1.dp, Color.Gray, RoundedCornerShape(4.dp))
-                )
-            }
-        }
-    }
 }
