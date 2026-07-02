@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 class MainViewModel : ViewModel() {
     private val spoolmanCatalogRepository = SpoolmanCatalogRepository()
     private val saveOrUpdateSpoolmanSpoolUseCase = SaveOrUpdateSpoolmanSpoolUseCase()
-    private val moonrakerConnectionRepository = MoonrakerConnectionRepository()
+    private val connectionTestUseCase = ConnectionTestUseCase()
     private val printerMappingUseCase = PrinterMappingUseCase()
 
     var readData by mutableStateOf<OpenSpoolData?>(null)
@@ -303,12 +303,10 @@ class MainViewModel : ViewModel() {
     }
 
     fun testMoonrakerConnection(inputUrl: String) {
-        val normalizedUrl = normalizeConnectionUrl(inputUrl)
-
         moonrakerStatus = null
         moonrakerError = null
 
-        val validationError = httpUrlValidationError(normalizedUrl)
+        val validationError = connectionTestUseCase.validationError(inputUrl)
         if (validationError != null) {
             isMoonrakerReachable = false
             moonrakerError = validationError
@@ -319,15 +317,20 @@ class MainViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                val result = moonrakerConnectionRepository.test(normalizedUrl)
-                isMoonrakerReachable = result.reachable
-                moonrakerStatus = result.status
-                moonrakerError = result.error
-            } catch (e: Exception) {
-                isMoonrakerReachable = false
-                moonrakerError = connectionErrorMessage(e)
+                when (val result = connectionTestUseCase.testMoonraker(inputUrl)) {
+                    is ConnectionTestResult.Moonraker -> {
+                        isMoonrakerReachable = result.reachable
+                        moonrakerStatus = result.status
+                        moonrakerError = result.error
+                    }
 
-                Log.e("MoonrakerTest", "Connection failed", e)
+                    is ConnectionTestResult.Failed -> {
+                        isMoonrakerReachable = false
+                        moonrakerError = result.error
+                    }
+
+                    is ConnectionTestResult.Spoolman -> Unit
+                }
             } finally {
                 isTestingMoonraker = false
             }
@@ -339,12 +342,10 @@ class MainViewModel : ViewModel() {
     }
 
     fun testSpoolmanConnection(inputUrl: String) {
-        val normalizedUrl = normalizeConnectionUrl(inputUrl)
-
         spoolmanStatus = null
         spoolmanError = null
 
-        val validationError = httpUrlValidationError(normalizedUrl)
+        val validationError = connectionTestUseCase.validationError(inputUrl)
         if (validationError != null) {
             spoolmanError = validationError
             return
@@ -354,14 +355,17 @@ class MainViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                spoolmanCatalogRepository.load(
-                    baseUrl = normalizedUrl,
-                    sortBy = spoolmanSortBy,
-                    forceRefresh = true
-                )
-                spoolmanStatus = "Spoolman erreichbar"
-            } catch (e: Exception) {
-                spoolmanError = connectionErrorMessage(e)
+                when (val result = connectionTestUseCase.testSpoolman(inputUrl, spoolmanSortBy)) {
+                    is ConnectionTestResult.Spoolman -> {
+                        spoolmanStatus = result.status
+                    }
+
+                    is ConnectionTestResult.Failed -> {
+                        spoolmanError = result.error
+                    }
+
+                    is ConnectionTestResult.Moonraker -> Unit
+                }
             } finally {
                 isTestingSpoolman = false
             }
