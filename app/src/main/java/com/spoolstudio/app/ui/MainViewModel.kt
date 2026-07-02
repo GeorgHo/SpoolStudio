@@ -119,14 +119,7 @@ class MainViewModel : ViewModel() {
     }
 
     fun loadSpoolmanUrl(context: Context) {
-        val settings = AppSettingsStore.load(context)
-
-        showLotNumber = settings.showLotNumber
-        showCommentField = settings.showCommentField
-        spoolmanUrl = settings.spoolmanUrl
-        spoolmanSortBy = settings.spoolmanSortBy
-        moonrakerUrl = settings.moonrakerUrl
-        bambuMasterKey = settings.bambuMasterKey
+        applySettingsLoadState(buildSettingsLoadState(AppSettingsStore.load(context)))
 
         if (spoolmanUrl.isNotBlank()) {
             loadSpoolmanFilaments()
@@ -217,6 +210,15 @@ class MainViewModel : ViewModel() {
 
         loadSpoolmanFilaments()
         showSettings = false
+    }
+
+    private fun applySettingsLoadState(state: SettingsLoadState) {
+        showLotNumber = state.showLotNumber
+        showCommentField = state.showCommentField
+        spoolmanUrl = state.spoolmanUrl
+        spoolmanSortBy = state.spoolmanSortBy
+        moonrakerUrl = state.moonrakerUrl
+        bambuMasterKey = state.bambuMasterKey
     }
 
     fun handleFilamentSelection(filament: FilamentSpool?) {

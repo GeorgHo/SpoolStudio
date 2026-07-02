@@ -6,6 +6,27 @@ import org.junit.Test
 
 class SettingsStateHelpersTest {
     @Test
+    fun loadStateCopiesStoredSettingsForViewModel() {
+        val state = buildSettingsLoadState(
+            AppSettings(
+                spoolmanUrl = "http://spoolman.local",
+                moonrakerUrl = "http://printer.local",
+                spoolmanSortBy = "last_used:desc",
+                bambuMasterKey = "ABCD1234",
+                showLotNumber = true,
+                showCommentField = true
+            )
+        )
+
+        assertEquals(true, state.showLotNumber)
+        assertEquals(true, state.showCommentField)
+        assertEquals("http://spoolman.local", state.spoolmanUrl)
+        assertEquals("last_used:desc", state.spoolmanSortBy)
+        assertEquals("http://printer.local", state.moonrakerUrl)
+        assertEquals("ABCD1234", state.bambuMasterKey)
+    }
+
+    @Test
     fun saveStateNormalizesUrlsSortAndBambuKey() {
         val state = buildSettingsSaveState(
             SettingsSaveInput(
