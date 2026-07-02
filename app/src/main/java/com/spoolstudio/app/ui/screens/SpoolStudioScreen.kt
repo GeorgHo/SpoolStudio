@@ -16,7 +16,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -126,56 +125,40 @@ fun SpoolStudioScreen(
         printerMappingStatusMessage = printerMappingStatusMessage
     )
 
-    LaunchedEffect(readData, dataVersion, selectedSpool, spoolMode, availableLocations) {
-        val sourceSpool = selectedSpool ?: readData?.let { FilamentSpool.fromOpenSpool(it) }
+    SpoolStudioFormEffects(
+        form = form,
+        readData = readData,
+        dataVersion = dataVersion,
+        selectedSpool = selectedSpool,
+        spoolMode = spoolMode,
+        availableLocations = availableLocations
+    )
 
-        if (sourceSpool != null) {
-            form.applySpoolSource(
-                sourceSpool = sourceSpool,
-                spoolMode = spoolMode,
-                availableLocations = availableLocations
-            )
-        } else if (spoolMode == SpoolMode.CREATE) {
-            form.clearLocation()
-        }
-    }
+    SnackbarAutoDismissEffect(
+        showSnackbar = showSnackbar,
+        snackbarMessage = snackbarMessage,
+        onSnackbarDismiss = onSnackbarDismiss
+    )
 
-    LaunchedEffect(form.colorHex) {
-        form.colorHexInput = form.colorHex ?: ""
-        if (!form.colorNameWasManuallyEdited) {
-            val suggested = suggestColorName(form.colorHex)
-            if (suggested.isNotBlank()) {
-                form.colorName = suggested
-            }
-        }
-    }
-
-    LaunchedEffect(showSnackbar, snackbarMessage) {
-        if (showSnackbar && snackbarMessage.isNotBlank()) {
-            kotlinx.coroutines.delay(2500)
-            onSnackbarDismiss()
-        }
-    }
-
-    LaunchedEffect(rawReadVersion) {
-        val raw = rawReadText ?: return@LaunchedEffect
-
-        if (isBambuRfidDump(raw)) {
-            bambuDialogText = raw
+    BambuRfidDumpEffect(
+        rawReadVersion = rawReadVersion,
+        rawReadText = rawReadText,
+        onBambuDumpDetected = {
+            bambuDialogText = it
             showBambuDialog = true
         }
-    }
+    )
 
-    LaunchedEffect(
-        printerTool1SpoolId,
-        printerTool2SpoolId,
-        printerTool3SpoolId,
-        printerTool4SpoolId,
-        activePrinterSpoolId,
-        printerMappingLoadVersion
-    ) {
-        printerMappingDialogSelection = printerMappingSelection
-    }
+    PrinterMappingSelectionSyncEffect(
+        toolhead1SpoolId = printerTool1SpoolId,
+        toolhead2SpoolId = printerTool2SpoolId,
+        toolhead3SpoolId = printerTool3SpoolId,
+        toolhead4SpoolId = printerTool4SpoolId,
+        activePrinterSpoolId = activePrinterSpoolId,
+        printerMappingLoadVersion = printerMappingLoadVersion,
+        printerMappingSelection = printerMappingSelection,
+        onSelectionChange = { printerMappingDialogSelection = it }
+    )
 
     fun isRemainingWeightValid(): Boolean = form.isRemainingWeightValid()
     fun validationMessage(): String? = form.validationMessage()
