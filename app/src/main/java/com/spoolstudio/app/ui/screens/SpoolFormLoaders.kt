@@ -44,12 +44,7 @@ fun SpoolFormState.applySpoolSource(
     } else {
         "Created by Spool Studio"
     }
-    remainingWeight = sourceSpool.remainingWeight
-        ?.takeIf { it >= 0f }
-        ?.let { weight ->
-            if (weight % 1f == 0f) weight.toInt().toString() else weight.toString()
-        }
-        ?: ""
+    remainingWeight = formatLoadedRemainingWeight(sourceSpool.remainingWeight)
     colorHexInput = colorHex ?: ""
     colorNameWasManuallyEdited = false
 }

@@ -48,6 +48,11 @@ fun formatRemainingWeightInput(remainingWeight: String): String? {
     return String.format(Locale.US, "%.2f", parsed)
 }
 
+fun formatLoadedRemainingWeight(remainingWeight: Float?): String {
+    val weight = remainingWeight?.takeIf { it >= 0f } ?: return ""
+    return String.format(Locale.US, "%.2f", weight)
+}
+
 fun isSpoolFormValid(
     variant: String,
     brand: String,

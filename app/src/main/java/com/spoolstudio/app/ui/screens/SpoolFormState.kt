@@ -123,6 +123,8 @@ class SpoolFormState(private val defaultMaterial: Material) {
         brand = "Bambu Lab"
         customBrand = ""
         clearLocation()
+        remainingWeight = ""
+        comment = ""
 
         data.minHotend?.let { minTemp = it.toString() }
         data.maxHotend?.let { maxTemp = it.toString() }

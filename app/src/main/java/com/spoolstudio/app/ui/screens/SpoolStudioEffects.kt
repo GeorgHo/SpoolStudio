@@ -46,10 +46,11 @@ fun SpoolStudioFormEffects(
 fun SnackbarAutoDismissEffect(
     showSnackbar: Boolean,
     snackbarMessage: String,
+    autoDismiss: Boolean,
     onSnackbarDismiss: () -> Unit
 ) {
-    LaunchedEffect(showSnackbar, snackbarMessage) {
-        if (showSnackbar && snackbarMessage.isNotBlank()) {
+    LaunchedEffect(showSnackbar, snackbarMessage, autoDismiss) {
+        if (autoDismiss && showSnackbar && snackbarMessage.isNotBlank()) {
             delay(2500)
             onSnackbarDismiss()
         }

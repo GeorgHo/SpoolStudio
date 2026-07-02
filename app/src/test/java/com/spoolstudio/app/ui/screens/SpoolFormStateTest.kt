@@ -55,7 +55,10 @@ class SpoolFormStateTest {
 
     @Test
     fun applyBambuRfidDataUpdatesFormState() {
-        val form = formState()
+        val form = formState().apply {
+            remainingWeight = "123.45"
+            comment = "Existing comment"
+        }
         val data = BambuRfidFormData(
             material = "PETG",
             detailedType = "PETG Basic",
@@ -84,6 +87,8 @@ class SpoolFormStateTest {
         assertEquals("70", form.bedMinTemp)
         assertEquals("90", form.bedMaxTemp)
         assertEquals("1234567890ABCDEFGHIJKLMNOPQRSTUV", form.lotNr)
+        assertEquals("", form.remainingWeight)
+        assertEquals("", form.comment)
     }
 
     @Test
@@ -125,6 +130,6 @@ class SpoolFormStateTest {
         assertEquals("90", form.bedMaxTemp)
         assertEquals("LOT-7", form.lotNr)
         assertEquals("Existing", form.comment)
-        assertEquals("512.5", form.remainingWeight)
+        assertEquals("512.50", form.remainingWeight)
     }
 }

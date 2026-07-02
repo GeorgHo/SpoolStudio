@@ -40,6 +40,14 @@ class SpoolFormHelpersTest {
     }
 
     @Test
+    fun formatLoadedRemainingWeightAlwaysUsesTwoDecimals() {
+        assertEquals("", formatLoadedRemainingWeight(null))
+        assertEquals("", formatLoadedRemainingWeight(-1f))
+        assertEquals("512.50", formatLoadedRemainingWeight(512.5f))
+        assertEquals("1000.00", formatLoadedRemainingWeight(1000f))
+    }
+
+    @Test
     fun remainingWeightWarningThresholdUsesLowFilamentLimits() {
         assertNull(remainingWeightWarningThreshold(151f))
         assertEquals(150, remainingWeightWarningThreshold(150f))

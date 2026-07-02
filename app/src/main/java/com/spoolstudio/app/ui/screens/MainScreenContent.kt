@@ -76,6 +76,7 @@ fun MainScreenContent(
             dataVersion = viewModel.dataVersion,
             snackbarMessage = viewModel.snackbarMessage,
             showSnackbar = viewModel.showSnackbar,
+            snackbarAutoDismiss = viewModel.snackbarAutoDismiss,
             onClearRawReadData = { viewModel.clearRawReadData() },
             onSnackbarDismiss = { viewModel.dismissSnackbar() },
             onSettingsClick = { viewModel.showSettings() },

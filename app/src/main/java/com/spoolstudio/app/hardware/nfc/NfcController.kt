@@ -5,6 +5,8 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.nfc.NfcAdapter
 import android.nfc.Tag
+import android.os.Handler
+import android.os.Looper
 import android.widget.Toast
 
 class NfcController(private val activity: Activity) {
@@ -13,6 +15,8 @@ class NfcController(private val activity: Activity) {
     private var pendingWriteData: String? = null
     private val nfcManager = NfcManager(activity.applicationContext)
     private var isReadingEnabled = false
+    private val operationTimeoutHandler = Handler(Looper.getMainLooper())
+    private var activeOperationId = 0
     
     var onTagDetected: ((String?) -> Unit)? = null
     var onStatusUpdate: ((String, Boolean) -> Unit)? = null
@@ -34,35 +38,24 @@ class NfcController(private val activity: Activity) {
     fun writeToCurrentTag(data: String) {
         isReadingEnabled = false // Clear any pending read
         pendingWriteData = data
-        onStatusUpdate?.invoke(" Hold your phone near an NFC tag to write data", true)
+        onStatusUpdate?.invoke("Hold your phone near an NFC tag to write data", true)
+        scheduleOperationTimeout(
+            message = "No NFC tag found to write. Please try again."
+        ) {
+            pendingWriteData = null
+        }
     }
 
-    /*
-    private var recentTagData: String? = null
-    private var tagDetectedTime: Long = 0
-    private val TAG_MEMORY_DURATION = 5000L // 5 seconds
-    */
     fun enableReading() {
         pendingWriteData = null
         isReadingEnabled = true
         onStatusUpdate?.invoke("Hold your phone near an NFC tag to read data", true)
+        scheduleOperationTimeout(
+            message = "No NFC tag found to read. Please try again."
+        ) {
+            isReadingEnabled = false
+        }
     }
-
-    /*
-    private fun hasRecentTag(): Boolean {
-        return recentTagData != null && (System.currentTimeMillis() - tagDetectedTime) < TAG_MEMORY_DURATION
-    }
-
-    private fun storeRecentTag(data: String?) {
-        recentTagData = data
-        tagDetectedTime = System.currentTimeMillis()
-    }
-
-    private fun clearRecentTag() {
-        recentTagData = null
-        tagDetectedTime = 0
-    }
-    */
 
     fun enableForegroundDispatch() {
         nfcAdapter?.enableForegroundDispatch(activity, pendingIntent, null, null)
@@ -84,6 +77,7 @@ class NfcController(private val activity: Activity) {
                 }
                 tag?.let { 
                     if (pendingWriteData != null) {
+                        clearOperationTimeout()
                         // Write mode - write the pending data
                         if (nfcManager.writeTag(it, pendingWriteData!!)) {
                             onStatusUpdate?.invoke("✅ Successfully wrote to tag!", false)
@@ -92,6 +86,7 @@ class NfcController(private val activity: Activity) {
                             onStatusUpdate?.invoke("❌ Write failed - try again", false)
                         }
                     } else if (isReadingEnabled) {
+                        clearOperationTimeout()
                         // Read mode - read the tag
                         val data = nfcManager.readTag(it)
                         onTagDetected?.invoke(data)
@@ -119,7 +114,31 @@ class NfcController(private val activity: Activity) {
         }
     }
 
+    private fun scheduleOperationTimeout(message: String, onTimeout: () -> Unit) {
+        val operationId = ++activeOperationId
+        operationTimeoutHandler.removeCallbacksAndMessages(null)
+        operationTimeoutHandler.postDelayed(
+            {
+                if (operationId == activeOperationId) {
+                    onTimeout()
+                    activeOperationId++
+                    onStatusUpdate?.invoke(message, false)
+                }
+            },
+            NFC_OPERATION_TIMEOUT_MS
+        )
+    }
+
+    private fun clearOperationTimeout() {
+        activeOperationId++
+        operationTimeoutHandler.removeCallbacksAndMessages(null)
+    }
+
     private fun showToast(message: String) {
         Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
+    }
+
+    private companion object {
+        const val NFC_OPERATION_TIMEOUT_MS = 10_000L
     }
 }

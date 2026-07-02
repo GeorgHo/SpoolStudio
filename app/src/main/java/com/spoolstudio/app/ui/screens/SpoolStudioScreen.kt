@@ -45,6 +45,7 @@ fun SpoolStudioScreen(
     dataVersion: Int = 0,
     snackbarMessage: String = "",
     showSnackbar: Boolean = false,
+    snackbarAutoDismiss: Boolean = true,
     onSnackbarDismiss: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
     onBambuDataApplied: () -> Unit = {},
@@ -137,6 +138,7 @@ fun SpoolStudioScreen(
     SnackbarAutoDismissEffect(
         showSnackbar = showSnackbar,
         snackbarMessage = snackbarMessage,
+        autoDismiss = snackbarAutoDismiss,
         onSnackbarDismiss = onSnackbarDismiss
     )
 

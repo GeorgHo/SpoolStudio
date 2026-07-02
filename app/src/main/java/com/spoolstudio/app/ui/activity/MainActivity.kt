@@ -86,8 +86,8 @@ class MainActivity : ComponentActivity() {
             viewModel.handleNfcTagDetected(data)
         }
         
-        nfcHandler.onStatusUpdate = { status, _ ->
-            viewModel.showSnackbarMessage(status)
+        nfcHandler.onStatusUpdate = { status, active ->
+            viewModel.showSnackbarMessage(status, autoDismiss = !active)
         }
     }
 

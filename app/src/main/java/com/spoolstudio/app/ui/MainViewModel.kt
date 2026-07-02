@@ -28,6 +28,8 @@ class MainViewModel : ViewModel() {
         private set
     var showSnackbar by mutableStateOf(false)
         private set
+    var snackbarAutoDismiss by mutableStateOf(true)
+        private set
     var showSettings by mutableStateOf(false)
         private set
     var spoolmanUrl by mutableStateOf("")
@@ -152,8 +154,9 @@ class MainViewModel : ViewModel() {
             Log.d("MainViewModel", "Raw RFID data is not OpenSpool JSON")
         }
     }
-    fun showSnackbarMessage(message: String) {
+    fun showSnackbarMessage(message: String, autoDismiss: Boolean = true) {
         snackbarMessage = message
+        snackbarAutoDismiss = autoDismiss
         showSnackbar = true
     }
 
