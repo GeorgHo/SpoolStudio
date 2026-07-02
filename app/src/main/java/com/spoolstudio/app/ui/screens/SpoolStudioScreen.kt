@@ -167,21 +167,14 @@ fun SpoolStudioScreen(
         }
     }
 
-    //BAM
     LaunchedEffect(rawReadVersion) {
         val raw = rawReadText ?: return@LaunchedEffect
 
-        val isBambuDump =
-            raw.contains("Bambu RFID Parsed") ||
-                    raw.contains("=== Sektor") ||
-                    raw.contains("Block 0 (abs")
-
-        if (isBambuDump) {
+        if (isBambuRfidDump(raw)) {
             bambuDialogText = raw
             showBambuDialog = true
         }
     }
-    //
 
     LaunchedEffect(
         printerTool1SpoolId,
@@ -199,7 +192,6 @@ fun SpoolStudioScreen(
     }
 
     fun isRemainingWeightValid(): Boolean = form.isRemainingWeightValid()
-    fun isFormValid(): Boolean = form.isValid()
     fun validationMessage(): String? = form.validationMessage()
     fun buildSaveRequest(): SpoolmanSaveRequest =
         form.buildSaveRequest(spoolMode, selectedSpool)
@@ -209,12 +201,13 @@ fun SpoolStudioScreen(
     }
 
     fun applyBambuDialogData() {
-        val bambuData = parseBambuRfidFormData(
+        val decision = resolveBambuRfidApplyDecision(
             text = bambuDialogText,
-            fallbackMaterial = form.filamentType
+            fallbackMaterial = form.filamentType,
+            spools = spools
         )
 
-        val applyIntoForm = {
+        fun applyIntoForm(bambuData: BambuRfidFormData) {
             onSpoolSelected(null)
             form.applyBambuRfidData(
                 data = bambuData,
@@ -225,32 +218,20 @@ fun SpoolStudioScreen(
             onBambuDataApplied()
         }
 
-        val matchingSpool = findMatchingSpoolByLotNr(spools, bambuData.uid)
-
-        when {
-            matchingSpool == null -> {
-                applyIntoForm()
+        when (decision) {
+            is BambuRfidApplyDecision.ApplyNewData -> {
+                applyIntoForm(decision.data)
             }
 
-            isSameBambuData(
-                spool = matchingSpool,
-                material = bambuData.material,
-                normalizedVariant = bambuData.normalizedVariant,
-                colorHexValue = bambuData.colorHex
-            ) -> {
-                onSpoolSelected(matchingSpool)
+            is BambuRfidApplyDecision.UseExistingSpool -> {
+                onSpoolSelected(decision.spool)
                 showBambuDialog = false
                 onBambuExistingSpoolFound()
             }
 
-            else -> {
-                bambuDiffDialogText = buildBambuDiffText(
-                    spool = matchingSpool,
-                    material = bambuData.material,
-                    normalizedVariant = bambuData.normalizedVariant,
-                    colorHexValue = bambuData.colorHex
-                )
-                pendingBambuApply = applyIntoForm
+            is BambuRfidApplyDecision.ShowDifference -> {
+                bambuDiffDialogText = decision.diffText
+                pendingBambuApply = { applyIntoForm(decision.data) }
                 showBambuDialog = false
                 showBambuDiffDialog = true
             }

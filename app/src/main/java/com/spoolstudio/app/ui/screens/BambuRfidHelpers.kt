@@ -14,6 +14,15 @@ data class BambuRfidFormData(
     val normalizedVariant: String
 )
 
+sealed class BambuRfidApplyDecision {
+    data class ApplyNewData(val data: BambuRfidFormData) : BambuRfidApplyDecision()
+    data class UseExistingSpool(val spool: FilamentSpool) : BambuRfidApplyDecision()
+    data class ShowDifference(
+        val data: BambuRfidFormData,
+        val diffText: String
+    ) : BambuRfidApplyDecision()
+}
+
 fun parseBambuRfidFormData(text: String, fallbackMaterial: String): BambuRfidFormData {
     val material = parsedBambuValue(text, "Filament Type")
     val detailedType = parsedBambuValue(text, "Detailed Type")
@@ -36,6 +45,50 @@ fun parseBambuRfidFormData(text: String, fallbackMaterial: String): BambuRfidFor
         )
     )
 }
+
+fun resolveBambuRfidApplyDecision(
+    text: String,
+    fallbackMaterial: String,
+    spools: List<FilamentSpool>
+): BambuRfidApplyDecision {
+    val bambuData = parseBambuRfidFormData(
+        text = text,
+        fallbackMaterial = fallbackMaterial
+    )
+    val matchingSpool = findMatchingSpoolByLotNr(spools, bambuData.uid)
+
+    return when {
+        matchingSpool == null -> {
+            BambuRfidApplyDecision.ApplyNewData(bambuData)
+        }
+
+        isSameBambuData(
+            spool = matchingSpool,
+            material = bambuData.material,
+            normalizedVariant = bambuData.normalizedVariant,
+            colorHexValue = bambuData.colorHex
+        ) -> {
+            BambuRfidApplyDecision.UseExistingSpool(matchingSpool)
+        }
+
+        else -> {
+            BambuRfidApplyDecision.ShowDifference(
+                data = bambuData,
+                diffText = buildBambuDiffText(
+                    spool = matchingSpool,
+                    material = bambuData.material,
+                    normalizedVariant = bambuData.normalizedVariant,
+                    colorHexValue = bambuData.colorHex
+                )
+            )
+        }
+    }
+}
+
+fun isBambuRfidDump(text: String): Boolean =
+    text.contains("Bambu RFID Parsed") ||
+        text.contains("=== Sektor") ||
+        text.contains("Block 0 (abs")
 
 fun parsedBambuValue(text: String, label: String): String? {
     return text
