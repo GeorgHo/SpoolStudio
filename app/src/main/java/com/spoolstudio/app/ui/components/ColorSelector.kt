@@ -52,11 +52,6 @@ import com.spoolstudio.app.utils.normalizeHexColor
 import android.graphics.Bitmap
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import com.spoolstudio.app.utils.PhotoColorDetector
 import androidx.activity.result.PickVisualMediaRequest
@@ -412,100 +407,25 @@ fun ColorSelector(
         }
     }
 
-    if (showPhotoDialog && photoBitmap != null) {
-        Dialog(onDismissRequest = { showPhotoDialog = false }) {
-            Card(
-                modifier = Modifier
-                    .padding(20.dp)
-                    .fillMaxWidth(),
-                shape = RoundedCornerShape(32.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text(
-                        text = "Detect color from photo",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
+    val currentPhotoBitmap = photoBitmap
+    if (showPhotoDialog && currentPhotoBitmap != null) {
+        ColorPhotoDialog(
+            bitmap = currentPhotoBitmap,
+            detectedHex = detectedPhotoHex,
+            detectedName = detectedPhotoName,
+            onPhotoViewSizeChange = { photoViewSize = it },
+            onPhotoTap = { detectColorFromPhotoTap(it) },
+            onUseDetectedColor = {
+                val hex = detectedPhotoHex ?: return@ColorPhotoDialog
 
-                    Image(
-                        bitmap = photoBitmap!!.asImageBitmap(),
-                        contentDescription = "Captured filament photo",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(320.dp)
-                            .clip(RoundedCornerShape(20.dp))
-                            .onSizeChanged { photoViewSize = it }
-                            .pointerInput(photoBitmap) {
-                                detectTapGestures { offset ->
-                                    detectColorFromPhotoTap(offset)
-                                }
-                            },
-                        contentScale = ContentScale.Crop
-                    )
-
-                    detectedPhotoHex?.let { hex ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(42.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(Color(android.graphics.Color.parseColor("#$hex")))
-                            )
-
-                            Column {
-                                Text(
-                                    text = "#$hex",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-
-                                if (detectedPhotoName.isNotBlank()) {
-                                    Text(
-                                        text = detectedPhotoName,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    Button(
-                        onClick = {
-                            val hex = detectedPhotoHex ?: return@Button
-
-                            if (detectedPhotoName.isNotBlank()) {
-                                onColorNameChange(detectedPhotoName)
-                            }
-
-                            onColorSelected(hex)
-                            showPhotoDialog = false
-                        },
-                        enabled = detectedPhotoHex != null,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
-                        Text("Use detected color")
-                    }
-
-                    OutlinedButton(
-                        onClick = { showPhotoDialog = false },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
-                        Text("Cancel")
-                    }
+                if (detectedPhotoName.isNotBlank()) {
+                    onColorNameChange(detectedPhotoName)
                 }
+
+                onColorSelected(hex)
+                showPhotoDialog = false
+            },
+            onDismiss = { showPhotoDialog = false }
+        )
             }
-        }
-    }
 }
