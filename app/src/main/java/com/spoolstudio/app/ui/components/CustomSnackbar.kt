@@ -28,11 +28,12 @@ import kotlinx.coroutines.delay
 fun CustomSnackbar(
     message: String,
     isVisible: Boolean,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    autoDismissMillis: Long = 3500L
 ) {
     LaunchedEffect(isVisible, message) {
         if (isVisible && message.isNotBlank()) {
-            delay(5500)
+            delay(autoDismissMillis)
             onDismiss()
         }
     }
