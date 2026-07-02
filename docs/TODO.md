@@ -16,6 +16,8 @@
   - Spoolman create/update decisions.
   - Bambu RFID parsing and data application.
 
+## Release
+
 - Add release documentation:
   - Version bump.
   - Android Studio Gradle sync.
