@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -34,6 +35,7 @@ fun MaterialSelector(
     onCustomMaterialChange: (String) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val regularMaterialNames = (MaterialDatabase.materials.map { it.name } + dynamicMaterials)
@@ -47,6 +49,14 @@ fun MaterialSelector(
             focusRequester.requestFocus()
             keyboardController?.show()
         }
+    }
+
+    LaunchedEffect(expanded) {
+        if (!expanded) searchQuery = ""
+    }
+
+    val filteredMaterialNames = materialNames.filter {
+        searchQuery.isBlank() || it.contains(searchQuery, ignoreCase = true)
     }
 
     Row(
@@ -82,9 +92,26 @@ fun MaterialSelector(
                 modifier = Modifier.clip(RoundedCornerShape(20.dp)),
                 tonalElevation = 8.dp
             ) {
-                materialNames.forEach { materialName ->
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it.take(32) },
+                    label = { Text("Search") },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    textStyle = MaterialTheme.typography.bodyMedium,
+                    shape = RoundedCornerShape(16.dp)
+                )
 
-                    if (materialName != "PLA" && materialName == regularMaterialNames.firstOrNull()) {
+                filteredMaterialNames.forEach { materialName ->
+
+                    if (materialName != "PLA" && materialName != "Other" &&
+                        materialName == filteredMaterialNames.firstOrNull { it != "PLA" && it != "Other" }) {
+                        HorizontalDivider()
+                    }
+
+                    if (materialName == "Other") {
                         HorizontalDivider()
                     }
 

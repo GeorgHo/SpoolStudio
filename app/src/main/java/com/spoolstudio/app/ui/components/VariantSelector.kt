@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -34,6 +35,7 @@ fun VariantSelector(
     onVariantChange: (String) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
     var customVariant by remember { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -55,6 +57,14 @@ fun VariantSelector(
         }
 
         add(VariantOption("Other", "Other"))
+    }
+
+    LaunchedEffect(expanded) {
+        if (!expanded) searchQuery = ""
+    }
+
+    val filteredOptions = options.filter {
+        searchQuery.isBlank() || it.label.contains(searchQuery, ignoreCase = true)
     }
 
     Row(
@@ -95,7 +105,19 @@ fun VariantSelector(
                 modifier = Modifier.clip(RoundedCornerShape(20.dp)),
                 tonalElevation = 8.dp
             ) {
-                options.forEach { option ->
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it.take(32) },
+                    label = { Text("Search") },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    textStyle = MaterialTheme.typography.bodyMedium,
+                    shape = RoundedCornerShape(16.dp)
+                )
+
+                filteredOptions.forEach { option ->
                     if (option.value == "Other") {
                         HorizontalDivider()
                     }

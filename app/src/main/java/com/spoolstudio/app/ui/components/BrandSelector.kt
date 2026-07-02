@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -34,6 +35,7 @@ fun BrandSelector(
     onCustomBrandChange: (String) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val regularBrands = (BrandDatabase.brands + dynamicBrands)
@@ -46,6 +48,14 @@ fun BrandSelector(
             focusRequester.requestFocus()
             keyboardController?.show()
         }
+    }
+
+    LaunchedEffect(expanded) {
+        if (!expanded) searchQuery = ""
+    }
+
+    val filteredBrands = brands.filter {
+        searchQuery.isBlank() || it.contains(searchQuery, ignoreCase = true)
     }
 
     Row(
@@ -81,7 +91,19 @@ fun BrandSelector(
                 modifier = Modifier.zIndex(1f).clip(RoundedCornerShape(20.dp)),
                 tonalElevation = 8.dp
             ) {
-                brands.forEach { brand ->
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it.take(32) },
+                    label = { Text("Search") },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    textStyle = MaterialTheme.typography.bodyMedium,
+                    shape = RoundedCornerShape(16.dp)
+                )
+
+                filteredBrands.forEach { brand ->
 
                     DropdownMenuItem(
                         text = { Text(brand) },

@@ -3,6 +3,7 @@ package com.spoolstudio.app.ui.screens
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -33,6 +34,10 @@ fun LocationSection(
     onCustomLocationChange: (String) -> Unit
 ) {
     var locationExpanded by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    val filteredLocations = availableLocations.filter {
+        searchQuery.isBlank() || it.contains(searchQuery, ignoreCase = true)
+    }
 
     ExposedDropdownMenuBox(
         expanded = locationExpanded,
@@ -63,15 +68,31 @@ fun LocationSection(
 
         DropdownMenu(
             expanded = locationExpanded,
-            onDismissRequest = { locationExpanded = false }
+            onDismissRequest = {
+                locationExpanded = false
+                searchQuery = ""
+            }
         ) {
-            availableLocations.forEach { item ->
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it.take(60) },
+                label = { Text("Search") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodyMedium,
+                shape = RoundedCornerShape(16.dp)
+            )
+
+            filteredLocations.forEach { item ->
                 DropdownMenuItem(
                     text = { Text(item) },
                     onClick = {
                         onLocationChange(item)
                         onCustomLocationChange("")
                         locationExpanded = false
+                        searchQuery = ""
                     }
                 )
             }
@@ -82,6 +103,7 @@ fun LocationSection(
                 onClick = {
                     onLocationChange("Other")
                     locationExpanded = false
+                    searchQuery = ""
                 }
             )
         }
