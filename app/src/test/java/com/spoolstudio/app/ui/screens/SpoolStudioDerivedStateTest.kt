@@ -22,31 +22,31 @@ class SpoolStudioDerivedStateTest {
     fun printerMappingChangeDetectionComparesDialogAndPrinterState() {
         assertFalse(
             hasPrinterMappingChanges(
-                toolhead1SpoolId = 1,
-                toolhead2SpoolId = null,
-                toolhead3SpoolId = 3,
-                toolhead4SpoolId = null,
-                activeDialogSpoolId = 1,
-                printerTool1SpoolId = 1,
-                printerTool2SpoolId = null,
-                printerTool3SpoolId = 3,
-                printerTool4SpoolId = null,
-                activePrinterSpoolId = 1
+                dialogSelection = PrinterMappingSelection(
+                    toolhead1SpoolId = 1,
+                    toolhead3SpoolId = 3,
+                    activeSpoolId = 1
+                ),
+                printerSelection = PrinterMappingSelection(
+                    toolhead1SpoolId = 1,
+                    toolhead3SpoolId = 3,
+                    activeSpoolId = 1
+                )
             )
         )
 
         assertTrue(
             hasPrinterMappingChanges(
-                toolhead1SpoolId = 2,
-                toolhead2SpoolId = null,
-                toolhead3SpoolId = 3,
-                toolhead4SpoolId = null,
-                activeDialogSpoolId = 1,
-                printerTool1SpoolId = 1,
-                printerTool2SpoolId = null,
-                printerTool3SpoolId = 3,
-                printerTool4SpoolId = null,
-                activePrinterSpoolId = 1
+                dialogSelection = PrinterMappingSelection(
+                    toolhead1SpoolId = 2,
+                    toolhead3SpoolId = 3,
+                    activeSpoolId = 1
+                ),
+                printerSelection = PrinterMappingSelection(
+                    toolhead1SpoolId = 1,
+                    toolhead3SpoolId = 3,
+                    activeSpoolId = 1
+                )
             )
         )
     }

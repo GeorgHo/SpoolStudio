@@ -63,7 +63,6 @@ fun SpoolStudioScreen(
     availableVariants: List<String> = emptyList(),
     availableLocations: List<String> = emptyList(),
     spoolMode: SpoolMode = SpoolMode.CREATE,
-    onDuplicateSpool: () -> Unit = {},
     isMoonrakerReachable: Boolean = false,
     onTestMoonrakerConnection: () -> Unit = {},
     printerTool1SpoolId: Int? = null,
@@ -76,11 +75,9 @@ fun SpoolStudioScreen(
     printerMappingSaveSuccessful: Boolean? = null,
     printerMappingStatusMessage: String? = null,
     printerMappingOperation: String? = null,
-    onBeginPrinterMappingDialogSession: () -> Unit = {},
     onClearPrinterMappingDialogFeedback: () -> Unit = {},
     onLoadCurrentPrinterMapping: () -> Unit = {},
     onSavePrinterMapping: (Int?, Int?, Int?, Int?, Int?) -> Unit = { _, _, _, _, _ -> },
-    onSaveSuccess: () -> Unit = {},
     showLotNumber: Boolean = false,
     showCommentField: Boolean = false,
     onCreateNewSpool: () -> Unit = {},
@@ -94,31 +91,23 @@ fun SpoolStudioScreen(
     val defaultMaterial = MaterialDatabase.getMaterial("PLA") ?: MaterialDatabase.materials.first()
     val form = remember { SpoolFormState(defaultMaterial) }
     var showPrinterMappingDialog by remember { mutableStateOf(false) }
-    var toolhead1SpoolId by remember { mutableStateOf<Int?>(null) }
-    var toolhead2SpoolId by remember { mutableStateOf<Int?>(null) }
-    var toolhead3SpoolId by remember { mutableStateOf<Int?>(null) }
-    var toolhead4SpoolId by remember { mutableStateOf<Int?>(null) }
-    var activeDialogSpoolId by remember { mutableStateOf<Int?>(null) }
+    var printerMappingDialogSelection by remember { mutableStateOf(PrinterMappingSelection()) }
+    val printerMappingSelection = printerMappingSelection(
+        toolhead1SpoolId = printerTool1SpoolId,
+        toolhead2SpoolId = printerTool2SpoolId,
+        toolhead3SpoolId = printerTool3SpoolId,
+        toolhead4SpoolId = printerTool4SpoolId,
+        activeSpoolId = activePrinterSpoolId
+    )
 
     val hasPrinterMappingChanges = hasPrinterMappingChanges(
-        toolhead1SpoolId = toolhead1SpoolId,
-        toolhead2SpoolId = toolhead2SpoolId,
-        toolhead3SpoolId = toolhead3SpoolId,
-        toolhead4SpoolId = toolhead4SpoolId,
-        activeDialogSpoolId = activeDialogSpoolId,
-        printerTool1SpoolId = printerTool1SpoolId,
-        printerTool2SpoolId = printerTool2SpoolId,
-        printerTool3SpoolId = printerTool3SpoolId,
-        printerTool4SpoolId = printerTool4SpoolId,
-        activePrinterSpoolId = activePrinterSpoolId
+        dialogSelection = printerMappingDialogSelection,
+        printerSelection = printerMappingSelection
     )
 
     val activeSpoolOutsideMapping = isActiveSpoolOutsideMapping(
         activePrinterSpoolId = activePrinterSpoolId,
-        toolhead1SpoolId = toolhead1SpoolId,
-        toolhead2SpoolId = toolhead2SpoolId,
-        toolhead3SpoolId = toolhead3SpoolId,
-        toolhead4SpoolId = toolhead4SpoolId
+        dialogSelection = printerMappingDialogSelection
     )
 
     val spoolColor = resolveSpoolColor(form.colorHex)
@@ -184,11 +173,7 @@ fun SpoolStudioScreen(
         activePrinterSpoolId,
         printerMappingLoadVersion
     ) {
-        toolhead1SpoolId = printerTool1SpoolId
-        toolhead2SpoolId = printerTool2SpoolId
-        toolhead3SpoolId = printerTool3SpoolId
-        toolhead4SpoolId = printerTool4SpoolId
-        activeDialogSpoolId = activePrinterSpoolId
+        printerMappingDialogSelection = printerMappingSelection
     }
 
     fun isRemainingWeightValid(): Boolean = form.isRemainingWeightValid()
@@ -306,11 +291,7 @@ fun SpoolStudioScreen(
                         isNewFromSelectedEnabled = isNewFromSelectedEnabled,
                         onCreateNewSpool = onCreateNewSpool,
                         onOpenPrinterMapping = {
-                            toolhead1SpoolId = printerTool1SpoolId
-                            toolhead2SpoolId = printerTool2SpoolId
-                            toolhead3SpoolId = printerTool3SpoolId
-                            toolhead4SpoolId = printerTool4SpoolId
-                            activeDialogSpoolId = activePrinterSpoolId
+                            printerMappingDialogSelection = printerMappingSelection
 
                             showPrinterMappingDialog = true
                             onTestMoonrakerConnection()
@@ -330,16 +311,26 @@ fun SpoolStudioScreen(
             inlineStatusText = inlinePrinterMappingStatusText,
             inlineStatusColor = inlinePrinterMappingStatusColor,
             hasPrinterMappingChanges = hasPrinterMappingChanges,
-            toolhead1SpoolId = toolhead1SpoolId,
-            toolhead2SpoolId = toolhead2SpoolId,
-            toolhead3SpoolId = toolhead3SpoolId,
-            toolhead4SpoolId = toolhead4SpoolId,
-            activeDialogSpoolId = activeDialogSpoolId,
-            onToolhead1SpoolIdChange = { toolhead1SpoolId = it },
-            onToolhead2SpoolIdChange = { toolhead2SpoolId = it },
-            onToolhead3SpoolIdChange = { toolhead3SpoolId = it },
-            onToolhead4SpoolIdChange = { toolhead4SpoolId = it },
-            onActiveDialogSpoolIdChange = { activeDialogSpoolId = it },
+            toolhead1SpoolId = printerMappingDialogSelection.toolhead1SpoolId,
+            toolhead2SpoolId = printerMappingDialogSelection.toolhead2SpoolId,
+            toolhead3SpoolId = printerMappingDialogSelection.toolhead3SpoolId,
+            toolhead4SpoolId = printerMappingDialogSelection.toolhead4SpoolId,
+            activeDialogSpoolId = printerMappingDialogSelection.activeSpoolId,
+            onToolhead1SpoolIdChange = {
+                printerMappingDialogSelection = printerMappingDialogSelection.withToolhead1(it)
+            },
+            onToolhead2SpoolIdChange = {
+                printerMappingDialogSelection = printerMappingDialogSelection.withToolhead2(it)
+            },
+            onToolhead3SpoolIdChange = {
+                printerMappingDialogSelection = printerMappingDialogSelection.withToolhead3(it)
+            },
+            onToolhead4SpoolIdChange = {
+                printerMappingDialogSelection = printerMappingDialogSelection.withToolhead4(it)
+            },
+            onActiveDialogSpoolIdChange = {
+                printerMappingDialogSelection = printerMappingDialogSelection.withActiveSpool(it, it != null)
+            },
             onCancel = {
                 onClearPrinterMappingDialogFeedback()
                 showPrinterMappingDialog = false

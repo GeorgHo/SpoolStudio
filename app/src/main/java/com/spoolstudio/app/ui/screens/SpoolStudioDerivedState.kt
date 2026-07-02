@@ -33,37 +33,17 @@ fun printerMappingBusyLabel(operation: String?): String? =
     }
 
 fun hasPrinterMappingChanges(
-    toolhead1SpoolId: Int?,
-    toolhead2SpoolId: Int?,
-    toolhead3SpoolId: Int?,
-    toolhead4SpoolId: Int?,
-    activeDialogSpoolId: Int?,
-    printerTool1SpoolId: Int?,
-    printerTool2SpoolId: Int?,
-    printerTool3SpoolId: Int?,
-    printerTool4SpoolId: Int?,
-    activePrinterSpoolId: Int?
+    dialogSelection: PrinterMappingSelection,
+    printerSelection: PrinterMappingSelection
 ): Boolean =
-    toolhead1SpoolId != printerTool1SpoolId ||
-        toolhead2SpoolId != printerTool2SpoolId ||
-        toolhead3SpoolId != printerTool3SpoolId ||
-        toolhead4SpoolId != printerTool4SpoolId ||
-        activeDialogSpoolId != activePrinterSpoolId
+    dialogSelection != printerSelection
 
 fun isActiveSpoolOutsideMapping(
     activePrinterSpoolId: Int?,
-    toolhead1SpoolId: Int?,
-    toolhead2SpoolId: Int?,
-    toolhead3SpoolId: Int?,
-    toolhead4SpoolId: Int?
+    dialogSelection: PrinterMappingSelection
 ): Boolean =
     activePrinterSpoolId != null &&
-        activePrinterSpoolId !in listOf(
-            toolhead1SpoolId,
-            toolhead2SpoolId,
-            toolhead3SpoolId,
-            toolhead4SpoolId
-        )
+        activePrinterSpoolId !in dialogSelection.toolheadSpoolIds()
 
 fun isWriteActionEnabled(form: SpoolFormState): Boolean =
     form.isValid() && !form.colorHex.isNullOrBlank()

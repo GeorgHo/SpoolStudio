@@ -92,7 +92,6 @@ fun MainScreenContent(
             availableVariants = viewModel.availableVariants,
             availableLocations = viewModel.availableLocations,
             spoolMode = viewModel.spoolMode,
-            onDuplicateSpool = { viewModel.duplicateCurrentSpool() },
             isMoonrakerReachable = viewModel.isMoonrakerReachable,
             printerTool1SpoolId = viewModel.printerTool1SpoolId,
             printerTool2SpoolId = viewModel.printerTool2SpoolId,

@@ -487,9 +487,10 @@ class MainViewModel : ViewModel() {
                 printerMappingStatusMessage = message
                 showSnackbarMessage(message)
             } catch (e: Exception) {
+                val message = printerMappingLoadErrorMessage(e)
                 printerMappingSaveSuccessful = false
-                printerMappingStatusMessage = "Loading printer mapping failed: ${e.message ?: "Unknown error"}"
-                showSnackbarMessage("Loading printer mapping failed: ${e.message ?: "Unknown error"}")
+                printerMappingStatusMessage = message
+                showSnackbarMessage(message)
             } finally {
                 printerMappingOperation = null
                 isLoadingPrinterMapping = false
@@ -540,9 +541,10 @@ class MainViewModel : ViewModel() {
                 printerMappingStatusMessage = "Mapping saved to printer"
                 showSnackbarMessage("Mapping saved to printer")
             } catch (e: Exception) {
+                val message = printerMappingSaveErrorMessage(e)
                 printerMappingSaveSuccessful = false
-                printerMappingStatusMessage = "Save failed: ${e.message ?: "Unknown error"}"
-                showSnackbarMessage("Save failed: ${e.message ?: "Unknown error"}")
+                printerMappingStatusMessage = message
+                showSnackbarMessage(message)
             } finally {
                 printerMappingOperation = null
                 isLoadingPrinterMapping = false
