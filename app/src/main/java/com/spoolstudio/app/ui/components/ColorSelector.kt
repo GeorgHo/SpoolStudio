@@ -64,7 +64,6 @@ import androidx.compose.ui.platform.LocalContext
 import android.graphics.ImageDecoder
 import android.os.Build
 import android.provider.MediaStore
-import android.graphics.Matrix
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -126,37 +125,17 @@ fun ColorSelector(
 
     fun detectColorFromPhotoTap(tapOffset: Offset) {
         val bitmap = photoBitmap ?: return
-        val viewWidth = photoViewSize.width.toFloat()
-        val viewHeight = photoViewSize.height.toFloat()
-
-        if (viewWidth <= 0f || viewHeight <= 0f) return
-
-        val bitmapWidth = bitmap.width.toFloat()
-        val bitmapHeight = bitmap.height.toFloat()
-
-        val scale = maxOf(
-            viewWidth / bitmapWidth,
-            viewHeight / bitmapHeight
-        )
-
-        val scaledWidth = bitmapWidth * scale
-        val scaledHeight = bitmapHeight * scale
-
-        val offsetX = (scaledWidth - viewWidth) / 2f
-        val offsetY = (scaledHeight - viewHeight) / 2f
-
-        val bitmapX = ((tapOffset.x + offsetX) / scale)
-            .toInt()
-            .coerceIn(0, bitmap.width - 1)
-
-        val bitmapY = ((tapOffset.y + offsetY) / scale)
-            .toInt()
-            .coerceIn(0, bitmap.height - 1)
+        val coordinates = mappedBitmapTapCoordinates(
+            tapOffset = tapOffset,
+            viewSize = photoViewSize,
+            bitmapWidth = bitmap.width,
+            bitmapHeight = bitmap.height
+        ) ?: return
 
         val detectedHex = PhotoColorDetector.detectAverageHexColor(
             bitmap = bitmap,
-            x = bitmapX,
-            y = bitmapY,
+            x = coordinates.x,
+            y = coordinates.y,
             radius = 10
         )
 
@@ -529,22 +508,4 @@ fun ColorSelector(
             }
         }
     }
-}
-
-private fun Bitmap.toSoftwareArgbBitmap(): Bitmap {
-    return if (config == Bitmap.Config.ARGB_8888 && !isRecycled) {
-        copy(Bitmap.Config.ARGB_8888, false)
-    } else {
-        copy(Bitmap.Config.ARGB_8888, false)
-    }
-}
-
-private fun Bitmap.rotate90IfLandscape(): Bitmap {
-    if (width <= height) return this
-
-    val matrix = Matrix().apply {
-        postRotate(90f)
-    }
-
-    return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
 }
