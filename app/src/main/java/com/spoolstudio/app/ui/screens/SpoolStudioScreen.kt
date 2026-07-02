@@ -90,6 +90,7 @@ fun SpoolStudioScreen(
     var pendingBambuApply by remember { mutableStateOf<(() -> Unit)?>(null) }
     val defaultMaterial = MaterialDatabase.getMaterial("PLA") ?: MaterialDatabase.materials.first()
     val form = remember { SpoolFormState(defaultMaterial) }
+    val writeOpenSpoolTagUseCase = remember { WriteOpenSpoolTagUseCase() }
     var showPrinterMappingDialog by remember { mutableStateOf(false) }
     var printerMappingDialogSelection by remember { mutableStateOf(PrinterMappingSelection()) }
     val printerMappingSelection = printerMappingSelection(
@@ -284,9 +285,7 @@ fun SpoolStudioScreen(
                             onCreateInSpoolman(buildSaveRequest())
                         },
                         onWriteTag = {
-                            form.buildOpenSpoolTagData(spoolMode, selectedSpool)?.let { tagData ->
-                                onWriteTag(tagData.toJson())
-                            }
+                            writeOpenSpoolTagUseCase.buildPayload(form, spoolMode, selectedSpool)?.let(onWriteTag)
                         },
                         isNewFromSelectedEnabled = isNewFromSelectedEnabled,
                         onCreateNewSpool = onCreateNewSpool,
