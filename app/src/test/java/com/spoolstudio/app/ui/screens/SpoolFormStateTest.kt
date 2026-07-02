@@ -1,6 +1,7 @@
 package com.spoolstudio.app.ui.screens
 
 import com.spoolstudio.app.domain.models.Material
+import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.ui.SpoolMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -83,5 +84,47 @@ class SpoolFormStateTest {
         assertEquals("70", form.bedMinTemp)
         assertEquals("90", form.bedMaxTemp)
         assertEquals("1234567890ABCDEFGHIJKLMNOPQRSTUV", form.lotNr)
+    }
+
+    @Test
+    fun applySpoolSourceMapsKnownAndCustomLocation() {
+        val form = formState()
+        val sourceSpool = FilamentSpool(
+            id = 7,
+            material = "PETG",
+            variant = "",
+            brand = "Brand A",
+            colorHex = "00AACC",
+            location = "Rack 3",
+            minTemp = 230,
+            maxTemp = 250,
+            bedMinTemp = 70,
+            bedMaxTemp = 90,
+            lotNr = "LOT-7",
+            comment = "Existing",
+            remainingWeight = 512.5f,
+            spoolmanName = "PETG Cyan"
+        )
+
+        form.applySpoolSource(
+            sourceSpool = sourceSpool,
+            spoolMode = SpoolMode.UPDATE,
+            availableLocations = listOf("Shelf A")
+        )
+
+        assertEquals("PETG", form.filamentType)
+        assertEquals("Basic", form.variant)
+        assertEquals("Brand A", form.brand)
+        assertEquals("00AACC", form.colorHex)
+        assertEquals("Petg Cyan", form.colorName)
+        assertEquals("Other", form.location)
+        assertEquals("Rack 3", form.customLocation)
+        assertEquals("230", form.minTemp)
+        assertEquals("250", form.maxTemp)
+        assertEquals("70", form.bedMinTemp)
+        assertEquals("90", form.bedMaxTemp)
+        assertEquals("LOT-7", form.lotNr)
+        assertEquals("Existing", form.comment)
+        assertEquals("512.5", form.remainingWeight)
     }
 }

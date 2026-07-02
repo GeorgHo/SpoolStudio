@@ -100,107 +100,51 @@ fun SpoolStudioScreen(
     var toolhead4SpoolId by remember { mutableStateOf<Int?>(null) }
     var activeDialogSpoolId by remember { mutableStateOf<Int?>(null) }
 
-    val hasPrinterMappingChanges =
-        toolhead1SpoolId != printerTool1SpoolId ||
-                toolhead2SpoolId != printerTool2SpoolId ||
-                toolhead3SpoolId != printerTool3SpoolId ||
-                toolhead4SpoolId != printerTool4SpoolId ||
-                activeDialogSpoolId != activePrinterSpoolId
+    val hasPrinterMappingChanges = hasPrinterMappingChanges(
+        toolhead1SpoolId = toolhead1SpoolId,
+        toolhead2SpoolId = toolhead2SpoolId,
+        toolhead3SpoolId = toolhead3SpoolId,
+        toolhead4SpoolId = toolhead4SpoolId,
+        activeDialogSpoolId = activeDialogSpoolId,
+        printerTool1SpoolId = printerTool1SpoolId,
+        printerTool2SpoolId = printerTool2SpoolId,
+        printerTool3SpoolId = printerTool3SpoolId,
+        printerTool4SpoolId = printerTool4SpoolId,
+        activePrinterSpoolId = activePrinterSpoolId
+    )
 
-    val activeSpoolOutsideMapping =
-        activePrinterSpoolId != null &&
-                activePrinterSpoolId !in listOf(
-            toolhead1SpoolId,
-            toolhead2SpoolId,
-            toolhead3SpoolId,
-            toolhead4SpoolId
-        )
+    val activeSpoolOutsideMapping = isActiveSpoolOutsideMapping(
+        activePrinterSpoolId = activePrinterSpoolId,
+        toolhead1SpoolId = toolhead1SpoolId,
+        toolhead2SpoolId = toolhead2SpoolId,
+        toolhead3SpoolId = toolhead3SpoolId,
+        toolhead4SpoolId = toolhead4SpoolId
+    )
 
-    val spoolColor = form.colorHex?.let { hex ->
-
-        val normalized = hex.trim().removePrefix("#")
-
-        if (normalized.matches(Regex("^[A-Fa-f0-9]{6}$"))) {
-            Color(android.graphics.Color.parseColor("#$normalized"))
-        } else {
-            Color(0xFF4A423D)
-        }
-
-    } ?: Color(0xFF4A423D)
-
-    val printerMappingBusyLabel = when (printerMappingOperation) {
-        "load" -> "Loading printer mapping..."
-        "save" -> "Saving printer mapping..."
-        else -> null
-    }
-
-    val isWriteActionEnabled = form.isValid() && !form.colorHex.isNullOrBlank()
-    val hasSpoolmanChanges = spoolMode != SpoolMode.UPDATE ||
-        (selectedSpool != null && hasSpoolmanSaveChanges(form.buildSaveRequest(spoolMode, selectedSpool), selectedSpool))
-    val isSaveToSpoolmanEnabled = isWriteActionEnabled && hasSpoolmanChanges
-    val isNewFromSelectedEnabled =
-        spoolMode != SpoolMode.CREATE && (selectedSpool != null || readData != null)
-
-    val inlinePrinterMappingStatusColor = when {
-        isLoadingPrinterMapping -> MaterialTheme.colorScheme.primary
-        printerMappingSaveSuccessful == true -> MaterialTheme.colorScheme.primary
-        printerMappingSaveSuccessful == false -> MaterialTheme.colorScheme.error
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
-
-    val inlinePrinterMappingStatusText = when {
-        isLoadingPrinterMapping -> printerMappingBusyLabel
-        !printerMappingStatusMessage.isNullOrBlank() -> printerMappingStatusMessage
-        else -> null
-    }
+    val spoolColor = resolveSpoolColor(form.colorHex)
+    val isWriteActionEnabled = isWriteActionEnabled(form)
+    val isSaveToSpoolmanEnabled = isSaveToSpoolmanEnabled(form, spoolMode, selectedSpool)
+    val isNewFromSelectedEnabled = isNewFromSelectedEnabled(spoolMode, selectedSpool, readData)
+    val inlinePrinterMappingStatusColor = printerMappingStatusColor(
+        colorScheme = MaterialTheme.colorScheme,
+        isLoadingPrinterMapping = isLoadingPrinterMapping,
+        printerMappingSaveSuccessful = printerMappingSaveSuccessful
+    )
+    val inlinePrinterMappingStatusText = printerMappingStatusText(
+        isLoadingPrinterMapping = isLoadingPrinterMapping,
+        printerMappingOperation = printerMappingOperation,
+        printerMappingStatusMessage = printerMappingStatusMessage
+    )
 
     LaunchedEffect(readData, dataVersion, selectedSpool, spoolMode, availableLocations) {
         val sourceSpool = selectedSpool ?: readData?.let { FilamentSpool.fromOpenSpool(it) }
 
         if (sourceSpool != null) {
-            form.filamentType = sourceSpool.material
-            form.variant = sourceSpool.variant.ifBlank { "Basic" }
-            form.colorHex = sourceSpool.colorHex
-            form.colorName = formatColorName(
-                sourceSpool.spoolmanName?.takeIf { it.isNotBlank() }
-                    ?: sourceSpool.colorHex
-                    ?: form.colorName
+            form.applySpoolSource(
+                sourceSpool = sourceSpool,
+                spoolMode = spoolMode,
+                availableLocations = availableLocations
             )
-            form.brand = sourceSpool.brand
-
-            val loadedLocation = sourceSpool.location.orEmpty().trim()
-            if (loadedLocation.isBlank()) {
-                form.clearLocation()
-            } else if (loadedLocation in availableLocations) {
-                form.location = loadedLocation
-                form.customLocation = ""
-            } else {
-                form.location = "Other"
-                form.customLocation = loadedLocation
-            }
-
-            form.minTemp = sourceSpool.minTemp?.toString() ?: form.minTemp
-            form.maxTemp = sourceSpool.maxTemp?.toString() ?: form.maxTemp
-            form.bedMinTemp = sourceSpool.bedMinTemp?.toString() ?: form.bedMinTemp
-            form.bedMaxTemp = sourceSpool.bedMaxTemp?.toString() ?: form.bedMaxTemp
-            form.lotNr = if (spoolMode == SpoolMode.UPDATE) {
-                sourceSpool.lotNr.orEmpty()
-            } else {
-                ""
-            }
-            form.comment = if (spoolMode == SpoolMode.UPDATE) {
-                sourceSpool.comment ?: ""
-            } else {
-                "Created by Spool Studio"
-            }
-            form.remainingWeight = sourceSpool.remainingWeight
-                ?.takeIf { it >= 0f }
-                ?.let { weight ->
-                    if (weight % 1f == 0f) weight.toInt().toString() else weight.toString()
-                }
-                ?: ""
-            form.colorHexInput = form.colorHex ?: ""
-            form.colorNameWasManuallyEdited = false
         } else if (spoolMode == SpoolMode.CREATE) {
             form.clearLocation()
         }
@@ -314,11 +258,7 @@ fun SpoolStudioScreen(
         onClearRawReadData()
     }
 
-    val primaryActionLabel = when (spoolMode) {
-        SpoolMode.CREATE -> "Write to Spoolman"
-        SpoolMode.UPDATE -> "Update in Spoolman"
-        SpoolMode.DUPLICATE -> "Duplicate in Spoolman"
-    }
+    val primaryActionLabel = spoolActionLabel(spoolMode)
 
     Surface(
         modifier = Modifier.fillMaxSize(),
