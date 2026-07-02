@@ -25,10 +25,13 @@
 
 ## Features
 
-- Add search/autocomplete support to remaining selection fields where list size makes scrolling awkward.
 - Review low-filament warning colors after real device testing; consider two levels such as yellow and red.
-- Review snackbar/status display duration and placement after real device testing.
-- Make any remaining action buttons disabled when their preconditions are not met.
+- Re-check action button disabled states during final full-device test.
+- Final real-device checks:
+  - Bambu RFID read/apply flow.
+  - OpenSpool RFID write flow.
+  - Photo color detection on the phone camera/gallery.
+  - Printer mapping against the repaired printer scripts.
 
 ## Release
 
