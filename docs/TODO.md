@@ -16,14 +16,6 @@
   - Spoolman create/update decisions.
   - Bambu RFID parsing and data application.
 
-## Features after structure cleanup
-
-- Add a clear Spoolman sync status for the selected spool.
-- Make action buttons state-aware:
-  - Apply this to every action button where usage prerequisites can be determined reliably.
-  - Enable Spoolman update only when form values changed.
-  - Enable RFID write actions only when valid tag data is available and write mode makes sense.
-  - Keep disabled states visually clear so users understand which action is currently possible.
 - Add release documentation:
   - Version bump.
   - Android Studio Gradle sync.
