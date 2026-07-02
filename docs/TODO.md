@@ -4,13 +4,9 @@
 
 - Continue reducing `SpoolStudioScreen.kt` where cohesive sections can be moved without behavior risk.
 - Continue reducing `MainViewModel.kt` by moving remaining workflows into focused helpers/use cases:
-  - NFC tag read state handling.
-  - Printer mapping load/save flow.
-  - Connection test state handling.
-- Add or extend unit tests for:
-  - NFC tag read state handling.
-  - Printer mapping load/save flow.
-  - Connection test error mapping.
+  - Settings load/save state handling.
+  - Spoolman catalog refresh state handling.
+- Add or extend unit tests for remaining extracted workflows.
 
 ## Release
 

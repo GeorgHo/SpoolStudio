@@ -190,24 +190,29 @@ class MainViewModel : ViewModel() {
         newBambuMasterKey: String,
         newShowCommentField: Boolean
     ) {
-        val normalizedUrl = normalizeConnectionUrl(newUrl)
-        val normalizedMoonrakerUrl = normalizeConnectionUrl(newMoonrakerUrl)
-        val normalizedSort = newSort.ifBlank { "" }
-        val normalizedBambuMasterKey = newBambuMasterKey.trim().uppercase()
+        val settings = buildSettingsSaveState(
+            SettingsSaveInput(
+                spoolmanUrl = newUrl,
+                moonrakerUrl = newMoonrakerUrl,
+                spoolmanSortBy = newSort,
+                bambuMasterKey = newBambuMasterKey,
+                showCommentField = newShowCommentField
+            )
+        )
 
-        spoolmanUrl = normalizedUrl
-        moonrakerUrl = normalizedMoonrakerUrl
-        spoolmanSortBy = normalizedSort
-        bambuMasterKey = normalizedBambuMasterKey
-        showCommentField = newShowCommentField
+        spoolmanUrl = settings.spoolmanUrl
+        moonrakerUrl = settings.moonrakerUrl
+        spoolmanSortBy = settings.spoolmanSortBy
+        bambuMasterKey = settings.bambuMasterKey
+        showCommentField = settings.showCommentField
 
         AppSettingsStore.saveConnectionSettings(
             context = context,
-            spoolmanUrl = normalizedUrl,
-            moonrakerUrl = normalizedMoonrakerUrl,
-            spoolmanSortBy = normalizedSort,
-            bambuMasterKey = normalizedBambuMasterKey,
-            showCommentField = newShowCommentField
+            spoolmanUrl = settings.spoolmanUrl,
+            moonrakerUrl = settings.moonrakerUrl,
+            spoolmanSortBy = settings.spoolmanSortBy,
+            bambuMasterKey = settings.bambuMasterKey,
+            showCommentField = settings.showCommentField
         )
 
         loadSpoolmanFilaments()
