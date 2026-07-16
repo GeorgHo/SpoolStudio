@@ -2,219 +2,168 @@
 
 ![Platform](https://img.shields.io/badge/Platform-Android-green)
 ![Kotlin](https://img.shields.io/badge/Kotlin-100%25-blue)
+![Version](https://img.shields.io/badge/Version-2.0-brightgreen)
 ![Status](https://img.shields.io/badge/Status-Active-brightgreen)
-![Unofficial](https://img.shields.io/badge/Project-Unofficial-orange)
 
-Spool Studio is an Android app for managing 3D printer filament spools using NFC, Spoolman, and direct printer integration.
+Spool Studio is an Android app for managing 3D printer filament spools with Spoolman, NFC/RFID tags, and optional printer integration.
 
-This project is based on the open-source project **SpoolPainter** by ni4223 and has been significantly extended.
+Version 2.0 introduces a redesigned interface, improved Spoolman workflows, searchable selection dialogs, OpenSpool tag handling, printer mapping, and optional Bambu Lab RFID inspection.
 
----
-
-## 📥 Download
-
-👉 [Download latest APK](https://github.com/GeorgHo/SpoolStudio/releases/latest)
+This project started from the open-source project **SpoolPainter** by ni4223 and has since been heavily extended.
 
 ---
 
+## Download
+
+[Download the latest APK](https://github.com/GeorgHo/SpoolStudio/releases/latest)
+
 ---
 
-## 🚀 Quick Start
+## Screenshots
+
+<p align="center">
+  <img src="docs/images/v2_main.png" width="260" alt="Spool Studio main screen"/>
+  <img src="docs/images/v2_settings.png" width="260" alt="Spool Studio settings"/>
+  <img src="docs/images/v2_actions.png" width="260" alt="Spool Studio action buttons"/>
+</p>
+
+---
+
+## Highlights
+
+- Modern dark UI designed for quick spool editing on a phone
+- Spoolman support for reading, creating, updating, and deleting spools
+- OpenSpool-compatible NFC/RFID tag read and write support
+- Searchable dropdowns for spool, material, variant, brand, color, location, and spool tare weight
+- Color picker, color-name recognition, and HEX color editing
+- Remaining filament tracking with visual low-filament warnings
+- Optional lot number and comment fields
+- Optional spool tare weight field with reuse suggestions by brand
+- Snapmaker U1 printer mapping through Moonraker
+- Optional Bambu Lab RFID dump view when a user-provided key is configured
+
+---
+
+## Quick Start
 
 ### 1. Install the App
-- Download the latest APK from the section above
-- Install it on your Android device (enable "Install unknown apps" if needed)
 
----
+- Download the APK from the latest release.
+- Install it on your Android device.
+- Enable "Install unknown apps" for your browser or file manager if Android asks for it.
 
-### 2. Setup Spoolman (Required for Core Features)
+### 2. Connect Spoolman
 
-- Open **Settings** in the app
-- Enter your Spoolman URL (e.g. `http://<your-server>:7912`)
-- Test the connection
+- Open **Settings**.
+- Enter your Spoolman URL, for example `http://10.201.0.1:8000`.
+- Tap **Test Spoolman Connection**.
 
-Once connected, you can:
-- View existing spools
-- Create new spools
-- Edit spool data
-- Sync filament information
-
----
+Once connected, the app can load spool data, create new spools, update existing entries, and synchronize data with NFC/RFID tags.
 
 ### 3. Use NFC / OpenSpool Tags
 
-- Tap **Read NFC Tag** to scan an existing tag
-- Tap **Write to NFC** to store spool data on a tag
-- Tags use the OpenSpool format for compatibility
+- Tap **Read RFID** to scan an existing tag.
+- Tap **Write RFID** to store the current spool data on a tag.
+- Spool Studio writes OpenSpool-compatible tag data.
 
----
+### 4. Optional: Printer Mapping
 
-### 4. (Optional) Printer Integration — Snapmaker U1
+Printer mapping is designed for:
 
-Requirements:
 - Snapmaker U1
 - paxx12 Extended Firmware
-- Moonraker + Spoolman integration
+- Moonraker
+- Spoolman integration
 
-Setup:
-- Enter your Moonraker URL in Settings (e.g. `http://<printer-ip>:7125`)
-- Test the connection
+Enter your Moonraker URL in **Settings**, test the connection, then use **Printer Mapping** to read and update active toolhead spool assignments.
 
-You can then:
-- Load current toolhead ↔ spool mapping
-- Assign spools to toolheads (E0–E3)
-- Sync active spool usage with Spoolman
+### 5. Optional: Bambu Lab RFID
+
+Bambu Lab RFID support requires a user-provided master key. The key is not included in this project.
 
 ---
 
-### 5. (Optional) Bambu Lab RFID
+## Features
 
-- Requires a user-provided key
-- Not included in this project
+### Spoolman
 
-Use this feature only if you understand the implications.
+- Load existing spools from Spoolman
+- Create a completely new spool
+- Create a new spool from a selected spool
+- Update spool details
+- Delete a selected spool after confirmation
+- Use Spoolman catalogs for materials, brands, locations, and known spool weights
+- Display Spoolman server information in Settings
 
----
+### Filament Data
 
-## ✨ Features
+- Material type and variant
+- Brand
+- Color, color name, and HEX value
+- Remaining filament weight
+- Optional spool tare weight
+- Optional location, lot number, and comment
+- Nozzle and bed temperature ranges
 
-### 🔗 Spoolman & OpenSpool Integration (Core Features)
+### NFC / RFID
 
-These features work independently of printer integration and only require a Spoolman backend.
-They are based on the OpenSpool data model for consistent filament data handling.
+- Read OpenSpool tags
+- Write OpenSpool tags
+- Map material names to OpenSpool-compatible values when needed
+- Keep physical tags and Spoolman records aligned
 
-* Read spools from Spoolman
+### Printer Integration
 
-* Create new spools in Spoolman
+- Read current toolhead spool mapping
+- Assign Spoolman spools to toolheads
+- Mark active spools
+- Save printer mapping through Moonraker
+- Show clear status and error messages instead of raw dumps
 
-* Edit existing spool data (material, color, temperatures, brand, location, etc.)
+### Bambu Lab RFID
 
-* Synchronize spool data between app and Spoolman
-
-* NFC/RFID tag read and write (OpenSpool format)
-
-* Store spool information directly on physical tags
-
-* Maintain a consistent link between physical spools and digital records
-
----
-
-### 🖨️ Printer Integration (Snapmaker U1 only)
-
-These features require:
-
-* Snapmaker U1
-
-* paxx12 Extended Firmware
-
-* Moonraker + Spoolman integration
-
-* Read current toolhead ↔ spool assignments from the printer
-
-* Update spool mappings (E0–E3 / Toolhead 1–4)
-
-* Synchronize active spool usage with Spoolman
-
-* Maintain a single source of truth between:
-  App ↔ Printer ↔ Spoolman
-
-> ⚠️ **Important:**
-> Full printer integration is **only supported on the Snapmaker U1**
-> and requires the **paxx12 Extended Firmware**.
-> Standard Snapmaker firmware and other printers are not supported.
+- Read and inspect Bambu Lab RFID tag data when a key is configured
+- Show parsed dump data in a dedicated view
+- Keep key handling user-controlled
 
 ---
 
-### 🏷️ Bambu Lab RFID Support (Advanced / Optional)
+## Requirements
 
-* Read Bambu Lab RFID tags
-* Parse tag data (depending on available key)
-* Extend compatibility with vendor-specific filament systems
-
-> ⚠️ Requires a user-supplied key (not included in this project)
-
----
-
-## 🔗 OpenSpool Support
-
-Spool Studio uses the OpenSpool data format for NFC/RFID tags.
-
-This ensures:
-
-* standardized filament data storage
-* compatibility with OpenSpool-compatible tools
-* portable spool identification across systems
+- Android device with NFC
+- Android API 21 or newer
+- Spoolman server for the main workflow
+- Optional: Snapmaker U1 with paxx12 Extended Firmware and Moonraker
+- Optional: user-provided Bambu Lab RFID key
 
 ---
 
-## 📸 Screenshots
+## Tech Stack
 
-### Main Screen
-
-<p align="center">
-  <img src="docs/images/01_main_1.png" width="250"/>
-  <img src="docs/images/01_main_2.png" width="250"/>
-</p>
-
-### Spool Details
-
-<p align="center">
-  <img src="docs/images/04_additional_spool__info.png" width="250"/>
-</p>
-
-### Settings (Spoolman & Moonraker)
-
-<p align="center">
-  <img src="docs/images/02_settings.png" width="250"/>
-</p>
-
-### Spoolman Integration
-
-<p align="center">
-  <img src="docs/images/03_spoolmaker_selection.png" width="250"/>
-  <img src="docs/images/03_spoolmaker_selected.png" width="250"/>
-</p>
-
-### Printer Mapping (Snapmaker U1 / Moonraker)
-
-<p align="center">
-  <img src="docs/images/05_snapmaker_u1_mapping_dialog.png" width="250"/>
-  <img src="docs/images/06_snapmaker_u1_loaded_mapping.png" width="250"/>
-</p>
+- Kotlin
+- Jetpack Compose
+- Material 3
+- NFC API
+- Coroutines
+- MVVM architecture
+- Spoolman API
+- Moonraker API
 
 ---
 
-## 🧰 Tech Stack
+## Credits
 
-* Kotlin
-* Jetpack Compose
-* Material 3
-* NFC API
-* Coroutines
-* MVVM architecture
-* Moonraker API
-* Klipper ecosystem
+- Original project: [SpoolPainter by ni4223](https://github.com/ni4223/SpoolPainter)
+- OpenSpool for the open filament tag data format
+- Spoolman for filament spool management
+- paxx12 for the Snapmaker U1 Extended Firmware
+- Moonraker and the Klipper ecosystem
 
----
-
-## 🙏 Credits
-
-* Original project: https://github.com/ni4223/SpoolPainter
-* Original developer: ni4223
-
-Special thanks to:
-
-* OpenSpool (open filament data format)
-* Spoolman (filament spool management backend)
-* paxx12 (Snapmaker U1 Extended Firmware)
-* Moonraker Team (Klipper API layer)
-
-This version is extended and maintained by Hovi.
-Permission to publish granted by the original author.
+Spool Studio is extended and maintained by Hovi.
 
 ---
 
-## ⚖️ License
+## License
 
 This project is based on the original SpoolPainter project by ni4223.
 
@@ -224,30 +173,8 @@ This project is licensed under the MIT License.
 
 ---
 
-## ⚠️ Disclaimer
+## Disclaimer
 
-This is an independent project and is not affiliated with the original developer.
-This project is tested with Snapmaker U1 but is not affiliated with Snapmaker.
+Spool Studio is an independent project and is not affiliated with Snapmaker, Bambu Lab, Spoolman, OpenSpool, Moonraker, Klipper, or the original SpoolPainter developer.
 
-### Bambu Lab RFID Notice
-
-Bambu Lab RFID tags use proprietary encryption and access keys which are **not publicly available**.
-
-* This project does **not provide any official keys**
-* Any key usage must be supplied by the user
-* The developer assumes **no responsibility** for:
-
-  * misuse
-  * reverse engineering
-  * potential legal implications
-
-Use this functionality at your own risk.
-
----
-
-## 📱 Requirements
-
-* Android device with NFC
-* Android API 21+
-* Optional: Spoolman server (for full functionality)
-* Optional: Snapmaker U1 with paxx12 firmware (for printer integration)
+Bambu Lab RFID tags use proprietary encryption and access keys. This project does not provide official keys. Any key usage must be supplied and evaluated by the user.
