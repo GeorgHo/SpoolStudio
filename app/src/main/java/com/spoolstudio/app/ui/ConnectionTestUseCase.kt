@@ -48,7 +48,7 @@ class ConnectionTestUseCase(
 
         return try {
             testSpoolmanConnection(normalizedUrl, sortBy)
-            ConnectionTestResult.Spoolman(status = "Spoolman erreichbar")
+            ConnectionTestResult.Spoolman(status = "Spoolman reachable")
         } catch (error: Exception) {
             ConnectionTestResult.Failed(connectionErrorMessage(error))
         }

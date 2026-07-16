@@ -8,14 +8,14 @@ data class BambuTagDump(
 ) {
     fun toFormattedHexDump(): String {
         if (blocks.isEmpty() && failedSectors.isEmpty()) {
-            return "Keine Daten gelesen."
+            return "No data read."
         }
 
         val grouped = blocks.groupBy { it.sectorIndex }
         val lines = mutableListOf<String>()
 
         for (sector in 0 until sectorCount) {
-            lines += "=== Sektor $sector ==="
+            lines += "=== Sector $sector ==="
 
             if (failedSectors.contains(sector)) {
                 lines += "AUTH FAILED"

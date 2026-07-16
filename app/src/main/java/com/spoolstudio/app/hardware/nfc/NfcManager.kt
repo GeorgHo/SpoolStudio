@@ -97,7 +97,7 @@ class NfcManager(private val context: android.content.Context) {
 
             for (sectorIndex in bambuRelevantSectors) {
                 if (sectorIndex >= sectorCount) continue
-                lines += "=== Sektor $sectorIndex ==="
+                lines += "=== Sector $sectorIndex ==="
 
                 val keyA = sectorKeys.getOrNull(sectorIndex)
                 if (keyA == null) {

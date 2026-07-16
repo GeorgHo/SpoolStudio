@@ -1,9 +1,15 @@
 package com.spoolstudio.app.ui.screens
 
+import android.app.Activity
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import com.spoolstudio.app.ui.MainViewModel
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 
 @Composable
 fun MainScreenContent(
@@ -12,9 +18,24 @@ fun MainScreenContent(
     onReadTag: () -> Unit
 ) {
     val context = LocalContext.current
+    var lastBackPressTime by remember { mutableStateOf(0L) }
 
     LaunchedEffect(Unit) {
         viewModel.loadSpoolmanUrl(context)
+    }
+
+    BackHandler {
+        if (viewModel.showSettings) {
+            viewModel.hideSettings()
+        } else {
+            val now = System.currentTimeMillis()
+            if (now - lastBackPressTime < 2000L) {
+                (context as? Activity)?.finishAndRemoveTask()
+            } else {
+                lastBackPressTime = now
+                viewModel.showSnackbarMessage("Press back again to close Spool Studio")
+            }
+        }
     }
 
     if (viewModel.showSettings) {
@@ -26,6 +47,14 @@ fun MainScreenContent(
             snackbarMessage = viewModel.snackbarMessage,
             showSnackbar = viewModel.showSnackbar,
             showCommentField = viewModel.showCommentField,
+            showEmptySpoolWeight = viewModel.showEmptySpoolWeight,
+            spoolCount = viewModel.spools.size,
+            activeSpoolCount = viewModel.spools.count { !it.archived },
+            archivedSpoolCount = viewModel.spools.count { it.archived },
+            spoolmanBrandCount = viewModel.availableBrands.size,
+            spoolmanMaterialCount = viewModel.availableMaterials.size,
+            spoolmanLocationCount = viewModel.availableLocations.size,
+            spoolmanColorCount = viewModel.spools.mapNotNull { it.colorHex?.takeIf(String::isNotBlank) }.distinct().size,
             onSnackbarDismiss = { viewModel.dismissSnackbar() },
 
             onTestMoonrakerConnection = { url ->
@@ -61,6 +90,9 @@ fun MainScreenContent(
             onShowLotNumberChanged = { value ->
                 viewModel.setShowLotNumber(context, value)
             },
+            onShowEmptySpoolWeightChanged = { value ->
+                viewModel.setShowEmptySpoolWeight(context, value)
+            },
             onBack = { viewModel.hideSettings() }
         )
     } else {
@@ -80,7 +112,7 @@ fun MainScreenContent(
             onClearRawReadData = { viewModel.clearRawReadData() },
             onSnackbarDismiss = { viewModel.dismissSnackbar() },
             onSettingsClick = { viewModel.showSettings() },
-            onBambuDataApplied = { viewModel.showSnackbarMessage("Daten aus Bambu RFID übernommen") },
+            onBambuDataApplied = { viewModel.showSnackbarMessage("Bambu RFID data applied") },
             spools = viewModel.spools,
             selectedSpool = viewModel.selectedSpool,
             isLoadingSpools = viewModel.isLoadingSpools,
@@ -110,6 +142,7 @@ fun MainScreenContent(
             printerMappingSaveSuccessful = viewModel.printerMappingSaveSuccessful,
             showLotNumber = viewModel.showLotNumber,
             showCommentField = viewModel.showCommentField,
+            showEmptySpoolWeight = viewModel.showEmptySpoolWeight,
             onBambuExistingSpoolFound = {
                 viewModel.showSnackbarMessage("Identical spool found in Spoolman")
             },
@@ -117,7 +150,14 @@ fun MainScreenContent(
                 viewModel.saveToSpoolman(request)
             },
             onCreateNewSpool = {
-                viewModel.createNewSpoolFromCurrent()
+                viewModel.duplicateCurrentSpool()
+            },
+            onCreateEmptySpool = {
+                viewModel.createEmptySpool()
+            },
+            isDeletingSpool = viewModel.isDeletingSpool,
+            onDeleteSelectedSpool = {
+                viewModel.deleteSelectedSpool()
             }
         )
     }

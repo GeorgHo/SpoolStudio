@@ -8,7 +8,8 @@ data class AppSettings(
     val spoolmanSortBy: String,
     val bambuMasterKey: String,
     val showLotNumber: Boolean,
-    val showCommentField: Boolean
+    val showCommentField: Boolean,
+    val showEmptySpoolWeight: Boolean
 )
 
 object AppSettingsStore {
@@ -19,6 +20,7 @@ object AppSettingsStore {
     private const val MOONRAKER_URL_KEY = "moonraker_url"
     private const val SHOW_LOT_NUMBER_KEY = "show_lot_number"
     private const val SHOW_COMMENT_FIELD = "show_comment_field"
+    private const val SHOW_EMPTY_SPOOL_WEIGHT = "show_empty_spool_weight"
     private const val DEFAULT_MOONRAKER_URL = ""
     private const val BAMBU_MASTER_KEY = "bambu_master_key"
 
@@ -34,7 +36,8 @@ object AppSettingsStore {
             spoolmanSortBy = prefs.getString(SPOOLMAN_SORT_KEY, "")?.ifBlank { "" } ?: "",
             bambuMasterKey = prefs.getString(BAMBU_MASTER_KEY, "")?.trim()?.uppercase() ?: "",
             showLotNumber = prefs.getBoolean(SHOW_LOT_NUMBER_KEY, false),
-            showCommentField = prefs.getBoolean(SHOW_COMMENT_FIELD, false)
+            showCommentField = prefs.getBoolean(SHOW_COMMENT_FIELD, false),
+            showEmptySpoolWeight = prefs.getBoolean(SHOW_EMPTY_SPOOL_WEIGHT, false)
         )
     }
 
@@ -60,6 +63,13 @@ object AppSettingsStore {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .edit()
             .putBoolean(SHOW_LOT_NUMBER_KEY, value)
+            .apply()
+    }
+
+    fun saveShowEmptySpoolWeight(context: Context, value: Boolean) {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(SHOW_EMPTY_SPOOL_WEIGHT, value)
             .apply()
     }
 

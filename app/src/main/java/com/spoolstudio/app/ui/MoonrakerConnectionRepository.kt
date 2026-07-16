@@ -33,13 +33,13 @@ class MoonrakerConnectionRepository {
             return if (responseCode in 200..299 && responseText.trim().startsWith("{")) {
                 MoonrakerConnectionResult(
                     reachable = true,
-                    status = "Moonraker erreichbar"
+                    status = "Moonraker reachable"
                 )
             } else {
                 MoonrakerConnectionResult(
                     reachable = false,
                     error = if (responseText.contains("<html", ignoreCase = true)) {
-                        "Kein direkter Moonraker-Endpunkt"
+                        "Not a direct Moonraker endpoint"
                     } else {
                         "HTTP $responseCode"
                     }

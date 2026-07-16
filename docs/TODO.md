@@ -1,5 +1,9 @@
 # SpoolStudio TODO
 
+## Release 2.0 status
+
+- Real-device phone test passed; Spool Studio 2.0 is ready for release preparation.
+
 ## Refactoring status
 
 - MainViewModel workflow extraction is complete for the planned scope:
@@ -23,20 +27,8 @@
   - `SpoolStudioScreen.kt`
   - `PrinterMappingDialog.kt`
 
-## Features
-
-- Review low-filament warning colors after real device testing; consider two levels such as yellow and red.
-- Re-check action button disabled states during final full-device test.
-- Final real-device checks:
-  - Bambu RFID read/apply flow.
-  - OpenSpool RFID write flow.
-  - Photo color detection on the phone camera/gallery.
-  - Printer mapping against the repaired printer scripts.
-
 ## Release
 
-- Add release documentation:
-  - Version bump.
-  - Android Studio Gradle sync.
-  - Signed APK build.
-  - GitHub release creation.
+- Version is set to `2.0`.
+- Release documentation is available in `docs/RELEASE_2.0.md`.
+- Remaining manual steps: create the signed APK in Android Studio, create the GitHub release with tag `v2.0`, and upload the APK.

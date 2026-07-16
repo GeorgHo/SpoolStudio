@@ -26,6 +26,7 @@ class SpoolFormState(private val defaultMaterial: Material) {
     var lotNr by mutableStateOf("")
     var comment by mutableStateOf("Created by Spool Studio")
     var remainingWeight by mutableStateOf("")
+    var emptySpoolWeight by mutableStateOf("")
     var colorHexInput by mutableStateOf("")
     var colorNameWasManuallyEdited by mutableStateOf(false)
     var isHexManuallySet by mutableStateOf(false)
@@ -51,6 +52,7 @@ class SpoolFormState(private val defaultMaterial: Material) {
         lotNr = ""
         comment = "Created by Spool Studio"
         remainingWeight = ""
+        emptySpoolWeight = ""
         colorHexInput = ""
         colorNameWasManuallyEdited = false
         isHexManuallySet = false
@@ -60,10 +62,10 @@ class SpoolFormState(private val defaultMaterial: Material) {
         isRemainingWeightValid(remainingWeight)
 
     fun isValid(): Boolean =
-        isSpoolFormValid(variant, brand, customBrand, filamentType, customMaterial, remainingWeight)
+        isSpoolFormValid(variant, brand, customBrand, filamentType, customMaterial, remainingWeight, emptySpoolWeight)
 
     fun validationMessage(): String? =
-        spoolFormValidationMessage(variant, brand, customBrand, filamentType, customMaterial, remainingWeight)
+        spoolFormValidationMessage(variant, brand, customBrand, filamentType, customMaterial, remainingWeight, emptySpoolWeight)
 
     fun buildSaveRequest(spoolMode: SpoolMode, selectedSpool: FilamentSpool?): SpoolmanSaveRequest =
         buildSpoolmanSaveRequest(
@@ -83,6 +85,7 @@ class SpoolFormState(private val defaultMaterial: Material) {
             lotNr = lotNr,
             comment = comment,
             remainingWeight = remainingWeight,
+            emptySpoolWeight = emptySpoolWeight,
             spoolMode = spoolMode,
             selectedSpool = selectedSpool
         )
@@ -124,6 +127,7 @@ class SpoolFormState(private val defaultMaterial: Material) {
         customBrand = ""
         clearLocation()
         remainingWeight = ""
+        emptySpoolWeight = ""
         comment = ""
 
         data.minHotend?.let { minTemp = it.toString() }

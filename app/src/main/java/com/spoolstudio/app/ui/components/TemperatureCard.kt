@@ -2,13 +2,13 @@ package com.spoolstudio.app.ui.components
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.spoolstudio.app.ui.theme.SpoolStudioShape
 
 @Composable
 fun TemperatureCard(
@@ -23,7 +23,7 @@ fun TemperatureCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = SpoolStudioShape.ScreenPanel,
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
@@ -102,15 +102,15 @@ fun TemperatureControl(
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Text(
-            text = "−",
+            text = "\u2212",
             modifier = Modifier
-                .size(32.dp)
+                .size(28.dp)
                 .clickable {
                     val current = value.toIntOrNull() ?: 0
-                    if (current > 0) onValueChange((current - 5).toString())
+                    if (current > 0) onValueChange((current - 1).toString())
                 }
                 .wrapContentSize(Alignment.Center),
             style = MaterialTheme.typography.titleLarge,
@@ -126,14 +126,14 @@ fun TemperatureControl(
                     onValueChange(sanitized)
                 }
             },
-            modifier = Modifier.width(80.dp),
+            modifier = Modifier.width(92.dp),
             textStyle = MaterialTheme.typography.bodyLarge.copy(
                 fontWeight = FontWeight.SemiBold
             ),
             singleLine = true,
             suffix = { 
                 Text(
-                    text = "°C",
+                    text = " \u00B0C",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -144,16 +144,16 @@ fun TemperatureControl(
                 focusedTextColor = MaterialTheme.colorScheme.onSurface,
                 unfocusedTextColor = MaterialTheme.colorScheme.onSurface
             ),
-            shape = RoundedCornerShape(20.dp)
+            shape = SpoolStudioShape.Field
         )
         
         Text(
             text = "+",
             modifier = Modifier
-                .size(32.dp)
+                .size(28.dp)
                 .clickable {
                     val current = value.toIntOrNull() ?: 0
-                    if (current < 500) onValueChange((current + 5).toString())
+                    if (current < 500) onValueChange((current + 1).toString())
                 }
                 .wrapContentSize(Alignment.Center),
             style = MaterialTheme.typography.titleLarge,

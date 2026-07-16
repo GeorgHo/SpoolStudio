@@ -66,7 +66,8 @@ class SpoolFormHelpersTest {
                 customBrand = "",
                 filamentType = "Other",
                 customMaterial = "",
-                remainingWeight = ""
+                remainingWeight = "",
+                emptySpoolWeight = ""
             )
         )
 
@@ -78,7 +79,8 @@ class SpoolFormHelpersTest {
                 customBrand = "",
                 filamentType = "PLA",
                 customMaterial = "",
-                remainingWeight = "-1"
+                remainingWeight = "-1",
+                emptySpoolWeight = ""
             )
         )
 
@@ -89,7 +91,8 @@ class SpoolFormHelpersTest {
                 customBrand = "",
                 filamentType = "PLA",
                 customMaterial = "",
-                remainingWeight = "42,50"
+                remainingWeight = "42,50",
+                emptySpoolWeight = "180"
             )
         )
     }
@@ -113,6 +116,7 @@ class SpoolFormHelpersTest {
             lotNr = "LOT-1",
             comment = "Test",
             remainingWeight = "750",
+            emptySpoolWeight = "180",
             spoolMode = SpoolMode.CREATE,
             selectedSpool = null
         )
@@ -121,6 +125,7 @@ class SpoolFormHelpersTest {
         assertEquals("CustomBrand", request.brand)
         assertEquals("Shelf A", request.location)
         assertEquals("750", request.remainingWeight)
+        assertEquals("180", request.emptySpoolWeight)
         assertNull(request.existingSpoolId)
     }
 

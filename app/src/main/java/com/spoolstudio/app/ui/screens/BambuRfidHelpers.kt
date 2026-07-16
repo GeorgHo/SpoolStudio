@@ -87,6 +87,7 @@ fun resolveBambuRfidApplyDecision(
 
 fun isBambuRfidDump(text: String): Boolean =
     text.contains("Bambu RFID Parsed") ||
+        text.contains("=== Sector") ||
         text.contains("=== Sektor") ||
         text.contains("Block 0 (abs")
 
@@ -144,7 +145,7 @@ fun buildBambuDiffText(
     colorHexValue: String?
 ): String {
     val lines = mutableListOf<String>()
-    lines += "Spule mit gleicher Lot Nummer gefunden."
+    lines += "Spool with matching lot number found."
     lines += ""
     lines += "ID: ${spool.id ?: "-"}"
     lines += "Lot Number: ${spool.lotNr ?: "-"}"
@@ -152,21 +153,21 @@ fun buildBambuDiffText(
 
     if (!spool.material.equals(material.orEmpty(), ignoreCase = true)) {
         lines += "Material:"
-        lines += "- Datenbank: ${spool.material}"
+        lines += "- Database: ${spool.material}"
         lines += "- Bambu: ${material ?: "-"}"
         lines += ""
     }
 
     if (!spool.variant.equals(normalizedVariant, ignoreCase = true)) {
         lines += "Variant:"
-        lines += "- Datenbank: ${spool.variant.ifBlank { "Basic" }}"
+        lines += "- Database: ${spool.variant.ifBlank { "Basic" }}"
         lines += "- Bambu: ${normalizedVariant.ifBlank { "Basic" }}"
         lines += ""
     }
 
     if (normalizeHexForCompare(spool.colorHex) != normalizeHexForCompare(colorHexValue)) {
         lines += "Color:"
-        lines += "- Datenbank: ${spool.colorHex?.let { "#$it" } ?: "-"}"
+        lines += "- Database: ${spool.colorHex?.let { "#$it" } ?: "-"}"
         lines += "- Bambu: ${colorHexValue?.let { "#$it" } ?: "-"}"
         lines += ""
     }

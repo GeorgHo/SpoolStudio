@@ -14,12 +14,14 @@ class SettingsStateHelpersTest {
                 spoolmanSortBy = "last_used:desc",
                 bambuMasterKey = "ABCD1234",
                 showLotNumber = true,
-                showCommentField = true
+                showCommentField = true,
+                showEmptySpoolWeight = true
             )
         )
 
         assertEquals(true, state.showLotNumber)
         assertEquals(true, state.showCommentField)
+        assertEquals(true, state.showEmptySpoolWeight)
         assertEquals("http://spoolman.local", state.spoolmanUrl)
         assertEquals("last_used:desc", state.spoolmanSortBy)
         assertEquals("http://printer.local", state.moonrakerUrl)

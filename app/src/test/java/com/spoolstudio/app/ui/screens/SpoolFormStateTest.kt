@@ -31,6 +31,7 @@ class SpoolFormStateTest {
             lotNr = "LOT-1"
             comment = "Test"
             remainingWeight = "750"
+            emptySpoolWeight = "180"
         }
 
         val request = form.buildSaveRequest(SpoolMode.CREATE, selectedSpool = null)
@@ -39,6 +40,7 @@ class SpoolFormStateTest {
         assertEquals("CustomBrand", request.brand)
         assertEquals("Shelf A", request.location)
         assertEquals("750", request.remainingWeight)
+        assertEquals("180", request.emptySpoolWeight)
         assertNull(request.existingSpoolId)
     }
 
@@ -54,10 +56,17 @@ class SpoolFormStateTest {
     }
 
     @Test
+    fun validationRejectsInvalidEmptySpoolWeight() {
+        val form = formState().apply { emptySpoolWeight = "abc" }
+        assertEquals("Please enter a valid empty spool weight", form.validationMessage())
+    }
+
+    @Test
     fun applyBambuRfidDataUpdatesFormState() {
         val form = formState().apply {
             remainingWeight = "123.45"
             comment = "Existing comment"
+            emptySpoolWeight = "180"
         }
         val data = BambuRfidFormData(
             material = "PETG",
@@ -88,6 +97,7 @@ class SpoolFormStateTest {
         assertEquals("90", form.bedMaxTemp)
         assertEquals("1234567890ABCDEFGHIJKLMNOPQRSTUV", form.lotNr)
         assertEquals("", form.remainingWeight)
+        assertEquals("", form.emptySpoolWeight)
         assertEquals("", form.comment)
     }
 
@@ -108,6 +118,7 @@ class SpoolFormStateTest {
             lotNr = "LOT-7",
             comment = "Existing",
             remainingWeight = 512.5f,
+            emptySpoolWeight = 180f,
             spoolmanName = "PETG Cyan"
         )
 
@@ -131,5 +142,46 @@ class SpoolFormStateTest {
         assertEquals("LOT-7", form.lotNr)
         assertEquals("Existing", form.comment)
         assertEquals("512.50", form.remainingWeight)
+        assertEquals("180.00", form.emptySpoolWeight)
+    }
+
+    @Test
+    fun applyDuplicateSpoolSourceClearsColorFieldsWhenSourceHasNoColor() {
+        val form = formState().apply {
+            colorHex = "00B1E7"
+            colorHexInput = "00B1E7"
+            colorName = "Cyan Blue"
+            colorNameWasManuallyEdited = true
+        }
+        val sourceSpool = FilamentSpool(
+            id = null,
+            material = "PLA+",
+            variant = "Silk",
+            brand = "GST 3D",
+            colorHex = null,
+            location = null,
+            minTemp = 200,
+            maxTemp = 230,
+            bedMinTemp = 50,
+            bedMaxTemp = 70,
+            lotNr = null,
+            comment = null,
+            remainingWeight = null,
+            spoolmanName = ""
+        )
+
+        form.applySpoolSource(
+            sourceSpool = sourceSpool,
+            spoolMode = SpoolMode.DUPLICATE,
+            availableLocations = emptyList()
+        )
+
+        assertEquals("PLA+", form.filamentType)
+        assertNull(form.colorHex)
+        assertEquals("", form.colorHexInput)
+        assertEquals("", form.colorName)
+        assertEquals("", form.remainingWeight)
+        assertEquals("", form.location)
+        assertEquals("Created by Spool Studio", form.comment)
     }
 }

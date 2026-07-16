@@ -209,7 +209,7 @@ Special thanks to:
 * paxx12 (Snapmaker U1 Extended Firmware)
 * Moonraker Team (Klipper API layer)
 
-This version is extended and maintained by Hovi (unofficial).
+This version is extended and maintained by Hovi.
 Permission to publish granted by the original author.
 
 ---
@@ -226,7 +226,7 @@ This project is licensed under the MIT License.
 
 ## ⚠️ Disclaimer
 
-This is an unofficial project and is not affiliated with the original developer.
+This is an independent project and is not affiliated with the original developer.
 This project is tested with Snapmaker U1 but is not affiliated with Snapmaker.
 
 ### Bambu Lab RFID Notice

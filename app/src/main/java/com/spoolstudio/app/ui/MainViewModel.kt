@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.spoolstudio.app.data.remote.spoolman.SpoolmanService
 import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.domain.models.OpenSpoolData
 import kotlinx.coroutines.launch
@@ -41,6 +42,8 @@ class MainViewModel : ViewModel() {
     var selectedSpool by mutableStateOf<FilamentSpool?>(null)
         private set
     var isLoadingSpools by mutableStateOf(false)
+        private set
+    var isDeletingSpool by mutableStateOf(false)
         private set
     var spoolmanSortBy by mutableStateOf("")
         private set
@@ -104,6 +107,8 @@ class MainViewModel : ViewModel() {
     var bambuMasterKey by mutableStateOf("")
         private set
     var showCommentField by mutableStateOf(false)
+        private set
+    var showEmptySpoolWeight by mutableStateOf(false)
         private set
     fun refreshSelectedSpool(spoolId: Int) {
         if (spoolmanUrl.isBlank()) return
@@ -218,6 +223,7 @@ class MainViewModel : ViewModel() {
     private fun applySettingsLoadState(state: SettingsLoadState) {
         showLotNumber = state.showLotNumber
         showCommentField = state.showCommentField
+        showEmptySpoolWeight = state.showEmptySpoolWeight
         spoolmanUrl = state.spoolmanUrl
         spoolmanSortBy = state.spoolmanSortBy
         moonrakerUrl = state.moonrakerUrl
@@ -249,21 +255,14 @@ class MainViewModel : ViewModel() {
         showSnackbarMessage("New from selected mode enabled")
     }
 
-    fun createNewSpoolFromCurrent() {
-        val sourceSpool = selectedSpool
-
-        if (sourceSpool == null && readData == null) {
-            showSnackbarMessage("No spool loaded")
-            return
-        }
-
+    fun createEmptySpool() {
         currentSpoolId = null
         selectedSpool = null
         spoolMode = SpoolMode.CREATE
-        readData = buildSpoolModeSourceData(sourceSpool, readData)
+        readData = null
 
         dataVersion++
-        showSnackbarMessage("New from selected mode enabled")
+        showSnackbarMessage("New spool mode enabled")
     }
 
     fun saveToSpoolman(request: SpoolmanSaveRequest) {
@@ -308,6 +307,41 @@ class MainViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 showSnackbarMessage("Spoolman action failed: ${e.message ?: "Unknown error"}")
+            }
+        }
+    }
+
+    fun deleteSelectedSpool() {
+        val spool = selectedSpool
+        val spoolId = spool?.id
+        when {
+            spoolmanUrl.isBlank() -> {
+                showSnackbarMessage("Please configure a Spoolman URL first")
+                return
+            }
+            spool == null || spoolId == null -> {
+                showSnackbarMessage("No Spoolman spool selected")
+                return
+            }
+            isDeletingSpool -> return
+        }
+
+        showSnackbarMessage("Deleting spool ID #$spoolId from Spoolman...")
+        viewModelScope.launch {
+            isDeletingSpool = true
+            try {
+                SpoolmanService(spoolmanUrl).deleteSpool(spoolId)
+                selectedSpool = null
+                currentSpoolId = null
+                readData = null
+                spoolMode = SpoolMode.CREATE
+                dataVersion++
+                loadSpoolmanFilaments()
+                showSnackbarMessage("Spool ID #$spoolId deleted from Spoolman")
+            } catch (e: Exception) {
+                showSnackbarMessage("Delete failed: ${e.message ?: "Unknown error"}")
+            } finally {
+                isDeletingSpool = false
             }
         }
     }
@@ -479,6 +513,11 @@ class MainViewModel : ViewModel() {
     fun setShowLotNumber(context: Context, value: Boolean) {
         showLotNumber = value
         AppSettingsStore.saveShowLotNumber(context, value)
+    }
+
+    fun setShowEmptySpoolWeight(context: Context, value: Boolean) {
+        showEmptySpoolWeight = value
+        AppSettingsStore.saveShowEmptySpoolWeight(context, value)
     }
 
     fun savePrinterMapping(

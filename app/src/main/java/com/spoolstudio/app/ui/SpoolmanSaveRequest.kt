@@ -14,5 +14,6 @@ data class SpoolmanSaveRequest(
     val lotNr: String,
     val comment: String,
     val remainingWeight: String,
+    val emptySpoolWeight: String,
     val existingSpoolId: Int?
 )

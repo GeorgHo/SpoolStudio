@@ -83,8 +83,8 @@ data class OpenSpoolData(
                 material = spool.material,
                 variant = spool.variant
             ) ?: throw IllegalArgumentException(
-                "Material '${spool.material}' mit Variante '${spool.variant}' " +
-                        "kann nicht auf einen OpenSpool-Tag geschrieben werden."
+                "Material '${spool.material}' with variant '${spool.variant}' " +
+                        "cannot be written to an OpenSpool tag."
             )
 
             return OpenSpoolData(

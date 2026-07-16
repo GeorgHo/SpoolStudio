@@ -11,7 +11,7 @@ class ConnectionTestUseCaseTest {
         val useCase = ConnectionTestUseCase()
 
         assertEquals(
-            "URL muss mit http:// oder https:// beginnen",
+            "URL must start with http:// or https://",
             useCase.validationError("printer.local")
         )
     }
@@ -22,7 +22,7 @@ class ConnectionTestUseCaseTest {
             testMoonrakerConnection = {
                 MoonrakerConnectionResult(
                     reachable = true,
-                    status = "Moonraker erreichbar"
+                    status = "Moonraker reachable"
                 )
             },
             testSpoolmanConnection = { _, _ -> throw AssertionError("Spoolman must not be called") }
@@ -32,7 +32,7 @@ class ConnectionTestUseCaseTest {
 
         assertTrue(result is ConnectionTestResult.Moonraker)
         assertEquals(true, (result as ConnectionTestResult.Moonraker).reachable)
-        assertEquals("Moonraker erreichbar", result.status)
+        assertEquals("Moonraker reachable", result.status)
     }
 
     @Test
@@ -45,6 +45,6 @@ class ConnectionTestUseCaseTest {
         val result = useCase.testSpoolman("http://spoolman.local", sortBy = "")
 
         assertTrue(result is ConnectionTestResult.Failed)
-        assertEquals("Host nicht erreichbar", (result as ConnectionTestResult.Failed).error)
+        assertEquals("Host not reachable", (result as ConnectionTestResult.Failed).error)
     }
 }

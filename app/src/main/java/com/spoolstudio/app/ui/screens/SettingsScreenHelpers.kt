@@ -1,7 +1,19 @@
 package com.spoolstudio.app.ui.screens
 
 fun normalizeSettingsUrl(url: String): String {
-    return url.trim().removeSuffix("/")
+    var result = url.trim()
+
+    if (result.isBlank()) return ""
+
+    if (!result.startsWith("http://") && !result.startsWith("https://")) {
+        result = "http://$result"
+    }
+
+    result = result.replace(Regex("/(\\d{2,5})(/|$)")) { match ->
+        ":${match.groupValues[1]}/"
+    }
+
+    return result.removeSuffix("/")
 }
 
 fun normalizeMoonrakerSettingsUrl(url: String): String {
@@ -38,7 +50,7 @@ fun hasSettingsChanges(
     savedShowCommentField: Boolean
 ): Boolean {
     return normalizeSettingsUrl(tempSpoolmanUrl) != normalizeSettingsUrl(savedSpoolmanUrl) ||
-        normalizeSettingsUrl(tempMoonrakerUrl) != normalizeSettingsUrl(savedMoonrakerUrl) ||
+        normalizeMoonrakerSettingsUrl(tempMoonrakerUrl) != normalizeMoonrakerSettingsUrl(savedMoonrakerUrl) ||
         normalizeSettingsSort(tempSort) != normalizeSettingsSort(savedSort) ||
         tempBambuKey.trim().uppercase() != savedBambuKey.trim().uppercase() ||
         tempShowCommentField != savedShowCommentField
@@ -56,7 +68,7 @@ fun runUrlRetestIfNeeded(
 
     val normalized = normalizeSettingsUrl(currentValue)
     if (normalized.isNotBlank() && normalized != lastTestedValue) {
-        onTest(currentValue)
+        onTest(normalized)
         onLastTestedChange(normalized)
     }
 }

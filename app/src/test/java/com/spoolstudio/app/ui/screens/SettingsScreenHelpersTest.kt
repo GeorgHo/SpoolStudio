@@ -7,8 +7,13 @@ import org.junit.Test
 
 class SettingsScreenHelpersTest {
     @Test
-    fun normalizeSettingsUrlTrimsAndRemovesTrailingSlash() {
+    fun normalizeSettingsUrlTrimsAddsSchemeAndRemovesTrailingSlash() {
         assertEquals("http://spoolman.local", normalizeSettingsUrl(" http://spoolman.local/ "))
+    }
+
+    @Test
+    fun normalizeSettingsUrlAcceptsBareSpoolmanAddress() {
+        assertEquals("http://10.201.0.1:8000", normalizeSettingsUrl("10.201.0.1:8000/"))
     }
 
     @Test
@@ -77,7 +82,7 @@ class SettingsScreenHelpersTest {
             onLastTestedChange = { lastTestedValue = it }
         )
 
-        assertEquals("http://spoolman.local/", testedValue)
+        assertEquals("http://spoolman.local", testedValue)
         assertEquals("http://spoolman.local", lastTestedValue)
     }
 }

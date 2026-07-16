@@ -71,7 +71,8 @@ fun LocationSection(
             onDismissRequest = {
                 locationExpanded = false
                 searchQuery = ""
-            }
+            },
+            modifier = Modifier.height(320.dp)
         ) {
             OutlinedTextField(
                 value = searchQuery,

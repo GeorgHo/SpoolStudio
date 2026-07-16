@@ -3,7 +3,6 @@ package com.spoolstudio.app.ui.screens
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
@@ -22,6 +21,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.spoolstudio.app.ui.remainingWeightWarningThreshold
+import com.spoolstudio.app.ui.theme.SpoolStudioShape
 
 @Composable
 fun SpoolDetailsSection(
@@ -54,8 +54,6 @@ fun SpoolDetailsSection(
     }
 
     if (showLotNumber) {
-        Spacer(modifier = Modifier.height(12.dp))
-
         OutlinedTextField(
             value = lotNr,
             onValueChange = { input ->
@@ -66,11 +64,11 @@ fun SpoolDetailsSection(
             label = { Text("Lot Number") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
-            shape = RoundedCornerShape(16.dp)
+            shape = SpoolStudioShape.Field
         )
     }
 
-    Spacer(modifier = Modifier.height(12.dp))
+    Spacer(modifier = Modifier.height(if (showLotNumber) 8.dp else 0.dp))
 
     OutlinedTextField(
         value = remainingWeight,
@@ -109,11 +107,11 @@ fun SpoolDetailsSection(
                 focusManager.clearFocus()
             }
         ),
-        shape = RoundedCornerShape(16.dp)
+        shape = SpoolStudioShape.Field
     )
 
     if (showCommentField) {
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
             value = comment,
@@ -125,7 +123,7 @@ fun SpoolDetailsSection(
             label = { Text("Comment") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
-            shape = RoundedCornerShape(16.dp)
+            shape = SpoolStudioShape.Field
         )
     }
 }

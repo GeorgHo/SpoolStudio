@@ -3,6 +3,7 @@ package com.spoolstudio.app.ui.screens
 import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.ui.SpoolMode
 import com.spoolstudio.app.utils.formatColorName
+import com.spoolstudio.app.utils.suggestColorName
 
 fun SpoolFormState.applySpoolSource(
     sourceSpool: FilamentSpool,
@@ -14,8 +15,8 @@ fun SpoolFormState.applySpoolSource(
     colorHex = sourceSpool.colorHex
     colorName = formatColorName(
         sourceSpool.spoolmanName?.takeIf { it.isNotBlank() }
-            ?: sourceSpool.colorHex
-            ?: colorName
+            ?: sourceSpool.colorHex?.let(::suggestColorName)
+            ?: ""
     )
     brand = sourceSpool.brand
 
@@ -45,6 +46,7 @@ fun SpoolFormState.applySpoolSource(
         "Created by Spool Studio"
     }
     remainingWeight = formatLoadedRemainingWeight(sourceSpool.remainingWeight)
+    emptySpoolWeight = formatLoadedEmptySpoolWeight(sourceSpool.emptySpoolWeight)
     colorHexInput = colorHex ?: ""
     colorNameWasManuallyEdited = false
 }

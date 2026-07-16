@@ -44,6 +44,7 @@ class SpoolmanSaveRepository(
         val nozzleTemp = request.minTemp.toIntOrNull()
         val bedTemp = request.bedMinTemp.toIntOrNull()
         val cleanRemainingWeight = parseRemainingWeight(request.remainingWeight)
+        val cleanEmptySpoolWeight = parseRemainingWeight(request.emptySpoolWeight)
 
         val finalSpool = when (actionMode) {
             SpoolMode.UPDATE -> updateSpool(
@@ -56,7 +57,8 @@ class SpoolmanSaveRepository(
                 cleanColorHex = cleanColorHex,
                 nozzleTemp = nozzleTemp,
                 bedTemp = bedTemp,
-                cleanRemainingWeight = cleanRemainingWeight
+                cleanRemainingWeight = cleanRemainingWeight,
+                cleanEmptySpoolWeight = cleanEmptySpoolWeight
             )
 
             SpoolMode.CREATE, SpoolMode.DUPLICATE -> createSpool(
@@ -69,7 +71,8 @@ class SpoolmanSaveRepository(
                 cleanColorHex = cleanColorHex,
                 nozzleTemp = nozzleTemp,
                 bedTemp = bedTemp,
-                cleanRemainingWeight = cleanRemainingWeight
+                cleanRemainingWeight = cleanRemainingWeight,
+                cleanEmptySpoolWeight = cleanEmptySpoolWeight
             )
         }
 
@@ -91,7 +94,8 @@ class SpoolmanSaveRepository(
         cleanColorHex: String?,
         nozzleTemp: Int?,
         bedTemp: Int?,
-        cleanRemainingWeight: Float?
+        cleanRemainingWeight: Float?,
+        cleanEmptySpoolWeight: Float?
     ): FilamentSpool {
         val request = input.request
         val spoolId = request.existingSpoolId
@@ -111,7 +115,8 @@ class SpoolmanSaveRepository(
                 vendorId = vendorId,
                 colorHex = cleanColorHex,
                 nozzleTemp = nozzleTemp,
-                bedTemp = bedTemp
+                bedTemp = bedTemp,
+                spoolWeight = cleanEmptySpoolWeight
             ).id
         } else {
             service.createOrFindFilament(
@@ -120,7 +125,8 @@ class SpoolmanSaveRepository(
                 vendorId = vendorId,
                 colorHex = cleanColorHex,
                 nozzleTemp = nozzleTemp,
-                bedTemp = bedTemp
+                bedTemp = bedTemp,
+                spoolWeight = cleanEmptySpoolWeight
             ).id
         }
 
@@ -147,7 +153,8 @@ class SpoolmanSaveRepository(
         cleanColorHex: String?,
         nozzleTemp: Int?,
         bedTemp: Int?,
-        cleanRemainingWeight: Float?
+        cleanRemainingWeight: Float?,
+        cleanEmptySpoolWeight: Float?
     ): FilamentSpool {
         val request = input.request
         val filament = service.createOrFindFilament(
@@ -156,7 +163,8 @@ class SpoolmanSaveRepository(
             vendorId = vendorId,
             colorHex = cleanColorHex,
             nozzleTemp = nozzleTemp,
-            bedTemp = bedTemp
+            bedTemp = bedTemp,
+            spoolWeight = cleanEmptySpoolWeight
         )
 
         val createdSpool = service.createSpool(

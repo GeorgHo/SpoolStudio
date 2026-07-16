@@ -3,6 +3,9 @@
 
     <style name="Theme.SpoolStudio"
         parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowBackground">@color/system_splash_background</item>
+        <item name="android:navigationBarColor">@color/system_splash_background</item>
+        <item name="android:statusBarColor">@color/system_splash_background</item>
     </style>
 
 

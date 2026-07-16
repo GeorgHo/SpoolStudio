@@ -25,7 +25,7 @@ fun FilamentForm(
     onBrandChange: (String) -> Unit,
     onCustomBrandChange: (String) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         MaterialSelector(
             selectedMaterial = filamentType,
             customMaterial = customMaterial,

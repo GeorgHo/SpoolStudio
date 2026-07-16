@@ -5,6 +5,8 @@ import com.spoolstudio.app.utils.suggestColorName
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,21 +16,20 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,10 +43,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.focus.onFocusChanged
 import com.spoolstudio.app.utils.normalizeHexColor
@@ -59,6 +64,9 @@ import androidx.compose.ui.platform.LocalContext
 import android.graphics.ImageDecoder
 import android.os.Build
 import android.provider.MediaStore
+import com.spoolstudio.app.ui.theme.SpoolStudioColors
+import com.spoolstudio.app.ui.theme.SpoolStudioShape
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,7 +79,6 @@ fun ColorSelector(
     var expanded by remember { mutableStateOf(false) }
     var showColorPicker by remember { mutableStateOf(false) }
     var originalColor by remember { mutableStateOf(selectedColor) }
-    var colorNameInput by remember { mutableStateOf(colorName) }
 
     var photoBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var showPhotoDialog by remember { mutableStateOf(false) }
@@ -150,69 +157,33 @@ fun ColorSelector(
         }
     }
 
-    LaunchedEffect(colorName) {
-        colorNameInput = colorName
-    }
-
     val displayValue = displayNameForSelectedColor(selectedColor, colorName)
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = !expanded }
-        ) {
-            OutlinedTextField(
+    Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+        Box(modifier = Modifier.fillMaxWidth()) {
+            ColorSelectorRow(
+                label = "Color",
                 value = displayValue,
-                onValueChange = { },
-                readOnly = true,
-                label = { Text("Color") },
-                leadingIcon = {
-                    if (selectedColor != null) {
-                        val safeColor = runCatching {
-                            val hex = normalizedColor ?: ""
-                            require(hex.matches(Regex("^[A-Fa-f0-9]{6}$")))
-                            Color(android.graphics.Color.parseColor("#$hex"))
-                        }.getOrElse {
-                            MaterialTheme.colorScheme.surfaceVariant
-                        }
-
-                        Box(
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clip(CircleShape)
-                                .background(safeColor)
-                                .border(
-                                    1.dp,
-                                    MaterialTheme.colorScheme.outline,
-                                    CircleShape
-                                )
-                        )
-                    } else {
-                        NoColorIcon(size = 24.dp)
-                    }
+                leading = {
+                    ColorSwatch(hex = normalizedColor)
                 },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                modifier = Modifier
-                    .menuAnchor(MenuAnchorType.PrimaryNotEditable)
-                    .fillMaxWidth(),
-                textStyle = MaterialTheme.typography.bodyLarge.copy(
-                    fontWeight = FontWeight.SemiBold
-                ),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface
-                ),
-                shape = RoundedCornerShape(20.dp)
+                trailing = {
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = null,
+                        tint = SpoolStudioColors.InkMuted
+                    )
+                },
+                onClick = { expanded = true }
             )
 
-            ExposedDropdownMenu(
+            DropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
                 modifier = Modifier
                     .zIndex(1f)
-                    .clip(RoundedCornerShape(20.dp))
+                    .clip(SpoolStudioShape.Small)
+                    .background(SpoolStudioColors.Surface)
             ) {
                 DropdownMenuItem(
                     text = { Text("No Color") },
@@ -280,77 +251,18 @@ fun ColorSelector(
                 )
             }
         }
-
-        OutlinedTextField(
-            value = colorNameInput,
-            onValueChange = { input ->
-                colorNameInput = input.take(40)
-            },
-            label = { Text("Color Name") },
-            placeholder = { Text("Editable color name") },
-            singleLine = true,
-            readOnly = false,
-            enabled = true,
-            modifier = Modifier
-                .fillMaxWidth()
-                .onFocusChanged { focusState ->
-                    if (!focusState.isFocused) {
-                        val formatted = formatColorName(colorNameInput)
-                        colorNameInput = formatted
-                        onColorNameChange(formatted)
-                    }
-                },
-            keyboardOptions = KeyboardOptions(
-                capitalization = KeyboardCapitalization.None,
-                autoCorrectEnabled = false
-            ),
-            textStyle = MaterialTheme.typography.bodyLarge.copy(
-                fontWeight = FontWeight.SemiBold
-            ),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                disabledBorderColor = MaterialTheme.colorScheme.outline,
-                disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
-            ),
-            shape = RoundedCornerShape(20.dp)
-        )
-
-        OutlinedTextField(
-            value = selectedColor ?: "",
-            onValueChange = { input ->
-                onColorSelected(sanitizeHexColorInput(input))
-            },
-            label = { Text("HEX") },
-            placeholder = { Text("RRGGBB") },
-            prefix = { Text("#") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-            textStyle = MaterialTheme.typography.bodySmall,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                disabledBorderColor = MaterialTheme.colorScheme.outline,
-                disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
-            ),
-            shape = RoundedCornerShape(16.dp)
-        )
-
     }
 
     if (showColorPicker) {
-        Dialog(onDismissRequest = { showColorPicker = false }) {
+        Dialog(
+            onDismissRequest = { showColorPicker = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
             Card(
                 modifier = Modifier
-                    .padding(20.dp)
-                    .fillMaxWidth(),
-                shape = RoundedCornerShape(40.dp),
+                    .fillMaxWidth()
+                    .padding(horizontal = 28.dp),
+                shape = SpoolStudioShape.Dialog,
                 elevation = CardDefaults.cardElevation(defaultElevation = 16.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = Color(0xFF424242)
@@ -390,14 +302,14 @@ fun ColorSelector(
                                 showColorPicker = false
                             },
                             modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(16.dp)
+                            shape = SpoolStudioShape.Button
                         ) {
                             Text("Cancel")
                         }
                         Button(
                             onClick = { showColorPicker = false },
                             modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(16.dp)
+                            shape = SpoolStudioShape.Button
                         ) {
                             Text("Done")
                         }
@@ -428,4 +340,188 @@ fun ColorSelector(
             onDismiss = { showPhotoDialog = false }
         )
             }
+}
+
+@Composable
+private fun ColorSelectorRow(
+    label: String,
+    value: String,
+    leading: (@Composable () -> Unit)? = null,
+    trailing: (@Composable () -> Unit)? = null,
+    onClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(46.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+                color = SpoolStudioColors.Ink,
+                modifier = Modifier.weight(1f)
+            )
+            if (leading != null) {
+                leading()
+            }
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = SpoolStudioColors.Ink,
+                maxLines = 1,
+                modifier = Modifier.weight(1.25f)
+            )
+            if (trailing != null) {
+                Box(
+                    modifier = Modifier.size(22.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    trailing()
+                }
+            }
+        }
+        HorizontalDivider(color = SpoolStudioColors.InkMuted.copy(alpha = 0.18f))
+    }
+}
+
+@Composable
+private fun InlineColorTextField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    prefix: String = "",
+    placeholder: String = "",
+    onFocusLost: (() -> Unit)? = null
+) {
+    var fieldValue by remember { mutableStateOf(TextFieldValue(value)) }
+    var isFocused by remember { mutableStateOf(false) }
+    LaunchedEffect(value) {
+        if (value != fieldValue.text) {
+            fieldValue = TextFieldValue(value, selection = TextRange(value.length))
+        }
+    }
+    LaunchedEffect(isFocused) {
+        if (isFocused && fieldValue.text.isNotEmpty()) {
+            delay(90)
+            fieldValue = fieldValue.copy(selection = TextRange(0, fieldValue.text.length))
+        }
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = SpoolStudioColors.Ink,
+            modifier = Modifier.weight(1f)
+        )
+        Row(
+            modifier = Modifier.weight(1.45f),
+            horizontalArrangement = Arrangement.spacedBy(0.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (prefix.isNotBlank()) {
+                Text(
+                    text = prefix,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontSize = 15.sp,
+                        lineHeight = 19.sp,
+                        fontWeight = FontWeight.SemiBold
+                    ),
+                    color = SpoolStudioColors.InkMuted
+                )
+            }
+            BasicTextField(
+            value = fieldValue,
+            onValueChange = {
+                fieldValue = it
+                onValueChange(it.text)
+            },
+            singleLine = true,
+            modifier = Modifier
+                .weight(1f)
+                .pointerInput(fieldValue.text) {
+                    detectTapGestures(
+                        onTap = {
+                            fieldValue = fieldValue.copy(selection = TextRange(0, fieldValue.text.length))
+                        }
+                    )
+                }
+                .then(
+                    if (onFocusLost != null) {
+                        Modifier.onFocusChanged { focusState ->
+                            if (!focusState.isFocused) {
+                                onFocusLost()
+                            }
+                            isFocused = focusState.isFocused
+                        }
+                    } else {
+                        Modifier.onFocusChanged { focusState ->
+                            isFocused = focusState.isFocused
+                        }
+                    }
+                ),
+            keyboardOptions = KeyboardOptions(
+                capitalization = KeyboardCapitalization.None,
+                autoCorrectEnabled = false
+            ),
+            textStyle = MaterialTheme.typography.bodyMedium.copy(
+                fontSize = 15.sp,
+                lineHeight = 19.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = SpoolStudioColors.Ink
+            ),
+            decorationBox = { innerTextField ->
+                Box(contentAlignment = Alignment.CenterStart) {
+                    if (fieldValue.text.isBlank() && placeholder.isNotBlank()) {
+                        Text(
+                            text = placeholder,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontSize = 15.sp,
+                                lineHeight = 19.sp,
+                                fontWeight = FontWeight.SemiBold
+                            ),
+                            color = SpoolStudioColors.InkMuted
+                        )
+                    }
+                    innerTextField()
+                }
+            }
+            )
+        }
+    }
+    HorizontalDivider(color = SpoolStudioColors.InkMuted.copy(alpha = 0.18f))
+}
+
+@Composable
+private fun ColorSwatch(hex: String?) {
+    if (!hex.isNullOrBlank()) {
+        val safeColor = runCatching {
+            require(hex.matches(Regex("^[A-Fa-f0-9]{6}$")))
+            Color(android.graphics.Color.parseColor("#$hex"))
+        }.getOrElse {
+            SpoolStudioColors.SurfaceMuted
+        }
+        Box(
+            modifier = Modifier
+                .size(18.dp)
+                .clip(CircleShape)
+                .background(safeColor)
+                .border(1.dp, SpoolStudioColors.InkMuted, CircleShape)
+        )
+    } else {
+        NoColorIcon(size = 18.dp)
+    }
 }

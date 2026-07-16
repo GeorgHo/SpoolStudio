@@ -10,11 +10,13 @@ import com.spoolstudio.app.domain.models.SpoolmanFilament
 import com.spoolstudio.app.domain.models.SpoolmanSpool
 import com.spoolstudio.app.domain.models.SpoolmanVendor
 import okhttp3.OkHttpClient
+import okhttp3.ResponseBody
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.PATCH
 import retrofit2.http.POST
@@ -67,6 +69,9 @@ interface SpoolmanApi {
         @Path("id") id: Int,
         @Body request: Map<String, @JvmSuppressWildcards Any?>
     ): Response<SpoolmanSpool>
+
+    @DELETE("api/v1/spool/{id}")
+    suspend fun deleteSpool(@Path("id") id: Int): Response<ResponseBody>
 }
 
 data class SpoolmanCatalog(
@@ -106,6 +111,10 @@ class SpoolmanService(private val baseUrl: String) {
     private fun normalizeUpper(value: String?): String = normalizeText(value).uppercase()
     private fun normalizeHex(value: String?): String? =
         normalizeText(value).removePrefix("#").ifBlank { null }?.uppercase()
+
+    private fun weightsEqual(first: Float?, second: Float?): Boolean =
+        (first == null && second == null) ||
+            (first != null && second != null && kotlin.math.abs(first - second) <= 0.01f)
 
     suspend fun getCatalog(sortBy: String? = null, forceRefresh: Boolean = false): SpoolmanCatalog {
         val now = System.currentTimeMillis()
@@ -263,7 +272,8 @@ class SpoolmanService(private val baseUrl: String) {
         vendorId: Int,
         colorHex: String?,
         nozzleTemp: Int?,
-        bedTemp: Int?
+        bedTemp: Int?,
+        spoolWeight: Float? = null
     ): SpoolmanFilament {
         val normalizedName = normalizeText(name)
         val normalizedMaterial = normalizeText(material)
@@ -275,7 +285,22 @@ class SpoolmanService(private val baseUrl: String) {
                 normalizeHex(filament.color_hex) == normalizedColorHex &&
                 normalizeText(filament.name).equals(normalizedName, ignoreCase = true)
         }
-        if (existing != null) return existing
+        if (existing != null) {
+            return if (spoolWeight == null || weightsEqual(existing.spool_weight, spoolWeight)) {
+                existing
+            } else {
+                updateFilament(
+                    id = existing.id,
+                    name = normalizedName,
+                    material = normalizedMaterial,
+                    vendorId = vendorId,
+                    colorHex = normalizedColorHex,
+                    nozzleTemp = nozzleTemp,
+                    bedTemp = bedTemp,
+                    spoolWeight = spoolWeight
+                )
+            }
+        }
 
         val request = CreateFilamentRequest(
             name = normalizedName.ifBlank { normalizedColorHex ?: "Unknown" },
@@ -287,6 +312,7 @@ class SpoolmanService(private val baseUrl: String) {
             density = defaultDensity(FilamentSpool.splitMaterialAndVariant(normalizedMaterial).first),
             diameter = 1.75f,
             weight = 1000f,
+            spool_weight = spoolWeight,
             price = 0.0f,
             comment = "Spool Studio",
             extra = null
@@ -307,7 +333,8 @@ class SpoolmanService(private val baseUrl: String) {
         vendorId: Int,
         colorHex: String?,
         nozzleTemp: Int?,
-        bedTemp: Int?
+        bedTemp: Int?,
+        spoolWeight: Float? = null
     ): SpoolmanFilament {
         val request = mutableMapOf<String, Any?>()
         request["name"] = normalizeText(name).ifBlank { "Unknown" }
@@ -316,6 +343,7 @@ class SpoolmanService(private val baseUrl: String) {
         request["color_hex"] = normalizeHex(colorHex)
         request["settings_extruder_temp"] = nozzleTemp
         request["settings_bed_temp"] = bedTemp
+        spoolWeight?.let { request["spool_weight"] = it }
         request["comment"] = "Spool Studio"
 
         val response = api.updateFilament(id, request)
@@ -374,6 +402,15 @@ class SpoolmanService(private val baseUrl: String) {
         }
         cachedCatalog = null
         return response.body() ?: throw IllegalStateException("Spool update response was empty")
+    }
+
+    suspend fun deleteSpool(id: Int) {
+        val response = api.deleteSpool(id)
+        if (!response.isSuccessful) {
+            val errorText = response.errorBody()?.string()
+            throw IllegalStateException("Spool could not be deleted (${response.code()}): $errorText")
+        }
+        cachedCatalog = null
     }
 
     private fun defaultDensity(material: String): Float {

@@ -12,10 +12,10 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -38,6 +38,8 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.ui.components.SpoolStudioLogo
+import com.spoolstudio.app.ui.theme.SpoolStudioColors
+import com.spoolstudio.app.ui.theme.SpoolStudioShape
 
 @Composable
 fun MappingRowPlaceholder(label: String) {
@@ -51,7 +53,7 @@ fun MappingRowPlaceholder(label: String) {
         )
 
         Text(
-            text = "Keine Spule gewaehlt",
+            text = "No spool selected",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -101,6 +103,7 @@ fun MappingRowDropdown(
             Text(
                 text = label,
                 style = MaterialTheme.typography.titleMedium,
+                color = SpoolStudioColors.OnGraphite,
                 modifier = Modifier.offset(y = (-7).dp)
             )
 
@@ -130,17 +133,21 @@ fun MappingRowDropdown(
                     .menuAnchor(MenuAnchorType.PrimaryNotEditable)
                     .fillMaxWidth()
                     .height(50.dp),
-                shape = RoundedCornerShape(20.dp),
-                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp)
+                shape = SpoolStudioShape.Field,
+                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = SpoolStudioColors.OnGraphite,
+                    disabledContentColor = SpoolStudioColors.OnGraphiteMuted.copy(alpha = 0.55f)
+                )
             ) {
                 Text(
                     text = displayText,
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.bodyMedium,
                     color = if (selectedSpool != null) {
-                        MaterialTheme.colorScheme.onSurface
+                        SpoolStudioColors.OnGraphite
                     } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
+                        SpoolStudioColors.OnGraphiteMuted
                     },
                     maxLines = 1
                 )
@@ -148,7 +155,7 @@ fun MappingRowDropdown(
                 Icon(
                     imageVector = Icons.Filled.ArrowDropDown,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = SpoolStudioColors.OnGraphiteMuted
                 )
             }
 
@@ -220,9 +227,9 @@ fun MappingRowDropdown(
                 text = "Active spool",
                 style = MaterialTheme.typography.bodyMedium,
                 color = if (selectedSpoolId != null && enabled) {
-                    MaterialTheme.colorScheme.onSurface
+                    SpoolStudioColors.OnGraphite
                 } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
+                    SpoolStudioColors.OnGraphiteMuted
                 }
             )
         }

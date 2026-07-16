@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.HorizontalDivider
@@ -24,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.spoolstudio.app.data.local.VariantDatabase
+import com.spoolstudio.app.ui.theme.SpoolStudioShape
 
 private data class VariantOption(val label: String, val value: String)
 
@@ -96,13 +96,15 @@ fun VariantSelector(
                     focusedTextColor = MaterialTheme.colorScheme.onSurface,
                     unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                 ),
-                shape = RoundedCornerShape(20.dp)
+                shape = SpoolStudioShape.Field
             )
 
             ExposedDropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
-                modifier = Modifier.clip(RoundedCornerShape(20.dp)),
+                modifier = Modifier
+                    .clip(SpoolStudioShape.Field)
+                    .height(320.dp),
                 tonalElevation = 8.dp
             ) {
                 OutlinedTextField(
@@ -114,7 +116,7 @@ fun VariantSelector(
                         .fillMaxWidth()
                         .padding(horizontal = 8.dp, vertical = 4.dp),
                     textStyle = MaterialTheme.typography.bodyMedium,
-                    shape = RoundedCornerShape(16.dp)
+                    shape = SpoolStudioShape.Field
                 )
 
                 filteredOptions.forEach { option ->
@@ -163,7 +165,7 @@ fun VariantSelector(
                 supportingText = {
                     if (customVariant.isBlank()) Text("Please enter a custom variant")
                 },
-                shape = RoundedCornerShape(20.dp)
+                shape = SpoolStudioShape.Field
             )
         }
     }

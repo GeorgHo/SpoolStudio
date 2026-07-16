@@ -11,7 +11,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.spoolstudio.app.ui.components.TemperatureControl
 
@@ -26,8 +25,7 @@ fun TemperatureSection(
     onBedMinChange: (String) -> Unit,
     onBedMaxChange: (String) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text("Temperature", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -35,7 +33,7 @@ fun TemperatureSection(
         ) {
             Text("Nozzle", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.width(60.dp))
             TemperatureControl(value = nozzleMin, onValueChange = onNozzleMinChange, modifier = Modifier.weight(1f))
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(10.dp))
             TemperatureControl(value = nozzleMax, onValueChange = onNozzleMaxChange, modifier = Modifier.weight(1f))
         }
         Row(
@@ -45,7 +43,7 @@ fun TemperatureSection(
         ) {
             Text("Bed", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.width(60.dp))
             TemperatureControl(value = bedMin, onValueChange = onBedMinChange, modifier = Modifier.weight(1f))
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(10.dp))
             TemperatureControl(value = bedMax, onValueChange = onBedMaxChange, modifier = Modifier.weight(1f))
         }
     }

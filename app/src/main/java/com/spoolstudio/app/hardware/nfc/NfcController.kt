@@ -96,10 +96,11 @@ class NfcController(private val activity: Activity) {
                         } else {
                             val isHexDump =
                                 data.contains("Bambu RFID Parsed") ||
+                                        data.contains("=== Sector") ||
                                         data.contains("=== Sektor") ||
                                         data.contains("Block 0 (abs")
                             if (isHexDump) {
-                                onStatusUpdate?.invoke("✅ Bambu RFID dump gelesen", false)
+                                onStatusUpdate?.invoke("✅ Bambu RFID dump read", false)
                             } else {
                                 onStatusUpdate?.invoke("✅ Tag read successfully!", false)
                             }

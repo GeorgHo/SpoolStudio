@@ -9,11 +9,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.background
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -22,7 +27,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.spoolstudio.app.data.local.MaterialDatabase
@@ -30,6 +34,8 @@ import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.domain.models.OpenSpoolData
 import com.spoolstudio.app.ui.SpoolMode
 import com.spoolstudio.app.ui.SpoolmanSaveRequest
+import com.spoolstudio.app.ui.theme.SpoolStudioColors
+import com.spoolstudio.app.ui.theme.spoolStudioBackground
 import com.spoolstudio.app.utils.*
 
 @Composable
@@ -80,8 +86,12 @@ fun SpoolStudioScreen(
     onSavePrinterMapping: (Int?, Int?, Int?, Int?, Int?) -> Unit = { _, _, _, _, _ -> },
     showLotNumber: Boolean = false,
     showCommentField: Boolean = false,
+    showEmptySpoolWeight: Boolean = false,
     onCreateNewSpool: () -> Unit = {},
+    onCreateEmptySpool: () -> Unit = {},
     onCreateInSpoolman: (SpoolmanSaveRequest) -> Unit = {},
+    isDeletingSpool: Boolean = false,
+    onDeleteSelectedSpool: () -> Unit = {},
 ) {
     var showBambuDialog by remember { mutableStateOf(false) }
     var bambuDialogText by remember { mutableStateOf("") }
@@ -92,6 +102,7 @@ fun SpoolStudioScreen(
     val form = remember { SpoolFormState(defaultMaterial) }
     val writeOpenSpoolTagUseCase = remember { WriteOpenSpoolTagUseCase() }
     var showPrinterMappingDialog by remember { mutableStateOf(false) }
+    var showDeleteSpoolDialog by remember { mutableStateOf(false) }
     var printerMappingDialogSelection by remember { mutableStateOf(PrinterMappingSelection()) }
     val printerMappingSelection = printerMappingSelection(
         toolhead1SpoolId = printerTool1SpoolId,
@@ -111,7 +122,6 @@ fun SpoolStudioScreen(
         dialogSelection = printerMappingDialogSelection
     )
 
-    val spoolColor = resolveSpoolColor(form.colorHex)
     val isWriteActionEnabled = isWriteActionEnabled(form)
     val isSaveToSpoolmanEnabled = isSaveToSpoolmanEnabled(form, spoolMode, selectedSpool)
     val isNewFromSelectedEnabled = isNewFromSelectedEnabled(spoolMode, selectedSpool, readData)
@@ -214,14 +224,17 @@ fun SpoolStudioScreen(
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = Color(0xFFF3E7DE)
+        color = SpoolStudioColors.ScreenBackground
     ) {
         Column(
-            modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding(),
+            modifier = Modifier
+                .fillMaxSize()
+                .spoolStudioBackground()
+                .statusBarsPadding()
+                .navigationBarsPadding(),
             verticalArrangement = Arrangement.Top
         ) {
             SpoolStudioHeader(
-                spoolColor = spoolColor,
                 onSettingsClick = onSettingsClick
             )
 
@@ -242,6 +255,7 @@ fun SpoolStudioScreen(
                         form = form,
                         spools = spools,
                         selectedSpool = selectedSpool,
+                        spoolMode = spoolMode,
                         spoolmanUrl = spoolmanUrl,
                         currentSpoolId = currentSpoolId,
                         isLoadingSpools = isLoadingSpools,
@@ -251,6 +265,7 @@ fun SpoolStudioScreen(
                         availableLocations = availableLocations,
                         showLotNumber = showLotNumber,
                         showCommentField = showCommentField,
+                        showEmptySpoolWeight = showEmptySpoolWeight,
                         isRemainingWeightValid = isRemainingWeightValid(),
                         onSpoolSelected = onSpoolSelected,
                         onClearAllSpoolFields = { clearAllSpoolmanFields() },
@@ -263,6 +278,7 @@ fun SpoolStudioScreen(
 
                     SpoolActionSection(
                         primaryActionLabel = primaryActionLabel,
+                        isCreateMode = spoolMode != SpoolMode.UPDATE,
                         isSaveToSpoolmanEnabled = isSaveToSpoolmanEnabled,
                         isWriteTagEnabled = isWriteActionEnabled,
                         onReadTag = onReadTag,
@@ -274,11 +290,16 @@ fun SpoolStudioScreen(
                         },
                         isNewFromSelectedEnabled = isNewFromSelectedEnabled,
                         onCreateNewSpool = onCreateNewSpool,
+                        onCreateEmptySpool = onCreateEmptySpool,
                         onOpenPrinterMapping = {
                             printerMappingDialogSelection = printerMappingSelection
 
                             showPrinterMappingDialog = true
                             onTestMoonrakerConnection()
+                        },
+                        isDeleteSpoolEnabled = selectedSpool?.id != null && !isDeletingSpool,
+                        onDeleteSelectedSpool = {
+                            showDeleteSpoolDialog = true
                         }
                     )
                 }
@@ -344,6 +365,42 @@ fun SpoolStudioScreen(
                 pendingBambuApply = null
             }
         )
+
+        val spoolToDelete = selectedSpool
+        if (showDeleteSpoolDialog && spoolToDelete?.id != null) {
+            AlertDialog(
+                onDismissRequest = { showDeleteSpoolDialog = false },
+                containerColor = SpoolStudioColors.Surface,
+                title = {
+                    Text(
+                        text = "Delete spool ID #${spoolToDelete.id}?",
+                        color = SpoolStudioColors.Ink
+                    )
+                },
+                text = {
+                    Text(
+                        text = "${spoolToDelete.brand} - ${spoolToDelete.spoolmanName ?: spoolToDelete.displayName} - ${spoolToDelete.displayName}\n\nThis deletes the spool from Spoolman only. RFID tags are not changed.",
+                        color = SpoolStudioColors.Ink
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showDeleteSpoolDialog = false
+                            onDeleteSelectedSpool()
+                        },
+                        colors = ButtonDefaults.textButtonColors(contentColor = SpoolStudioColors.Error)
+                    ) {
+                        Text("Delete")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteSpoolDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
 
         CenteredSnackbarOverlay(
             message = snackbarMessage,

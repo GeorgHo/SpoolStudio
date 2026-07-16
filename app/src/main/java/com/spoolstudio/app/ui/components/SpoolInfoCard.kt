@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.ui.remainingWeightWarningThreshold
+import com.spoolstudio.app.ui.theme.SpoolStudioShape
 import kotlinx.coroutines.delay
 
 @Composable
@@ -78,7 +79,7 @@ fun SpoolInfoCard(
     if (showDialog) {
         Dialog(onDismissRequest = { showDialog = false }) {
             Surface(
-                shape = RoundedCornerShape(28.dp),
+                shape = SpoolStudioShape.Dialog,
                 tonalElevation = 8.dp,
                 shadowElevation = 12.dp,
                 color = MaterialTheme.colorScheme.surface
@@ -159,7 +160,7 @@ fun SpoolInfoCard(
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
                         ),
-                        shape = RoundedCornerShape(8.dp),
+                        shape = SpoolStudioShape.Small,
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
                         Column(
@@ -262,7 +263,7 @@ fun SpoolInfoCard(
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
                         ),
-                        shape = RoundedCornerShape(8.dp),
+                        shape = SpoolStudioShape.Small,
                         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                     ) {
                         val lotValue = spool.lotNr?.takeIf { it.isNotBlank() } ?: "-"

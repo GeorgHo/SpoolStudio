@@ -58,9 +58,25 @@ fun formatColorName(input: String): String {
         }
 }
 
+private val filamentColorAliases = mapOf(
+    "metallsilber" to "C0C0C0",
+    "silk silver" to "C0C0C0",
+    "silky silver" to "C0C0C0",
+    "matt silver" to "C0C0C0",
+    "matte silver" to "C0C0C0",
+    "mattsilber" to "C0C0C0",
+    "silbergrau" to "C0C0C0",
+    "silver metallic" to "C0C0C0",
+    "pearl silber" to "D9D9D6",
+    "perl silber" to "D9D9D6",
+    "pearl metallic silver" to "D9D9D6"
+)
+
 fun suggestHexFromName(name: String): String? {
     val normalized = normalizedLookupKey(name)
     if (normalized.isBlank()) return null
+
+    filamentColorAliases[normalized]?.let { return it }
 
     val exact = knownColors.firstOrNull { color ->
         normalizedLookupKey(color.name) == normalized ||

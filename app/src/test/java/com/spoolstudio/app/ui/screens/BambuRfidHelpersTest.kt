@@ -19,6 +19,7 @@ class BambuRfidHelpersTest {
     @Test
     fun detectsBambuRfidDumpText() {
         assertTrue(isBambuRfidDump("Bambu RFID Parsed\nFilament Type: PLA"))
+        assertTrue(isBambuRfidDump("=== Sector 1 ==="))
         assertTrue(isBambuRfidDump("=== Sektor 1 ==="))
         assertTrue(isBambuRfidDump("Block 0 (abs 4): 00 11"))
     }

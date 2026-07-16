@@ -38,6 +38,9 @@ fun isRemainingWeightValid(remainingWeight: String): Boolean {
     return normalized.isBlank() || normalized.toFloatOrNull()?.let { it >= 0f } == true
 }
 
+fun isEmptySpoolWeightValid(emptySpoolWeight: String): Boolean =
+    isRemainingWeightValid(emptySpoolWeight)
+
 fun formatRemainingWeightInput(remainingWeight: String): String? {
     val parsed = if (remainingWeight.isBlank()) {
         1000f
@@ -53,18 +56,23 @@ fun formatLoadedRemainingWeight(remainingWeight: Float?): String {
     return String.format(Locale.US, "%.2f", weight)
 }
 
+fun formatLoadedEmptySpoolWeight(emptySpoolWeight: Float?): String =
+    formatLoadedRemainingWeight(emptySpoolWeight)
+
 fun isSpoolFormValid(
     variant: String,
     brand: String,
     customBrand: String,
     filamentType: String,
     customMaterial: String,
-    remainingWeight: String
+    remainingWeight: String,
+    emptySpoolWeight: String
 ): Boolean =
     isSpoolVariantValid(variant) &&
         isSpoolBrandValid(brand, customBrand) &&
         isSpoolMaterialValid(filamentType, customMaterial) &&
-        isRemainingWeightValid(remainingWeight)
+        isRemainingWeightValid(remainingWeight) &&
+        isEmptySpoolWeightValid(emptySpoolWeight)
 
 fun spoolFormValidationMessage(
     variant: String,
@@ -72,12 +80,14 @@ fun spoolFormValidationMessage(
     customBrand: String,
     filamentType: String,
     customMaterial: String,
-    remainingWeight: String
+    remainingWeight: String,
+    emptySpoolWeight: String
 ): String? = when {
     !isSpoolMaterialValid(filamentType, customMaterial) -> "Please enter a custom filament type"
     !isSpoolVariantValid(variant) -> "Please enter a custom variant"
     !isSpoolBrandValid(brand, customBrand) -> "Please enter a custom brand"
     !isRemainingWeightValid(remainingWeight) -> "Please enter a valid remaining weight"
+    !isEmptySpoolWeightValid(emptySpoolWeight) -> "Please enter a valid empty spool weight"
     else -> null
 }
 
@@ -98,6 +108,7 @@ fun buildSpoolmanSaveRequest(
     lotNr: String,
     comment: String,
     remainingWeight: String,
+    emptySpoolWeight: String,
     spoolMode: SpoolMode,
     selectedSpool: FilamentSpool?
 ): SpoolmanSaveRequest =
@@ -115,6 +126,7 @@ fun buildSpoolmanSaveRequest(
         lotNr = lotNr,
         comment = comment,
         remainingWeight = remainingWeight,
+        emptySpoolWeight = emptySpoolWeight,
         existingSpoolId = if (spoolMode == SpoolMode.UPDATE) selectedSpool?.id else null
     )
 
@@ -132,6 +144,15 @@ fun hasSpoolmanSaveChanges(request: SpoolmanSaveRequest, selectedSpool: Filament
         else -> kotlin.math.abs(requestedRemainingWeight - selectedRemainingWeight) > 0.01f
     }
 
+    val requestedEmptySpoolWeight = parseRemainingWeight(request.emptySpoolWeight)
+        ?: selectedSpool.emptySpoolWeight
+    val selectedEmptySpoolWeight = selectedSpool.emptySpoolWeight
+    val emptySpoolWeightChanged = when {
+        requestedEmptySpoolWeight == null && selectedEmptySpoolWeight == null -> false
+        requestedEmptySpoolWeight == null || selectedEmptySpoolWeight == null -> true
+        else -> kotlin.math.abs(requestedEmptySpoolWeight - selectedEmptySpoolWeight) > 0.01f
+    }
+
     val requestedLotNr = request.lotNr.trim()
         .ifBlank { selectedSpool.lotNr.orEmpty().trim() }
 
@@ -146,7 +167,8 @@ fun hasSpoolmanSaveChanges(request: SpoolmanSaveRequest, selectedSpool: Filament
         request.location.trim().ifBlank { null } != selectedSpool.location?.trim()?.ifBlank { null } ||
         requestedLotNr != selectedSpool.lotNr.orEmpty().trim() ||
         request.comment.trim().ifBlank { null } != selectedSpool.comment?.trim()?.ifBlank { null } ||
-        remainingWeightChanged
+        remainingWeightChanged ||
+        emptySpoolWeightChanged
 }
 
 fun buildOpenSpoolTagData(

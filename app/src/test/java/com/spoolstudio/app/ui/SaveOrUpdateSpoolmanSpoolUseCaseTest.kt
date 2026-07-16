@@ -95,6 +95,7 @@ class SaveOrUpdateSpoolmanSpoolUseCaseTest {
             lotNr = "",
             comment = "Created by Spool Studio",
             remainingWeight = "1000",
+            emptySpoolWeight = "",
             existingSpoolId = null
         )
 }

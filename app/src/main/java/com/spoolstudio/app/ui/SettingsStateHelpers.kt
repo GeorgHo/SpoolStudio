@@ -19,6 +19,7 @@ data class SettingsSaveState(
 data class SettingsLoadState(
     val showLotNumber: Boolean,
     val showCommentField: Boolean,
+    val showEmptySpoolWeight: Boolean,
     val spoolmanUrl: String,
     val spoolmanSortBy: String,
     val moonrakerUrl: String,
@@ -29,6 +30,7 @@ fun buildSettingsLoadState(settings: AppSettings): SettingsLoadState =
     SettingsLoadState(
         showLotNumber = settings.showLotNumber,
         showCommentField = settings.showCommentField,
+        showEmptySpoolWeight = settings.showEmptySpoolWeight,
         spoolmanUrl = settings.spoolmanUrl,
         spoolmanSortBy = settings.spoolmanSortBy,
         moonrakerUrl = settings.moonrakerUrl,

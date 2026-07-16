@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -24,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.spoolstudio.app.data.local.MaterialDatabase
+import com.spoolstudio.app.ui.theme.SpoolStudioShape
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -84,12 +84,14 @@ fun MaterialSelector(
                     focusedTextColor = MaterialTheme.colorScheme.onSurface,
                     unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                 ),
-                shape = RoundedCornerShape(20.dp)
+                shape = SpoolStudioShape.Field
             )
             ExposedDropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
-                modifier = Modifier.clip(RoundedCornerShape(20.dp)),
+                modifier = Modifier
+                    .clip(SpoolStudioShape.Field)
+                    .height(320.dp),
                 tonalElevation = 8.dp
             ) {
                 OutlinedTextField(
@@ -101,7 +103,7 @@ fun MaterialSelector(
                         .fillMaxWidth()
                         .padding(horizontal = 8.dp, vertical = 4.dp),
                     textStyle = MaterialTheme.typography.bodyMedium,
-                    shape = RoundedCornerShape(16.dp)
+                    shape = SpoolStudioShape.Field
                 )
 
                 filteredMaterialNames.forEach { materialName ->
@@ -162,7 +164,7 @@ fun MaterialSelector(
                     focusedTextColor = MaterialTheme.colorScheme.onSurface,
                     unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                 ),
-                shape = RoundedCornerShape(20.dp)
+                shape = SpoolStudioShape.Field
             )
         }
     }

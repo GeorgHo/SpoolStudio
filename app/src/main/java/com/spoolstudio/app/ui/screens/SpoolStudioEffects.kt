@@ -27,7 +27,7 @@ fun SpoolStudioFormEffects(
                 availableLocations = availableLocations
             )
         } else if (spoolMode == SpoolMode.CREATE) {
-            form.clearLocation()
+            form.resetForNewSpool()
         }
     }
 
@@ -37,6 +37,8 @@ fun SpoolStudioFormEffects(
             val suggested = suggestColorName(form.colorHex)
             if (suggested.isNotBlank()) {
                 form.colorName = suggested
+            } else if (form.colorHex.isNullOrBlank()) {
+                form.colorName = ""
             }
         }
     }
