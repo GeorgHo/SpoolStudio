@@ -15,9 +15,10 @@ fun SpoolStudioFormEffects(
     dataVersion: Int,
     selectedSpool: FilamentSpool?,
     spoolMode: SpoolMode,
-    availableLocations: List<String>
+    availableLocations: List<String>,
+    suppressCreateReset: Boolean = false
 ) {
-    LaunchedEffect(readData, dataVersion, selectedSpool, spoolMode, availableLocations) {
+    LaunchedEffect(readData, dataVersion, selectedSpool, spoolMode, availableLocations, suppressCreateReset) {
         val sourceSpool = selectedSpool ?: readData?.let { FilamentSpool.fromOpenSpool(it) }
 
         if (sourceSpool != null) {
@@ -26,7 +27,7 @@ fun SpoolStudioFormEffects(
                 spoolMode = spoolMode,
                 availableLocations = availableLocations
             )
-        } else if (spoolMode == SpoolMode.CREATE) {
+        } else if (spoolMode == SpoolMode.CREATE && !suppressCreateReset) {
             form.resetForNewSpool()
         }
     }

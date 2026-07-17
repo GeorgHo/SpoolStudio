@@ -37,6 +37,40 @@ class BambuRfidHelpersTest {
     }
 
     @Test
+    fun parsedBambuDumpMapsDisplayedFieldsIntoFormData() {
+        val text = """
+            Bambu RFID Parsed
+
+            UID: E653F0E1
+            Filament Type: PLA
+            Detailed Type: PLA Basic
+            Material ID: GFA00
+            Variant ID: A00-P0
+            Filament Color: #F7E6DE
+            Color Count: 1
+            Spool Weight: 1000 g
+            Filament Length: 330 m
+            Filament Diameter: 1,75 mm
+            Spool Width: 66,25 mm
+            Min Nozzle Diameter: 0,2 mm
+
+            Temperatures:
+            - Drying Temp: 55 C
+            - Drying Time: 8 h
+            - Bed Temp: 0 C
+        """.trimIndent()
+
+        val data = parseBambuRfidFormData(text, fallbackMaterial = "PLA")
+
+        assertEquals("E653F0E1", data.uid)
+        assertEquals("PLA", data.material)
+        assertEquals("Basic", data.normalizedVariant)
+        assertEquals("F7E6DE", data.colorHex)
+        assertEquals(1000, data.spoolWeightGrams)
+        assertEquals(0, data.bedTemp)
+    }
+
+    @Test
     fun decisionUsesExistingSpoolWhenBambuDataMatches() {
         val matchingSpool = FilamentSpool(
             id = 42,

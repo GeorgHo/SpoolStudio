@@ -7,6 +7,7 @@ data class BambuRfidFormData(
     val material: String?,
     val detailedType: String?,
     val colorHex: String?,
+    val spoolWeightGrams: Int?,
     val minHotend: Int?,
     val maxHotend: Int?,
     val bedTemp: Int?,
@@ -35,6 +36,7 @@ fun parseBambuRfidFormData(text: String, fallbackMaterial: String): BambuRfidFor
         material = material,
         detailedType = detailedType,
         colorHex = colorHex,
+        spoolWeightGrams = parsedBambuInt(text, "Spool Weight"),
         minHotend = parsedBambuInt(text, "Min Hotend"),
         maxHotend = parsedBambuInt(text, "Max Hotend"),
         bedTemp = parsedBambuInt(text, "Bed Temp"),
@@ -94,6 +96,7 @@ fun isBambuRfidDump(text: String): Boolean =
 fun parsedBambuValue(text: String, label: String): String? {
     return text
         .lineSequence()
+        .map { it.trim().removePrefix("-").trimStart() }
         .firstOrNull { it.startsWith("$label: ") }
         ?.substringAfter(": ")
         ?.trim()

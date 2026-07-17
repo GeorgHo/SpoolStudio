@@ -64,6 +64,8 @@ class SpoolFormStateTest {
     @Test
     fun applyBambuRfidDataUpdatesFormState() {
         val form = formState().apply {
+            location = "Rack"
+            customLocation = "Rack"
             remainingWeight = "123.45"
             comment = "Existing comment"
             emptySpoolWeight = "180"
@@ -72,6 +74,7 @@ class SpoolFormStateTest {
             material = "PETG",
             detailedType = "PETG Basic",
             colorHex = "00AACC",
+            spoolWeightGrams = 1000,
             minHotend = 230,
             maxHotend = 250,
             bedTemp = 80,
@@ -89,16 +92,16 @@ class SpoolFormStateTest {
         assertEquals("Cyan", form.colorName)
         assertEquals("Bambu Lab", form.brand)
         assertEquals("", form.customBrand)
-        assertEquals("", form.location)
-        assertEquals("", form.customLocation)
+        assertEquals("Rack", form.location)
+        assertEquals("Rack", form.customLocation)
         assertEquals("230", form.minTemp)
         assertEquals("250", form.maxTemp)
         assertEquals("70", form.bedMinTemp)
         assertEquals("90", form.bedMaxTemp)
         assertEquals("1234567890ABCDEFGHIJKLMNOPQRSTUV", form.lotNr)
-        assertEquals("", form.remainingWeight)
-        assertEquals("", form.emptySpoolWeight)
-        assertEquals("", form.comment)
+        assertEquals("1000", form.remainingWeight)
+        assertEquals("180", form.emptySpoolWeight)
+        assertEquals("Existing comment", form.comment)
     }
 
     @Test

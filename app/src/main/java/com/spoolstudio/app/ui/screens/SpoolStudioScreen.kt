@@ -99,6 +99,7 @@ fun SpoolStudioScreen(
     var showBambuDiffDialog by remember { mutableStateOf(false) }
     var bambuDiffDialogText by remember { mutableStateOf("") }
     var pendingBambuApply by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var preserveManualCreateForm by remember { mutableStateOf(false) }
     val defaultMaterial = MaterialDatabase.getMaterial("PLA") ?: MaterialDatabase.materials.first()
     val form = remember { SpoolFormState(defaultMaterial) }
     val writeOpenSpoolTagUseCase = remember { WriteOpenSpoolTagUseCase() }
@@ -137,59 +138,31 @@ fun SpoolStudioScreen(
         printerMappingStatusMessage = printerMappingStatusMessage
     )
 
-    SpoolStudioFormEffects(
-        form = form,
-        readData = readData,
-        dataVersion = dataVersion,
-        selectedSpool = selectedSpool,
-        spoolMode = spoolMode,
-        availableLocations = availableLocations
-    )
-
-    SnackbarAutoDismissEffect(
-        showSnackbar = showSnackbar,
-        snackbarMessage = snackbarMessage,
-        autoDismiss = snackbarAutoDismiss,
-        onSnackbarDismiss = onSnackbarDismiss
-    )
-
-    BambuRfidDumpEffect(
-        rawReadVersion = rawReadVersion,
-        rawReadText = rawReadText,
-        onBambuDumpDetected = {
-            bambuDialogText = it
-            showBambuDialog = true
-        }
-    )
-
-    PrinterMappingSelectionSyncEffect(
-        toolhead1SpoolId = printerTool1SpoolId,
-        toolhead2SpoolId = printerTool2SpoolId,
-        toolhead3SpoolId = printerTool3SpoolId,
-        toolhead4SpoolId = printerTool4SpoolId,
-        activePrinterSpoolId = activePrinterSpoolId,
-        printerMappingLoadVersion = printerMappingLoadVersion,
-        printerMappingSelection = printerMappingSelection,
-        onSelectionChange = { printerMappingDialogSelection = it }
-    )
-
     fun isRemainingWeightValid(): Boolean = form.isRemainingWeightValid()
     fun validationMessage(): String? = form.validationMessage()
     fun buildSaveRequest(): SpoolmanSaveRequest =
         form.buildSaveRequest(spoolMode, selectedSpool)
+
+    fun handleSpoolSelected(spool: FilamentSpool?) {
+        preserveManualCreateForm = false
+        onSpoolSelected(spool)
+    }
+
     fun clearAllSpoolmanFields() {
+        preserveManualCreateForm = false
         onSpoolSelected(null)
         form.resetForNewSpool()
     }
 
-    fun applyBambuDialogData() {
+    fun applyBambuRfidText(text: String) {
         val decision = resolveBambuRfidApplyDecision(
-            text = bambuDialogText,
+            text = text,
             fallbackMaterial = form.filamentType,
             spools = spools
         )
 
         fun applyIntoForm(bambuData: BambuRfidFormData) {
+            preserveManualCreateForm = true
             onSpoolSelected(null)
             form.applyBambuRfidData(
                 data = bambuData,
@@ -197,6 +170,7 @@ fun SpoolStudioScreen(
             )
 
             showBambuDialog = false
+            showBambuDiffDialog = false
             onBambuDataApplied()
         }
 
@@ -206,6 +180,7 @@ fun SpoolStudioScreen(
             }
 
             is BambuRfidApplyDecision.UseExistingSpool -> {
+                preserveManualCreateForm = false
                 onSpoolSelected(decision.spool)
                 showBambuDialog = false
                 onBambuExistingSpoolFound()
@@ -220,6 +195,44 @@ fun SpoolStudioScreen(
         }
         onClearRawReadData()
     }
+
+    fun applyBambuDialogData() {
+        applyBambuRfidText(bambuDialogText)
+    }
+
+    SpoolStudioFormEffects(
+        form = form,
+        readData = readData,
+        dataVersion = dataVersion,
+        selectedSpool = selectedSpool,
+        spoolMode = spoolMode,
+        availableLocations = availableLocations,
+        suppressCreateReset = preserveManualCreateForm
+    )
+
+    SnackbarAutoDismissEffect(
+        showSnackbar = showSnackbar,
+        snackbarMessage = snackbarMessage,
+        autoDismiss = snackbarAutoDismiss,
+        onSnackbarDismiss = onSnackbarDismiss
+    )
+
+    BambuRfidDumpEffect(
+        rawReadVersion = rawReadVersion,
+        rawReadText = rawReadText,
+        onBambuDumpDetected = { applyBambuRfidText(it) }
+    )
+
+    PrinterMappingSelectionSyncEffect(
+        toolhead1SpoolId = printerTool1SpoolId,
+        toolhead2SpoolId = printerTool2SpoolId,
+        toolhead3SpoolId = printerTool3SpoolId,
+        toolhead4SpoolId = printerTool4SpoolId,
+        activePrinterSpoolId = activePrinterSpoolId,
+        printerMappingLoadVersion = printerMappingLoadVersion,
+        printerMappingSelection = printerMappingSelection,
+        onSelectionChange = { printerMappingDialogSelection = it }
+    )
 
     val primaryActionLabel = spoolActionLabel(spoolMode)
 
@@ -268,7 +281,7 @@ fun SpoolStudioScreen(
                         showCommentField = showCommentField,
                         showEmptySpoolWeight = showEmptySpoolWeight,
                         isRemainingWeightValid = isRemainingWeightValid(),
-                        onSpoolSelected = onSpoolSelected,
+                        onSpoolSelected = { handleSpoolSelected(it) },
                         onClearAllSpoolFields = { clearAllSpoolmanFields() },
                         onRefreshSelectedSpool = onRefreshSelectedSpool,
                         onRefreshSpoolmanCatalogIfStale = onRefreshSpoolmanCatalogIfStale
@@ -291,8 +304,14 @@ fun SpoolStudioScreen(
                             writeOpenSpoolTagUseCase.buildPayload(form, spoolMode, selectedSpool)?.let(onWriteTag)
                         },
                         isNewFromSelectedEnabled = isNewFromSelectedEnabled,
-                        onCreateNewSpool = onCreateNewSpool,
-                        onCreateEmptySpool = onCreateEmptySpool,
+                        onCreateNewSpool = {
+                            preserveManualCreateForm = false
+                            onCreateNewSpool()
+                        },
+                        onCreateEmptySpool = {
+                            preserveManualCreateForm = false
+                            onCreateEmptySpool()
+                        },
                         onOpenPrinterMapping = {
                             printerMappingDialogSelection = printerMappingSelection
 
