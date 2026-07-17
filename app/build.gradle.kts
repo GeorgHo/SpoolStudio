@@ -22,7 +22,7 @@ android {
 
     signingConfigs {
         create("release") {
-            val keystorePath = System.getenv("KEYSTORE_FILE") ?: System.getProperty("user.home") + "/spoolstudio-release-key.jks"
+            val keystorePath = System.getenv("KEYSTORE_FILE") ?: rootProject.file("keystore/spoolstudio.jks").absolutePath
             val pwdFile = File(System.getProperty("user.home") + "/spoolstudio-keystore.pwd")
             val keystorePass = System.getenv("KEYSTORE_PASSWORD") ?: pwdFile.takeIf { it.exists() }?.readText()?.trim() ?: ""
             
