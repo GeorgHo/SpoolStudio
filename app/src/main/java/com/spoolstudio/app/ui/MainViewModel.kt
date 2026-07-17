@@ -18,6 +18,8 @@ class MainViewModel : ViewModel() {
     private val saveOrUpdateSpoolmanSpoolUseCase = SaveOrUpdateSpoolmanSpoolUseCase()
     private val connectionTestUseCase = ConnectionTestUseCase()
     private val printerMappingUseCase = PrinterMappingUseCase()
+    private val spoolmanCatalogRefreshIntervalMs = 30_000L
+    private var lastSpoolmanCatalogRefreshMs = 0L
 
     var readData by mutableStateOf<OpenSpoolData?>(null)
         private set
@@ -167,6 +169,15 @@ class MainViewModel : ViewModel() {
 
     fun refreshSpools() {
         if (spoolmanUrl.isNotBlank()) {
+            loadSpoolmanFilaments()
+        }
+    }
+
+    fun refreshSpoolmanCatalogIfStale() {
+        if (spoolmanUrl.isBlank() || isLoadingSpools) return
+
+        val now = System.currentTimeMillis()
+        if (now - lastSpoolmanCatalogRefreshMs >= spoolmanCatalogRefreshIntervalMs) {
             loadSpoolmanFilaments()
         }
     }
@@ -452,6 +463,7 @@ class MainViewModel : ViewModel() {
                     forceRefresh = true
                 )
                 applySpoolmanCatalogState(buildSpoolmanCatalogState(catalog))
+                lastSpoolmanCatalogRefreshMs = System.currentTimeMillis()
             } catch (_: Exception) {
                 applySpoolmanCatalogState(emptySpoolmanCatalogState())
             } finally {

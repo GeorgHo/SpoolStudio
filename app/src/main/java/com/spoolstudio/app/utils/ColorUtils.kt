@@ -361,7 +361,18 @@ fun buildColorSuggestionDebug(hex: String?): ColorSuggestionDebug {
     val scored = scoreCatalogColors(upper)
     val nearest = scored.first()
 
-    // 🔥 WICHTIG: Grau-Erkennung VOR allem anderen
+    knownColors.firstOrNull { it.hex.equals(upper, ignoreCase = true) }?.let { exact ->
+        return ColorSuggestionDebug(
+            inputHex = upper,
+            suggestedName = exact.name,
+            reason = "Exact catalog match",
+            targetHue = hsl.h,
+            targetSaturation = hsl.s,
+            targetLightness = hsl.l,
+            nearest = scored.take(5).map { it.toDebugEntry() }
+        )
+    }
+    // Neutral fallback for colors that are not exact catalog matches.
     if (hsl.s < 0.10f) {
         val neutralName = when {
             hsl.l < 0.12f -> "Black"
@@ -374,18 +385,6 @@ fun buildColorSuggestionDebug(hex: String?): ColorSuggestionDebug {
             inputHex = upper,
             suggestedName = neutralName,
             reason = "Very low saturation fallback",
-            targetHue = hsl.h,
-            targetSaturation = hsl.s,
-            targetLightness = hsl.l,
-            nearest = scored.take(5).map { it.toDebugEntry() }
-        )
-    }
-
-    knownColors.firstOrNull { it.hex.equals(upper, ignoreCase = true) }?.let { exact ->
-        return ColorSuggestionDebug(
-            inputHex = upper,
-            suggestedName = exact.name,
-            reason = "Exact catalog match",
             targetHue = hsl.h,
             targetSaturation = hsl.s,
             targetLightness = hsl.l,

@@ -2,12 +2,12 @@
 
 ![Platform](https://img.shields.io/badge/Platform-Android-green)
 ![Kotlin](https://img.shields.io/badge/Kotlin-100%25-blue)
-![Version](https://img.shields.io/badge/Version-2.0-brightgreen)
+![Version](https://img.shields.io/badge/Version-2.0.1-brightgreen)
 ![Status](https://img.shields.io/badge/Status-Active-brightgreen)
 
 Spool Studio is an Android app for managing 3D printer filament spools with Spoolman, NFC/RFID tags, and optional printer integration.
 
-Version 2.0 introduces a redesigned interface, improved Spoolman workflows, searchable selection dialogs, OpenSpool tag handling, printer mapping, and optional Bambu Lab RFID inspection.
+Version 2.0 introduces a redesigned interface, improved Spoolman workflows, searchable selection dialogs, OpenSpool tag handling, printer mapping, and optional Bambu Lab RFID inspection. Version 2.0.1 adds post-release fixes for transparent filament colors, color-name editing, and dynamic Spoolman-backed selection lists.
 
 This project started from the open-source project **SpoolPainter** by ni4223 and has since been heavily extended.
 

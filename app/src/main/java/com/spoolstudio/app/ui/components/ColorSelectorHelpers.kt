@@ -5,6 +5,7 @@ import com.spoolstudio.app.utils.suggestColorName
 
 val commonColorPresets: Map<String, String> = mapOf(
     "White" to "FFFFFF",
+    "Transparent" to "E8EEF2",
     "Red" to "FF0000",
     "Blue" to "0000FF",
     "Green" to "00FF00",

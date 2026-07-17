@@ -64,6 +64,7 @@ fun SpoolmanFilamentDropdown(
     displayOverride: String? = null,
     showNewPill: Boolean = false,
     onClearAll: (() -> Unit)? = null,
+    onOpen: () -> Unit = {},
     infoButton: (@Composable () -> Unit)? = null
 ) {
     val focusManager = LocalFocusManager.current
@@ -99,6 +100,9 @@ fun SpoolmanFilamentDropdown(
             expanded = expanded,
             searchQuery = searchQuery,
             onExpandedChange = { shouldExpand ->
+                if (shouldExpand && !expanded) {
+                    onOpen()
+                }
                 expanded = shouldExpand && filaments.isNotEmpty() && !isLoading
             },
             onSearchQueryChange = { searchQuery = it.take(60) },
@@ -119,6 +123,9 @@ fun SpoolmanFilamentDropdown(
             } else {
                 if (shouldExpand) {
                     focusManager.clearFocus()
+                    if (!expanded) {
+                        onOpen()
+                    }
                 }
                 expanded = shouldExpand && filaments.isNotEmpty() && !isLoading
             }

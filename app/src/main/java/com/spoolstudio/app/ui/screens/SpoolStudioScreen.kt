@@ -1,4 +1,4 @@
-﻿package com.spoolstudio.app.ui.screens
+package com.spoolstudio.app.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -61,6 +61,7 @@ fun SpoolStudioScreen(
     isLoadingSpools: Boolean = false,
     onSpoolSelected: (FilamentSpool?) -> Unit = {},
     onRefreshSpools: () -> Unit = {},
+    onRefreshSpoolmanCatalogIfStale: () -> Unit = {},
     onRefreshSelectedSpool: (Int) -> Unit = {},
     spoolmanUrl: String = "",
     currentSpoolId: String? = null,
@@ -269,7 +270,8 @@ fun SpoolStudioScreen(
                         isRemainingWeightValid = isRemainingWeightValid(),
                         onSpoolSelected = onSpoolSelected,
                         onClearAllSpoolFields = { clearAllSpoolmanFields() },
-                        onRefreshSelectedSpool = onRefreshSelectedSpool
+                        onRefreshSelectedSpool = onRefreshSelectedSpool,
+                        onRefreshSpoolmanCatalogIfStale = onRefreshSpoolmanCatalogIfStale
                     )
 
                     validationMessage()?.let { message ->

@@ -7,7 +7,10 @@ data class NamedColor(
 )
 
 val knownColors = listOf(
-    NamedColor("Transparent", "FFFFFF", listOf("Transparent", "Klar", "Clear", "Natural", "Natur", "Farblos")),
+    NamedColor("Transparent", "E8EEF2", listOf("Transparent", "Klar", "Farblos", "Translucent", "Translucent White")),
+    NamedColor("Clear", "F2F6F8", listOf("Clear", "Clear Transparent", "Transparent Clear")),
+    NamedColor("Natural", "F5F1DE", listOf("Natural", "Natur", "Uncolored", "Uncoloured")),
+    NamedColor("Smoke", "6F747A", listOf("Transparent Black", "Transparent Grey", "Transparent Gray", "Smoke", "Smoked")),
 
     NamedColor("Black", "000000", listOf("Schwarz", "Jet Black", "Tiefschwarz", "Matt Black", "Gloss Black", "Onyx")),
     NamedColor("Soft Black", "1C1C1C", listOf("Soft Black", "Off Black", "Rich Black")),

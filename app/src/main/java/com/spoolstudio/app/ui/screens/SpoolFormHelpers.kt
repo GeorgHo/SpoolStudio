@@ -156,10 +156,14 @@ fun hasSpoolmanSaveChanges(request: SpoolmanSaveRequest, selectedSpool: Filament
     val requestedLotNr = request.lotNr.trim()
         .ifBlank { selectedSpool.lotNr.orEmpty().trim() }
 
+    val requestedColorName = request.colorName.trim().ifBlank { "Unknown" }
+    val selectedColorName = selectedSpool.spoolmanName.orEmpty().trim().ifBlank { "Unknown" }
+
     return request.material.trim() != selectedSpool.material.trim() ||
         request.variant.trim().ifBlank { "Basic" } != selectedSpool.variant.trim().ifBlank { "Basic" } ||
         request.brand.trim() != selectedSpool.brand.trim() ||
         normalizedColorHex(request.colorHex) != normalizedColorHex(selectedSpool.colorHex) ||
+        requestedColorName != selectedColorName ||
         normalizedInt(request.minTemp) != selectedSpool.minTemp ||
         normalizedInt(request.maxTemp) != selectedSpool.maxTemp ||
         normalizedInt(request.bedMinTemp) != selectedSpool.bedMinTemp ||

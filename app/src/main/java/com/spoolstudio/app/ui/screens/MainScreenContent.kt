@@ -118,6 +118,7 @@ fun MainScreenContent(
             isLoadingSpools = viewModel.isLoadingSpools,
             onSpoolSelected = { filament -> viewModel.handleFilamentSelection(filament) },
             onRefreshSpools = { viewModel.refreshSpools() },
+            onRefreshSpoolmanCatalogIfStale = { viewModel.refreshSpoolmanCatalogIfStale() },
             spoolmanUrl = viewModel.spoolmanUrl,
             currentSpoolId = viewModel.currentSpoolId,
             availableBrands = viewModel.availableBrands,

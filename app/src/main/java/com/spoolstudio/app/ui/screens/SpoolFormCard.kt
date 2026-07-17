@@ -1,4 +1,4 @@
-﻿package com.spoolstudio.app.ui.screens
+package com.spoolstudio.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -108,7 +108,8 @@ fun SpoolFormCard(
     isRemainingWeightValid: Boolean,
     onSpoolSelected: (FilamentSpool?) -> Unit,
     onClearAllSpoolFields: () -> Unit,
-    onRefreshSelectedSpool: (Int) -> Unit
+    onRefreshSelectedSpool: (Int) -> Unit,
+    onRefreshSpoolmanCatalogIfStale: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -126,7 +127,8 @@ fun SpoolFormCard(
             isLoadingSpools = isLoadingSpools,
             onSpoolSelected = onSpoolSelected,
             onClearAllSpoolFields = onClearAllSpoolFields,
-            onRefreshSelectedSpool = onRefreshSelectedSpool
+            onRefreshSelectedSpool = onRefreshSelectedSpool,
+            onRefreshSpoolmanCatalogIfStale = onRefreshSpoolmanCatalogIfStale
         )
 
         SpoolDataCard(
@@ -140,7 +142,8 @@ fun SpoolFormCard(
             showLotNumber = showLotNumber,
             showCommentField = showCommentField,
             showEmptySpoolWeight = showEmptySpoolWeight,
-            isRemainingWeightValid = isRemainingWeightValid
+            isRemainingWeightValid = isRemainingWeightValid,
+            onRefreshSpoolmanCatalogIfStale = onRefreshSpoolmanCatalogIfStale
         )
 
         TemperatureInputCard(form = form)
@@ -159,7 +162,8 @@ private fun SpoolDataCard(
     showLotNumber: Boolean,
     showCommentField: Boolean,
     showEmptySpoolWeight: Boolean,
-    isRemainingWeightValid: Boolean
+    isRemainingWeightValid: Boolean,
+    onRefreshSpoolmanCatalogIfStale: () -> Unit
 ) {
     var showColorDialog by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
@@ -266,6 +270,7 @@ private fun SpoolDataCard(
                 label = "Brand",
                 value = form.brand.ifBlank { "Generic" },
                 suggestions = brandOptions,
+                onOpen = onRefreshSpoolmanCatalogIfStale,
                 onValueChange = { brand ->
                     form.brand = brand.trim().ifBlank { "Generic" }.take(60)
                     form.customBrand = ""
@@ -309,14 +314,28 @@ private fun SpoolDataCard(
 
             CompactTextRow(
                 label = "Color Name",
-                value = form.colorName.ifBlank { "Unknown" },
+                value = form.colorName,
+                placeholder = "Unknown",
                 showEditIcon = true,
                 onValueChange = { newName ->
-                    val formatted = formatColorName(newName.take(40))
-                    form.colorName = formatted
-                    form.colorNameWasManuallyEdited = formatted.isNotBlank()
+                    val typedName = newName.take(40)
+                    form.colorName = typedName
+                    form.colorNameWasManuallyEdited = typedName.isNotBlank()
 
-                    val matchedHex = suggestHexFromName(formatted)
+                    val matchedHex = suggestHexFromName(formatColorName(typedName))
+                    if (matchedHex != null && (!form.isHexManuallySet || form.colorHex.isNullOrBlank())) {
+                        form.colorHex = matchedHex
+                        form.colorHexInput = matchedHex
+                        form.isHexManuallySet = false
+                    }
+                },
+                onFocusLost = {
+                    val formatted = formatColorName(form.colorName)
+                    val finalName = formatted.ifBlank { "Unknown" }
+                    form.colorName = finalName
+                    form.colorNameWasManuallyEdited = finalName != "Unknown"
+
+                    val matchedHex = suggestHexFromName(finalName)
                     if (matchedHex != null && (!form.isHexManuallySet || form.colorHex.isNullOrBlank())) {
                         form.colorHex = matchedHex
                         form.colorHexInput = matchedHex
@@ -354,6 +373,7 @@ private fun SpoolDataCard(
                 CompactEmptySpoolWeightRow(
                     value = form.emptySpoolWeight,
                     suggestions = emptySpoolWeightSuggestions,
+                    onOpen = onRefreshSpoolmanCatalogIfStale,
                     onValueChange = { form.emptySpoolWeight = sanitizeWeightInput(it) }
                 )
             }
@@ -366,6 +386,7 @@ private fun SpoolDataCard(
                     else -> form.location
                 },
                 options = locationOptions,
+                onOpen = onRefreshSpoolmanCatalogIfStale,
                 onSelected = {
                     focusManager.clearFocus()
                     if (it == "No Location") {
@@ -491,6 +512,7 @@ private fun CompactDropdownRow(
     value: String,
     options: List<String>,
     onSelected: (String) -> Unit,
+    onOpen: () -> Unit = {},
     showTopDivider: Boolean = false
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -513,6 +535,7 @@ private fun CompactDropdownRow(
             label = label,
             onClick = {
                 focusManager.clearFocus()
+                if (!expanded) onOpen()
                 expanded = !expanded
             },
             showTopDivider = showTopDivider
@@ -563,6 +586,7 @@ private fun CompactBrandRow(
     label: String,
     value: String,
     suggestions: List<String>,
+    onOpen: () -> Unit = {},
     onValueChange: (String) -> Unit
 ) {
     var showDialog by remember { mutableStateOf(false) }
@@ -571,6 +595,7 @@ private fun CompactBrandRow(
         label = label,
         onClick = {
             focusManager.clearFocus()
+            onOpen()
             showDialog = true
         }
     ) {
@@ -886,12 +911,16 @@ private fun CompactWeightRow(
 private fun CompactEmptySpoolWeightRow(
     value: String,
     suggestions: List<EmptySpoolWeightSuggestion>,
+    onOpen: () -> Unit = {},
     onValueChange: (String) -> Unit
 ) {
     var showDialog by remember { mutableStateOf(false) }
     CompactDataRow(
         label = "Empty spool weight",
-        onClick = { showDialog = true }
+        onClick = {
+            onOpen()
+            showDialog = true
+        }
     ) {
         Text(
             text = formatWeightWithUnit(value).ifBlank { "-" },
@@ -1082,6 +1111,7 @@ private fun CompactTextRow(
     valueFontWeight: FontWeight = FontWeight.SemiBold,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     focusRequester: FocusRequester? = null,
+    onFocusLost: () -> Unit = {},
     showBottomDivider: Boolean = true
 ) {
     var fieldValue by remember { mutableStateOf(TextFieldValue(value)) }
@@ -1140,9 +1170,13 @@ private fun CompactTextRow(
                         )
                     }
                     .onFocusChanged {
+                        val wasFocused = isFocused
                         isFocused = it.isFocused
                         if (it.isFocused && fieldValue.text.isNotEmpty()) {
                             selectAllRequest += 1
+                        }
+                        if (wasFocused && !it.isFocused) {
+                            onFocusLost()
                         }
                     },
                 decorationBox = { innerTextField ->
@@ -1468,7 +1502,8 @@ private fun SpoolHeroPanel(
     isLoadingSpools: Boolean,
     onSpoolSelected: (FilamentSpool?) -> Unit,
     onClearAllSpoolFields: () -> Unit,
-    onRefreshSelectedSpool: (Int) -> Unit
+    onRefreshSelectedSpool: (Int) -> Unit,
+    onRefreshSpoolmanCatalogIfStale: () -> Unit
 ) {
     val isCreateMode = spoolMode != SpoolMode.UPDATE
     val remainingText = form.remainingWeight.ifBlank {
@@ -1513,7 +1548,8 @@ private fun SpoolHeroPanel(
             showNewPill = isCreateMode && selectorOverride != null,
             onSpoolSelected = onSpoolSelected,
             onClearAllSpoolFields = onClearAllSpoolFields,
-            onRefreshSelectedSpool = onRefreshSelectedSpool
+            onRefreshSelectedSpool = onRefreshSelectedSpool,
+            onRefreshSpoolmanCatalogIfStale = onRefreshSpoolmanCatalogIfStale
         )
 
         Row(
@@ -1924,7 +1960,8 @@ private fun SpoolmanSelectionSection(
     showNewPill: Boolean = false,
     onSpoolSelected: (FilamentSpool?) -> Unit,
     onClearAllSpoolFields: () -> Unit,
-    onRefreshSelectedSpool: (Int) -> Unit
+    onRefreshSelectedSpool: (Int) -> Unit,
+    onRefreshSpoolmanCatalogIfStale: () -> Unit
 ) {
     if (spools.isNotEmpty()) {
         SpoolmanFilamentDropdown(
@@ -1941,6 +1978,7 @@ private fun SpoolmanSelectionSection(
             displayOverride = displayOverride,
             showNewPill = showNewPill,
             onClearAll = onClearAllSpoolFields,
+            onOpen = onRefreshSpoolmanCatalogIfStale,
             infoButton = null
         )
         return

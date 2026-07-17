@@ -19,4 +19,14 @@ class ColorNameRecognitionTest {
         assertEquals("C0C0C0", suggestHexFromName("Silk Silver"))
         assertEquals("C0C0C0", suggestHexFromName("Metallsilber"))
     }
+
+    @Test
+    fun transparentNamesResolveToTransparentHex() {
+        assertEquals("Transparent", formatColorName("Transparent"))
+        assertEquals("Transparent", formatColorName("Klar"))
+        assertEquals("E8EEF2", suggestHexFromName("Transparent"))
+        assertEquals("E8EEF2", suggestHexFromName("Klar"))
+        assertEquals("Natural", formatColorName("Natur"))
+        assertEquals("F5F1DE", suggestHexFromName("Natural"))
+    }
 }
