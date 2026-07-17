@@ -24,6 +24,7 @@ val knownColors = listOf(
     NamedColor("Light Gray", "D3D3D3", listOf("Light Grey", "Hellgrau", "Ash Gray", "Ash Grey")),
     NamedColor("Silver", "C0C0C0", listOf("Silber", "Metallic Silver", "Silver Gray", "Silver Grey")),
     NamedColor("Pearl Silver", "D9D9D6", listOf("Pearl Silver", "Pearl Grey", "Perlsilber")),
+    NamedColor("Marble", "D8D4CC", listOf("Marble", "Marbled", "Marmor", "Marble White", "White Marble", "Stone Marble")),
     NamedColor("White", "FFFFFF", listOf("White", "Weiß", "Weiss", "Pure White", "Snow White")),
     NamedColor("Warm White", "FDF4E3", listOf("Warm White", "Warmes Weiß", "Warmes Weiss", "Soft White")),
     NamedColor("Cool White", "F3F8FF", listOf("Cool White", "Kühles Weiß", "Kuehles Weiss", "Ice White")),

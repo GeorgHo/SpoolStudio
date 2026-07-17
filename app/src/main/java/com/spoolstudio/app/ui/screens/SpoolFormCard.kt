@@ -200,6 +200,23 @@ private fun SpoolDataCard(
     val emptySpoolWeightSuggestions = remember(spools) {
         buildEmptySpoolWeightSuggestions(spools)
     }
+
+    fun applyColorNameInput(input: String, finalize: Boolean = false) {
+        val rawName = input.take(40)
+        val formattedName = formatColorName(rawName)
+        val displayName = if (finalize) formattedName.ifBlank { "Unknown" } else rawName
+        val lookupName = formattedName.ifBlank { rawName }
+
+        form.colorName = displayName
+        form.colorNameWasManuallyEdited = displayName.isNotBlank() && displayName != "Unknown"
+
+        suggestHexFromName(lookupName)?.let { matchedHex ->
+            form.colorHex = matchedHex
+            form.colorHexInput = matchedHex
+            form.isHexManuallySet = false
+        }
+    }
+
     val remainingWarning = remainingWeightWarningThreshold(form.remainingWeight)
     val remainingColor = when {
         !isRemainingWeightValid -> MaterialTheme.colorScheme.error
@@ -318,29 +335,10 @@ private fun SpoolDataCard(
                 placeholder = "Unknown",
                 showEditIcon = true,
                 onValueChange = { newName ->
-                    val typedName = newName.take(40)
-                    form.colorName = typedName
-                    form.colorNameWasManuallyEdited = typedName.isNotBlank()
-
-                    val matchedHex = suggestHexFromName(formatColorName(typedName))
-                    if (matchedHex != null && (!form.isHexManuallySet || form.colorHex.isNullOrBlank())) {
-                        form.colorHex = matchedHex
-                        form.colorHexInput = matchedHex
-                        form.isHexManuallySet = false
-                    }
+                    applyColorNameInput(newName)
                 },
                 onFocusLost = {
-                    val formatted = formatColorName(form.colorName)
-                    val finalName = formatted.ifBlank { "Unknown" }
-                    form.colorName = finalName
-                    form.colorNameWasManuallyEdited = finalName != "Unknown"
-
-                    val matchedHex = suggestHexFromName(finalName)
-                    if (matchedHex != null && (!form.isHexManuallySet || form.colorHex.isNullOrBlank())) {
-                        form.colorHex = matchedHex
-                        form.colorHexInput = matchedHex
-                        form.isHexManuallySet = false
-                    }
+                    applyColorNameInput(form.colorName, finalize = true)
                 }
             )
 
@@ -495,9 +493,7 @@ private fun SpoolDataCard(
                             }
                         },
                         onColorNameChange = { newName ->
-                            val formatted = formatColorName(newName.take(40))
-                            form.colorName = formatted
-                            form.colorNameWasManuallyEdited = formatted.isNotBlank()
+                            applyColorNameInput(newName)
                         }
                     )
                 }

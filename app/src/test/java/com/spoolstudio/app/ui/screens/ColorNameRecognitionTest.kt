@@ -29,4 +29,12 @@ class ColorNameRecognitionTest {
         assertEquals("Natural", formatColorName("Natur"))
         assertEquals("F5F1DE", suggestHexFromName("Natural"))
     }
+
+    @Test
+    fun marbleNamesResolveToWarmStoneGray() {
+        assertEquals("Marble", formatColorName("Marble"))
+        assertEquals("Marble", formatColorName("Marmor"))
+        assertEquals("D8D4CC", suggestHexFromName("Marble"))
+        assertEquals("D8D4CC", suggestHexFromName("Marmor"))
+    }
 }
