@@ -16,11 +16,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
@@ -37,7 +34,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import com.spoolstudio.app.domain.models.FilamentSpool
+import com.spoolstudio.app.ui.components.SearchableDropdownDialog
 import com.spoolstudio.app.ui.components.SpoolStudioLogo
+import com.spoolstudio.app.ui.components.filterSpoolmanDropdownFilaments
 import com.spoolstudio.app.ui.theme.SpoolStudioColors
 import com.spoolstudio.app.ui.theme.SpoolStudioShape
 
@@ -72,8 +71,15 @@ fun MappingRowDropdown(
     onActiveCheckedChange: (Boolean) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
     val selectedSpool = spools.firstOrNull { it.id == selectedSpoolId }
+    val filteredSpools = filterSpoolmanDropdownFilaments(spools, searchQuery)
+    val showEmptyOption = searchQuery.isBlank() || "empty".contains(searchQuery.trim(), ignoreCase = true)
+    val options = buildList {
+        if (showEmptyOption) add(MappingSpoolOption.Empty)
+        filteredSpools.forEach { spool -> add(MappingSpoolOption.Spool(spool)) }
+    }
 
     @Suppress("DEPRECATION")
     val iconColor = selectedSpool?.colorHex
@@ -118,7 +124,13 @@ fun MappingRowDropdown(
         ExposedDropdownMenuBox(
             expanded = expanded,
             onExpandedChange = { shouldExpand ->
-                expanded = shouldExpand && spools.isNotEmpty() && enabled
+                if (shouldExpand && spools.isNotEmpty() && enabled) {
+                    searchQuery = ""
+                    focusManager.clearFocus(force = true)
+                    expanded = true
+                } else {
+                    expanded = false
+                }
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -126,7 +138,11 @@ fun MappingRowDropdown(
         ) {
             OutlinedButton(
                 onClick = {
-                    if (spools.isNotEmpty() && enabled) expanded = true
+                    if (spools.isNotEmpty() && enabled) {
+                        searchQuery = ""
+                        focusManager.clearFocus(force = true)
+                        expanded = true
+                    }
                 },
                 enabled = spools.isNotEmpty() && enabled,
                 modifier = Modifier
@@ -158,44 +174,28 @@ fun MappingRowDropdown(
                     tint = SpoolStudioColors.OnGraphiteMuted
                 )
             }
+        }
 
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                DropdownMenuItem(
-                    text = {
-                        Text(
-                            text = "Empty",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    },
-                    onClick = {
-                        onSpoolSelected(null)
-                        expanded = false
-                        focusManager.clearFocus(force = true)
-                    }
-                )
-                HorizontalDivider()
-
-                spools.forEach { spool ->
-                    val labelText =
-                        "ID ${spool.id ?: "-"} - ${spool.brand} - ${spool.spoolmanName ?: spool.displayName}"
-
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                text = labelText,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        },
-                        onClick = {
-                            onSpoolSelected(spool.id)
-                            expanded = false
-                        }
-                    )
-                }
-            }
+        if (expanded) {
+            SearchableDropdownDialog(
+                title = label,
+                searchQuery = searchQuery,
+                onSearchQueryChange = { searchQuery = it },
+                items = options,
+                itemLabel = { it.label },
+                onItemSelected = { option ->
+                    onSpoolSelected(option.spoolId)
+                    expanded = false
+                    searchQuery = ""
+                    focusManager.clearFocus(force = true)
+                },
+                onDismiss = {
+                    expanded = false
+                    searchQuery = ""
+                    focusManager.clearFocus(force = true)
+                },
+                showDefaultDivider = true
+            )
         }
 
         Row(
@@ -233,5 +233,21 @@ fun MappingRowDropdown(
                 }
             )
         }
+    }
+}
+
+private sealed class MappingSpoolOption {
+    abstract val label: String
+    abstract val spoolId: Int?
+
+    data object Empty : MappingSpoolOption() {
+        override val label: String = "Empty"
+        override val spoolId: Int? = null
+    }
+
+    data class Spool(private val spool: FilamentSpool) : MappingSpoolOption() {
+        override val label: String =
+            "ID ${spool.id ?: "-"} - ${spool.brand} - ${spool.spoolmanName ?: spool.displayName}"
+        override val spoolId: Int? = spool.id
     }
 }
