@@ -94,7 +94,7 @@ fun MappingRowDropdown(
         ?: MaterialTheme.colorScheme.onSurfaceVariant
 
     val displayText = selectedSpool?.let { spool ->
-        "ID ${spool.id ?: "-"} - ${spool.brand} - ${spool.spoolmanName ?: spool.displayName}"
+        mappingSpoolLabel(spool)
     } ?: "Select from Spoolman"
 
     Column(
@@ -246,8 +246,16 @@ private sealed class MappingSpoolOption {
     }
 
     data class Spool(private val spool: FilamentSpool) : MappingSpoolOption() {
-        override val label: String =
-            "ID ${spool.id ?: "-"} - ${spool.brand} - ${spool.spoolmanName ?: spool.displayName}"
+        override val label: String = mappingSpoolLabel(spool)
         override val spoolId: Int? = spool.id
     }
 }
+
+private fun mappingSpoolLabel(spool: FilamentSpool): String =
+    listOf(
+        "ID ${spool.id ?: "-"}",
+        spool.brand,
+        spool.spoolmanName ?: spool.displayName,
+        spool.material
+    ).filter { it.isNotBlank() }
+        .joinToString(" - ")
