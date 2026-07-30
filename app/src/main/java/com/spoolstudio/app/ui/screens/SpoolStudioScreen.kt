@@ -32,6 +32,9 @@ import androidx.compose.ui.unit.dp
 import com.spoolstudio.app.data.local.MaterialDatabase
 import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.domain.models.OpenSpoolData
+import com.spoolstudio.app.ui.PendingTagConversion
+import com.spoolstudio.app.ui.PrinterIntegrationMode
+import com.spoolstudio.app.ui.ResolvedPrinterIntegrationMode
 import com.spoolstudio.app.ui.SpoolMode
 import com.spoolstudio.app.ui.SpoolmanSaveRequest
 import com.spoolstudio.app.ui.theme.SpoolStudioColors
@@ -42,6 +45,7 @@ import com.spoolstudio.app.utils.*
 fun SpoolStudioScreen(
     onWriteTag: (String) -> Unit,
     onReadTag: () -> Unit,
+    isPrinterSpoolmanReady: Boolean = false,
     readData: OpenSpoolData? = null,
     // Bam
     rawReadText: String? = null,
@@ -76,23 +80,31 @@ fun SpoolStudioScreen(
     printerTool2SpoolId: Int? = null,
     printerTool3SpoolId: Int? = null,
     printerTool4SpoolId: Int? = null,
-    activePrinterSpoolId: Int? = null,
-    printerMappingLoadVersion: Int = 0,
+    printerIntegrationMode: PrinterIntegrationMode = PrinterIntegrationMode.PAXX12_SPOOL_LINK,
+    resolvedPrinterIntegrationMode: ResolvedPrinterIntegrationMode? = null,
     isLoadingPrinterMapping: Boolean = false,
     printerMappingSaveSuccessful: Boolean? = null,
     printerMappingStatusMessage: String? = null,
     printerMappingOperation: String? = null,
     onClearPrinterMappingDialogFeedback: () -> Unit = {},
     onLoadCurrentPrinterMapping: () -> Unit = {},
-    onSavePrinterMapping: (Int?, Int?, Int?, Int?, Int?) -> Unit = { _, _, _, _, _ -> },
     showLotNumber: Boolean = false,
     showCommentField: Boolean = false,
     showEmptySpoolWeight: Boolean = false,
+    materialModifierFieldEnabled: Boolean = false,
+    showMaterialModifierFieldPrompt: Boolean = false,
+    isCreatingMaterialModifierField: Boolean = false,
+    onConfirmMaterialModifierField: () -> Unit = {},
+    onDeclineMaterialModifierField: () -> Unit = {},
     onCreateNewSpool: () -> Unit = {},
     onCreateEmptySpool: () -> Unit = {},
     onCreateInSpoolman: (SpoolmanSaveRequest) -> Unit = {},
     isDeletingSpool: Boolean = false,
     onDeleteSelectedSpool: () -> Unit = {},
+    pendingTagConversion: PendingTagConversion? = null,
+    isConvertingTag: Boolean = false,
+    onConfirmTagConversion: () -> Unit = {},
+    onDeclineTagConversion: () -> Unit = {},
 ) {
     var showBambuDialog by remember { mutableStateOf(false) }
     var bambuDialogText by remember { mutableStateOf("") }
@@ -105,24 +117,7 @@ fun SpoolStudioScreen(
     val writeOpenSpoolTagUseCase = remember { WriteOpenSpoolTagUseCase() }
     var showPrinterMappingDialog by remember { mutableStateOf(false) }
     var showDeleteSpoolDialog by remember { mutableStateOf(false) }
-    var printerMappingDialogSelection by remember { mutableStateOf(PrinterMappingSelection()) }
-    val printerMappingSelection = printerMappingSelection(
-        toolhead1SpoolId = printerTool1SpoolId,
-        toolhead2SpoolId = printerTool2SpoolId,
-        toolhead3SpoolId = printerTool3SpoolId,
-        toolhead4SpoolId = printerTool4SpoolId,
-        activeSpoolId = activePrinterSpoolId
-    )
-
-    val hasPrinterMappingChanges = hasPrinterMappingChanges(
-        dialogSelection = printerMappingDialogSelection,
-        printerSelection = printerMappingSelection
-    )
-
-    val activeSpoolOutsideMapping = isActiveSpoolOutsideMapping(
-        activePrinterSpoolId = activePrinterSpoolId,
-        dialogSelection = printerMappingDialogSelection
-    )
+    var pendingTagWritePayload by remember { mutableStateOf<String?>(null) }
 
     val isWriteActionEnabled = isWriteActionEnabled(form)
     val isSaveToSpoolmanEnabled = isSaveToSpoolmanEnabled(form, spoolMode, selectedSpool)
@@ -223,17 +218,6 @@ fun SpoolStudioScreen(
         onBambuDumpDetected = { applyBambuRfidText(it) }
     )
 
-    PrinterMappingSelectionSyncEffect(
-        toolhead1SpoolId = printerTool1SpoolId,
-        toolhead2SpoolId = printerTool2SpoolId,
-        toolhead3SpoolId = printerTool3SpoolId,
-        toolhead4SpoolId = printerTool4SpoolId,
-        activePrinterSpoolId = activePrinterSpoolId,
-        printerMappingLoadVersion = printerMappingLoadVersion,
-        printerMappingSelection = printerMappingSelection,
-        onSelectionChange = { printerMappingDialogSelection = it }
-    )
-
     val primaryActionLabel = spoolActionLabel(spoolMode)
 
     Surface(
@@ -280,6 +264,7 @@ fun SpoolStudioScreen(
                         showLotNumber = showLotNumber,
                         showCommentField = showCommentField,
                         showEmptySpoolWeight = showEmptySpoolWeight,
+                        materialModifierFieldEnabled = materialModifierFieldEnabled,
                         isRemainingWeightValid = isRemainingWeightValid(),
                         onSpoolSelected = { handleSpoolSelected(it) },
                         onClearAllSpoolFields = { clearAllSpoolmanFields() },
@@ -301,7 +286,13 @@ fun SpoolStudioScreen(
                             onCreateInSpoolman(buildSaveRequest())
                         },
                         onWriteTag = {
-                            writeOpenSpoolTagUseCase.buildPayload(form, spoolMode, selectedSpool)?.let(onWriteTag)
+                            writeOpenSpoolTagUseCase.buildPayload(form, spoolMode, selectedSpool)?.let { payload ->
+                                if (isPrinterSpoolmanReady) {
+                                    onWriteTag(payload)
+                                } else {
+                                    pendingTagWritePayload = payload
+                                }
+                            }
                         },
                         isNewFromSelectedEnabled = isNewFromSelectedEnabled,
                         onCreateNewSpool = {
@@ -313,10 +304,10 @@ fun SpoolStudioScreen(
                             onCreateEmptySpool()
                         },
                         onOpenPrinterMapping = {
-                            printerMappingDialogSelection = printerMappingSelection
-
+                            onClearPrinterMappingDialogFeedback()
                             showPrinterMappingDialog = true
                             onTestMoonrakerConnection()
+                            onLoadCurrentPrinterMapping()
                         },
                         isDeleteSpoolEnabled = selectedSpool?.id != null && !isDeletingSpool,
                         onDeleteSelectedSpool = {
@@ -332,37 +323,18 @@ fun SpoolStudioScreen(
             spools = spools,
             isMoonrakerReachable = isMoonrakerReachable,
             isLoadingPrinterMapping = isLoadingPrinterMapping,
-            activeSpoolOutsideMapping = activeSpoolOutsideMapping,
-            activePrinterSpoolId = activePrinterSpoolId,
+            printerIntegrationModeLabel = resolvedPrinterIntegrationMode?.label ?: printerIntegrationMode.label,
             inlineStatusText = inlinePrinterMappingStatusText,
             inlineStatusColor = inlinePrinterMappingStatusColor,
-            hasPrinterMappingChanges = hasPrinterMappingChanges,
-            toolhead1SpoolId = printerMappingDialogSelection.toolhead1SpoolId,
-            toolhead2SpoolId = printerMappingDialogSelection.toolhead2SpoolId,
-            toolhead3SpoolId = printerMappingDialogSelection.toolhead3SpoolId,
-            toolhead4SpoolId = printerMappingDialogSelection.toolhead4SpoolId,
-            activeDialogSpoolId = printerMappingDialogSelection.activeSpoolId,
-            onToolhead1SpoolIdChange = {
-                printerMappingDialogSelection = printerMappingDialogSelection.withToolhead1(it)
-            },
-            onToolhead2SpoolIdChange = {
-                printerMappingDialogSelection = printerMappingDialogSelection.withToolhead2(it)
-            },
-            onToolhead3SpoolIdChange = {
-                printerMappingDialogSelection = printerMappingDialogSelection.withToolhead3(it)
-            },
-            onToolhead4SpoolIdChange = {
-                printerMappingDialogSelection = printerMappingDialogSelection.withToolhead4(it)
-            },
-            onActiveDialogSpoolIdChange = {
-                printerMappingDialogSelection = printerMappingDialogSelection.withActiveSpool(it, it != null)
-            },
+            toolhead1SpoolId = printerTool1SpoolId,
+            toolhead2SpoolId = printerTool2SpoolId,
+            toolhead3SpoolId = printerTool3SpoolId,
+            toolhead4SpoolId = printerTool4SpoolId,
             onCancel = {
                 onClearPrinterMappingDialogFeedback()
                 showPrinterMappingDialog = false
             },
-            onLoadCurrentPrinterMapping = onLoadCurrentPrinterMapping,
-            onSavePrinterMapping = onSavePrinterMapping
+            onLoadCurrentPrinterMapping = onLoadCurrentPrinterMapping
         )
 
         BambuRfidDialogHost(
@@ -386,6 +358,85 @@ fun SpoolStudioScreen(
                 pendingBambuApply = null
             }
         )
+
+        pendingTagWritePayload?.let { payload ->
+            AlertDialog(
+                onDismissRequest = { pendingTagWritePayload = null },
+                containerColor = SpoolStudioColors.Graphite,
+                title = {
+                    Text(
+                        text = "Printer Spoolman integration not ready",
+                        color = SpoolStudioColors.OnGraphite
+                    )
+                },
+                text = {
+                    Text(
+                        text = "At least one printer readiness check is not positive. The tag can still be written, but the printer may not auto-detect this spool until the firmware Spoolman integration is enabled and tested.",
+                        color = SpoolStudioColors.OnGraphiteMuted
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            pendingTagWritePayload = null
+                            onWriteTag(payload)
+                        },
+                        colors = ButtonDefaults.textButtonColors(contentColor = SpoolStudioColors.AccentCyan)
+                    ) {
+                        Text("Write anyway")
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { pendingTagWritePayload = null },
+                        colors = ButtonDefaults.textButtonColors(contentColor = SpoolStudioColors.GoldSoft)
+                    ) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
+
+        if (showMaterialModifierFieldPrompt) {
+            AlertDialog(
+                onDismissRequest = {
+                    if (!isCreatingMaterialModifierField) {
+                        onDeclineMaterialModifierField()
+                    }
+                },
+                containerColor = SpoolStudioColors.Surface,
+                title = {
+                    Text(
+                        text = "Create Spoolman field?",
+                        color = SpoolStudioColors.Ink
+                    )
+                },
+                text = {
+                    Text(
+                        text = "This spool uses a material modifier such as Plus or HS. Spool Studio can create the official Spoolman extra field \"material_modifier\" and store the modifier there. If you decline, the app will save without these modifiers.",
+                        color = SpoolStudioColors.Ink
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = onConfirmMaterialModifierField,
+                        enabled = !isCreatingMaterialModifierField,
+                        colors = ButtonDefaults.textButtonColors(contentColor = SpoolStudioColors.AccentCyan)
+                    ) {
+                        Text(if (isCreatingMaterialModifierField) "Creating..." else "Create field")
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = onDeclineMaterialModifierField,
+                        enabled = !isCreatingMaterialModifierField,
+                        colors = ButtonDefaults.textButtonColors(contentColor = SpoolStudioColors.Gold)
+                    ) {
+                        Text("Use without modifier")
+                    }
+                }
+            )
+        }
 
         val spoolToDelete = selectedSpool
         if (showDeleteSpoolDialog && spoolToDelete?.id != null) {
@@ -418,6 +469,47 @@ fun SpoolStudioScreen(
                 dismissButton = {
                     TextButton(onClick = { showDeleteSpoolDialog = false }) {
                         Text("Cancel")
+                    }
+                }
+            )
+        }
+
+        pendingTagConversion?.let { conversion ->
+            AlertDialog(
+                onDismissRequest = {
+                    if (!isConvertingTag) {
+                        onDeclineTagConversion()
+                    }
+                },
+                containerColor = SpoolStudioColors.Surface,
+                title = {
+                    Text(
+                        text = "Convert old tag?",
+                        color = SpoolStudioColors.Ink
+                    )
+                },
+                text = {
+                    Text(
+                        text = "This tag uses the old spool_id mapping for spool #${conversion.spoolId} (${conversion.spoolName}). Spool Studio v3 writes only Paxx12 SpoolLink tags.\n\nConvert it by storing card UID ${conversion.cardUid} in Spoolman?",
+                        color = SpoolStudioColors.Ink
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = onConfirmTagConversion,
+                        enabled = !isConvertingTag,
+                        colors = ButtonDefaults.textButtonColors(contentColor = SpoolStudioColors.AccentCyan)
+                    ) {
+                        Text(if (isConvertingTag) "Converting..." else "Convert")
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = onDeclineTagConversion,
+                        enabled = !isConvertingTag,
+                        colors = ButtonDefaults.textButtonColors(contentColor = SpoolStudioColors.Gold)
+                    ) {
+                        Text("Use v2")
                     }
                 }
             )

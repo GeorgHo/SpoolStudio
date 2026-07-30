@@ -229,7 +229,7 @@ fun SpoolmanFilamentDropdown(
                 searchQuery = searchQuery,
                 onSearchQueryChange = { searchQuery = it },
                 items = filteredFilaments,
-                itemLabel = ::spoolmanDropdownLabel,
+                itemLabel = ::spoolmanDropdownListLabel,
                 onItemSelected = { filament ->
                     onFilamentSelected(filament)
                     focusManager.clearFocus()
@@ -344,7 +344,7 @@ private fun DarkSpoolmanDropdown(
                 searchQuery = searchQuery,
                 onSearchQueryChange = onSearchQueryChange,
                 items = filteredFilaments,
-                itemLabel = ::spoolmanDropdownLabel,
+                itemLabel = ::spoolmanDropdownListLabel,
                 onItemSelected = { filament ->
                     onFilamentSelected(filament)
                     focusManager.clearFocus()

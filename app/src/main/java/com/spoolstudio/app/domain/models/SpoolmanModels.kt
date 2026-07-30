@@ -49,6 +49,12 @@ data class CreateVendorRequest(
     val empty_spool_weight: Float? = null
 )
 
+data class UpdateVendorRequest(
+    val name: String? = null,
+    val comment: String? = null,
+    val empty_spool_weight: Float? = null
+)
+
 data class CreateFilamentRequest(
     val name: String,
     val material: String,
@@ -72,6 +78,27 @@ data class CreateSpoolRequest(
     val remaining_weight: Float? = null,
     val comment: String? = null,
     val extra: Map<String, Any?>? = null
+)
+
+data class SpoolmanExtraField(
+    val key: String,
+    val name: String,
+    val order: Int? = null,
+    val unit: String? = null,
+    val field_type: String = "",
+    val default_value: String? = null,
+    val choices: List<String>? = null,
+    val multi_choice: Boolean? = null
+)
+
+data class SpoolmanExtraFieldRequest(
+    val name: String,
+    val order: Int = 0,
+    val unit: String? = null,
+    val field_type: String = "text",
+    val default_value: String? = null,
+    val choices: List<String>? = null,
+    val multi_choice: Boolean? = null
 )
 
 private fun decodePossiblyJsonString(raw: String): String {

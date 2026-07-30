@@ -11,7 +11,17 @@ import androidx.lifecycle.viewModelScope
 import com.spoolstudio.app.data.remote.spoolman.SpoolmanService
 import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.domain.models.OpenSpoolData
+import com.spoolstudio.app.domain.models.normalizeCardUid
+import com.spoolstudio.app.domain.models.spoolLinkSpoolmanFields
 import kotlinx.coroutines.launch
+import java.util.Locale
+
+data class PendingTagConversion(
+    val spoolId: Int,
+    val spoolName: String,
+    val cardUid: String,
+    val readData: OpenSpoolData
+)
 
 class MainViewModel : ViewModel() {
     private val spoolmanCatalogRepository = SpoolmanCatalogRepository()
@@ -39,6 +49,8 @@ class MainViewModel : ViewModel() {
         private set
     var moonrakerUrl by mutableStateOf("")
         private set
+    var printerIntegrationMode by mutableStateOf(PrinterIntegrationMode.PAXX12_SPOOL_LINK)
+        private set
     var spools by mutableStateOf<List<FilamentSpool>>(emptyList())
         private set
     var selectedSpool by mutableStateOf<FilamentSpool?>(null)
@@ -59,6 +71,21 @@ class MainViewModel : ViewModel() {
         private set
     var availableLocations by mutableStateOf<List<String>>(emptyList())
         private set
+    var spoolmanCardUidFieldSpoolCount by mutableIntStateOf(0)
+        private set
+    var spoolmanCardUidFieldKeys by mutableStateOf<List<String>>(emptyList())
+        private set
+    var spoolmanMaterialModifierFieldAvailable by mutableStateOf<Boolean?>(null)
+        private set
+    var materialModifierFieldDeclined by mutableStateOf(false)
+        private set
+    var isCreatingMaterialModifierField by mutableStateOf(false)
+        private set
+    var showMaterialModifierFieldPrompt by mutableStateOf(false)
+        private set
+    val materialModifierFieldEnabled: Boolean
+        get() = spoolmanMaterialModifierFieldAvailable == true && !materialModifierFieldDeclined
+    private var pendingMaterialModifierSaveRequest: SpoolmanSaveRequest? = null
     var spoolMode by mutableStateOf(SpoolMode.CREATE)
         private set
     var isMoonrakerReachable by mutableStateOf(false)
@@ -73,6 +100,8 @@ class MainViewModel : ViewModel() {
         private set
     var activePrinterSpoolId by mutableStateOf<Int?>(null)
         private set
+    var resolvedPrinterIntegrationMode by mutableStateOf<ResolvedPrinterIntegrationMode?>(null)
+        private set
     var printerMappingSaveSuccessful by mutableStateOf<Boolean?>(null)
         private set
     var printerMappingLoadVersion by mutableIntStateOf(0)
@@ -82,6 +111,10 @@ class MainViewModel : ViewModel() {
     var printerMappingStatusMessage by mutableStateOf<String?>(null)
         private set
     var printerMappingOperation by mutableStateOf<String?>(null)
+        private set
+    var pendingTagConversion by mutableStateOf<PendingTagConversion?>(null)
+        private set
+    var isConvertingTag by mutableStateOf(false)
         private set
 
     var spoolmanStatus by mutableStateOf<String?>(null)
@@ -93,6 +126,20 @@ class MainViewModel : ViewModel() {
     var moonrakerStatus by mutableStateOf<String?>(null)
         private set
     var moonrakerError by mutableStateOf<String?>(null)
+        private set
+    var moonrakerFirmwareVersion by mutableStateOf<String?>(null)
+        private set
+    var moonrakerVersion by mutableStateOf<String?>(null)
+        private set
+    var moonrakerSupportsSpoolLink by mutableStateOf<Boolean?>(null)
+        private set
+    var moonrakerHasSpoolmanComponent by mutableStateOf<Boolean?>(null)
+        private set
+    var moonrakerHasSpoolLinkComponent by mutableStateOf<Boolean?>(null)
+        private set
+    var moonrakerSpoolmanIntegrationEnabled by mutableStateOf<Boolean?>(null)
+        private set
+    var moonrakerDetectedModeLabel by mutableStateOf<String?>(null)
         private set
     var isTestingMoonraker by mutableStateOf(false)
         private set
@@ -148,6 +195,34 @@ class MainViewModel : ViewModel() {
         rawReadVersion = stateUpdate.rawReadVersion
 
         if (tagData != null) {
+            val matchedSpool = findLoadedSpoolByCardUid(tagData.readData)
+            if (matchedSpool != null) {
+                selectedSpool = matchedSpool
+                readData = OpenSpoolData.toOpenSpoolData(matchedSpool).copy(
+                    cardUid = tagData.readData.cardUid
+                )
+                currentSpoolId = matchedSpool.id?.toString()
+                spoolMode = SpoolMode.UPDATE
+                dataVersion++
+                return
+            }
+
+            val oldSpoolIdMatch = findLoadedSpoolBySpoolId(tagData.readData)
+            val tagUid = normalizeCardUid(tagData.readData.cardUid)
+            if (oldSpoolIdMatch?.id != null && tagUid.isNotBlank()) {
+                pendingTagConversion = PendingTagConversion(
+                    spoolId = oldSpoolIdMatch.id,
+                    spoolName = oldSpoolIdMatch.spoolmanName ?: oldSpoolIdMatch.displayName,
+                    cardUid = tagUid,
+                    readData = tagData.readData
+                )
+                showSnackbarMessage(
+                    "Old Paxx12 tag detected. Convert it to SpoolLink to use Spool Studio v3.",
+                    autoDismiss = false
+                )
+                return
+            }
+
             readData = stateUpdate.readData
             currentSpoolId = stateUpdate.currentSpoolId
             if (stateUpdate.clearSelectedSpool) {
@@ -160,6 +235,82 @@ class MainViewModel : ViewModel() {
         } else {
             Log.d("MainViewModel", "Raw RFID data is not OpenSpool JSON")
         }
+    }
+
+    private fun findLoadedSpoolBySpoolId(readData: OpenSpoolData): FilamentSpool? {
+        readData.spoolId?.toIntOrNull()?.let { spoolId ->
+            spools.firstOrNull { it.id == spoolId }?.let { return it }
+        }
+
+        return null
+    }
+
+    private fun findLoadedSpoolByCardUid(readData: OpenSpoolData): FilamentSpool? {
+        val uid = normalizeCardUid(readData.cardUid)
+        if (uid.isBlank()) return null
+
+        return spools.firstOrNull { spool ->
+            spool.cardUids.any { it.equals(uid, ignoreCase = true) }
+        }
+    }
+
+    fun confirmTagConversion(context: Context) {
+        val pending = pendingTagConversion ?: return
+        if (spoolmanUrl.isBlank()) {
+            showSnackbarMessage("Please configure a Spoolman URL before converting tags")
+            return
+        }
+
+        viewModelScope.launch {
+            isConvertingTag = true
+            try {
+                val refreshed = spoolmanCatalogRepository.findBySpoolId(spoolmanUrl, pending.spoolId)
+                val spool = refreshed ?: spools.firstOrNull { it.id == pending.spoolId }
+                    ?: throw IllegalStateException("Spoolman spool #${pending.spoolId} could not be loaded")
+
+                selectedSpool = spool
+                readData = pending.readData
+                currentSpoolId = spool.id?.toString()
+                spoolMode = SpoolMode.UPDATE
+
+                val conversionRequest = buildTagConversionSaveRequest(spool, pending)
+                val requestedModifier = spoolLinkSpoolmanFields(
+                    material = conversionRequest.material,
+                    variant = conversionRequest.variant,
+                    materialModifier = conversionRequest.materialModifier,
+                    allowMaterialModifier = true
+                ).materialModifier
+
+                if (requestedModifier.isNotBlank() && spoolmanMaterialModifierFieldAvailable != true) {
+                    pendingMaterialModifierSaveRequest = conversionRequest
+                    isConvertingTag = false
+                    if (materialModifierFieldDeclined) {
+                        showSnackbarMessage("Material modifier disabled. Converting without modifier.")
+                        performSaveToSpoolman(conversionRequest.withoutMaterialModifier())
+                    } else {
+                        showMaterialModifierFieldPrompt = true
+                    }
+                    return@launch
+                }
+
+                performSaveToSpoolman(
+                    conversionRequest.copy(
+                        allowMaterialModifier = materialModifierFieldEnabled || requestedModifier.isBlank()
+                    )
+                )
+            } catch (e: Exception) {
+                showSnackbarMessage("Tag conversion failed: ${e.message ?: "Unknown error"}", autoDismiss = false)
+                isConvertingTag = false
+            }
+        }
+    }
+
+    fun declineTagConversion() {
+        pendingTagConversion = null
+        showSnackbarMessage(
+            "Conversion cancelled. Spool Studio v3 only supports Paxx12 SpoolLink. Please use Spool Studio v2 for old tags.",
+            autoDismiss = false
+        )
     }
     fun showSnackbarMessage(message: String, autoDismiss: Boolean = true) {
         snackbarMessage = message
@@ -198,6 +349,7 @@ class MainViewModel : ViewModel() {
         context: Context,
         newUrl: String,
         newMoonrakerUrl: String,
+        newPrinterIntegrationMode: PrinterIntegrationMode,
         newSort: String,
         newBambuMasterKey: String,
         newShowCommentField: Boolean
@@ -206,6 +358,7 @@ class MainViewModel : ViewModel() {
             SettingsSaveInput(
                 spoolmanUrl = newUrl,
                 moonrakerUrl = newMoonrakerUrl,
+                printerIntegrationMode = newPrinterIntegrationMode,
                 spoolmanSortBy = newSort,
                 bambuMasterKey = newBambuMasterKey,
                 showCommentField = newShowCommentField
@@ -214,6 +367,8 @@ class MainViewModel : ViewModel() {
 
         spoolmanUrl = settings.spoolmanUrl
         moonrakerUrl = settings.moonrakerUrl
+        printerIntegrationMode = settings.printerIntegrationMode
+        resolvedPrinterIntegrationMode = null
         spoolmanSortBy = settings.spoolmanSortBy
         bambuMasterKey = settings.bambuMasterKey
         showCommentField = settings.showCommentField
@@ -222,6 +377,7 @@ class MainViewModel : ViewModel() {
             context = context,
             spoolmanUrl = settings.spoolmanUrl,
             moonrakerUrl = settings.moonrakerUrl,
+            printerIntegrationMode = settings.printerIntegrationMode,
             spoolmanSortBy = settings.spoolmanSortBy,
             bambuMasterKey = settings.bambuMasterKey,
             showCommentField = settings.showCommentField
@@ -238,7 +394,9 @@ class MainViewModel : ViewModel() {
         spoolmanUrl = state.spoolmanUrl
         spoolmanSortBy = state.spoolmanSortBy
         moonrakerUrl = state.moonrakerUrl
+        printerIntegrationMode = state.printerIntegrationMode
         bambuMasterKey = state.bambuMasterKey
+        materialModifierFieldDeclined = state.materialModifierFieldDeclined
     }
 
     fun handleFilamentSelection(filament: FilamentSpool?) {
@@ -276,7 +434,30 @@ class MainViewModel : ViewModel() {
         showSnackbarMessage("New spool mode enabled")
     }
 
-    fun saveToSpoolman(request: SpoolmanSaveRequest) {
+    fun saveToSpoolman(context: Context, request: SpoolmanSaveRequest) {
+        val requestedModifier = spoolLinkSpoolmanFields(
+            material = request.material,
+            variant = request.variant,
+            materialModifier = request.materialModifier,
+            allowMaterialModifier = true
+        ).materialModifier
+
+        if (requestedModifier.isNotBlank() && spoolmanMaterialModifierFieldAvailable != true) {
+            pendingMaterialModifierSaveRequest = request
+            if (materialModifierFieldDeclined) {
+                performSaveToSpoolman(request.withoutMaterialModifier())
+            } else {
+                showMaterialModifierFieldPrompt = true
+            }
+            return
+        }
+
+        performSaveToSpoolman(
+            request.copy(allowMaterialModifier = materialModifierFieldEnabled || requestedModifier.isBlank())
+        )
+    }
+
+    private fun performSaveToSpoolman(request: SpoolmanSaveRequest) {
         showSnackbarMessage(
             if (spoolMode == SpoolMode.UPDATE) {
                 "Updating spool in Spoolman..."
@@ -298,11 +479,15 @@ class MainViewModel : ViewModel() {
                     )
                 )) {
                     is SaveOrUpdateSpoolmanSpoolResult.ValidationFailed -> {
+                        if (pendingTagConversion != null) {
+                            isConvertingTag = false
+                        }
                         showSnackbarMessage(saveResult.message)
                     }
 
                     is SaveOrUpdateSpoolmanSpoolResult.Saved -> {
                         val result = saveResult.result
+                        val convertedPending = pendingTagConversion
                         selectedSpool = result.finalSpool
                         currentSpoolId = result.finalSpool.id?.toString()
                         val tagData = result.tagData
@@ -313,11 +498,86 @@ class MainViewModel : ViewModel() {
                         dataVersion++
                         loadSpoolmanFilaments()
 
-                        showSnackbarMessage(saveResult.successMessage)
+                        if (
+                            convertedPending != null &&
+                            result.finalSpool.id == convertedPending.spoolId &&
+                            normalizeCardUid(request.cardUid) == convertedPending.cardUid
+                        ) {
+                            pendingTagConversion = null
+                            isConvertingTag = false
+                            showSnackbarMessage("Tag converted to Paxx12 SpoolLink")
+                        } else {
+                            showSnackbarMessage(saveResult.successMessage)
+                        }
                     }
                 }
             } catch (e: Exception) {
                 showSnackbarMessage("Spoolman action failed: ${e.message ?: "Unknown error"}")
+                isConvertingTag = false
+            }
+        }
+    }
+
+    fun confirmMaterialModifierFieldCreation(context: Context) {
+        createMaterialModifierField(
+            context = context,
+            targetUrl = spoolmanUrl,
+            continuePendingSave = true
+        )
+    }
+
+    fun declineMaterialModifierFieldCreation(context: Context) {
+        showMaterialModifierFieldPrompt = false
+        materialModifierFieldDeclined = true
+        AppSettingsStore.saveMaterialModifierFieldDeclined(context, true)
+        val pending = pendingMaterialModifierSaveRequest
+        pendingMaterialModifierSaveRequest = null
+        if (pending != null) {
+            showSnackbarMessage("Material modifier disabled. Saving without modifier.")
+            performSaveToSpoolman(pending.withoutMaterialModifier())
+        } else {
+            showSnackbarMessage("Material modifier disabled")
+        }
+    }
+
+    fun createMaterialModifierField(
+        context: Context,
+        targetUrl: String = spoolmanUrl,
+        continuePendingSave: Boolean = false
+    ) {
+        val normalizedUrl = normalizeConnectionUrl(targetUrl)
+        val validationError = connectionTestUseCase.validationError(normalizedUrl)
+        if (validationError != null) {
+            showSnackbarMessage(validationError)
+            return
+        }
+        if (isCreatingMaterialModifierField) return
+
+        viewModelScope.launch {
+            isCreatingMaterialModifierField = true
+            try {
+                val created = SpoolmanService(normalizedUrl).createFilamentMaterialModifierField()
+                spoolmanMaterialModifierFieldAvailable = created
+                materialModifierFieldDeclined = false
+                AppSettingsStore.saveMaterialModifierFieldDeclined(context, false)
+                showMaterialModifierFieldPrompt = false
+                showSnackbarMessage(
+                    if (created) {
+                        "Material modifier field is ready"
+                    } else {
+                        "Material modifier field could not be verified"
+                    }
+                )
+
+                val pending = pendingMaterialModifierSaveRequest
+                pendingMaterialModifierSaveRequest = null
+                if (continuePendingSave && pending != null && created) {
+                    performSaveToSpoolman(pending.copy(allowMaterialModifier = true))
+                }
+            } catch (e: Exception) {
+                showSnackbarMessage("Field creation failed: ${e.message ?: "Unknown error"}", autoDismiss = false)
+            } finally {
+                isCreatingMaterialModifierField = false
             }
         }
     }
@@ -360,6 +620,13 @@ class MainViewModel : ViewModel() {
     fun testMoonrakerConnection(inputUrl: String) {
         moonrakerStatus = null
         moonrakerError = null
+        moonrakerFirmwareVersion = null
+        moonrakerVersion = null
+        moonrakerSupportsSpoolLink = null
+        moonrakerHasSpoolmanComponent = null
+        moonrakerHasSpoolLinkComponent = null
+        moonrakerSpoolmanIntegrationEnabled = null
+        moonrakerDetectedModeLabel = null
 
         val validationError = connectionTestUseCase.validationError(inputUrl)
         if (validationError != null) {
@@ -377,11 +644,25 @@ class MainViewModel : ViewModel() {
                         isMoonrakerReachable = result.reachable
                         moonrakerStatus = result.status
                         moonrakerError = result.error
+                        moonrakerFirmwareVersion = result.firmwareVersion
+                        moonrakerVersion = result.moonrakerVersion
+                        moonrakerSupportsSpoolLink = result.supportsSpoolLink
+                        moonrakerHasSpoolmanComponent = result.hasSpoolmanComponent
+                        moonrakerHasSpoolLinkComponent = result.hasSpoolLinkComponent
+                        moonrakerSpoolmanIntegrationEnabled = result.spoolmanIntegrationEnabled
+                        moonrakerDetectedModeLabel = result.detectedModeLabel
                     }
 
                     is ConnectionTestResult.Failed -> {
                         isMoonrakerReachable = false
                         moonrakerError = result.error
+                        moonrakerFirmwareVersion = null
+                        moonrakerVersion = null
+                        moonrakerSupportsSpoolLink = null
+                        moonrakerHasSpoolmanComponent = null
+                        moonrakerHasSpoolLinkComponent = null
+                        moonrakerSpoolmanIntegrationEnabled = null
+                        moonrakerDetectedModeLabel = null
                     }
 
                     is ConnectionTestResult.Spoolman -> Unit
@@ -413,6 +694,10 @@ class MainViewModel : ViewModel() {
                 when (val result = connectionTestUseCase.testSpoolman(inputUrl, spoolmanSortBy)) {
                     is ConnectionTestResult.Spoolman -> {
                         spoolmanStatus = result.status
+                        spoolmanMaterialModifierFieldAvailable = result.materialModifierFieldAvailable
+                        if (result.materialModifierFieldAvailable) {
+                            materialModifierFieldDeclined = false
+                        }
                     }
 
                     is ConnectionTestResult.Failed -> {
@@ -439,6 +724,13 @@ class MainViewModel : ViewModel() {
     fun clearMoonrakerStatus() {
         moonrakerStatus = null
         moonrakerError = null
+        moonrakerFirmwareVersion = null
+        moonrakerVersion = null
+        moonrakerSupportsSpoolLink = null
+        moonrakerHasSpoolmanComponent = null
+        moonrakerHasSpoolLinkComponent = null
+        moonrakerSpoolmanIntegrationEnabled = null
+        moonrakerDetectedModeLabel = null
     }
 
     fun beginPrinterMappingDialogSession() {
@@ -478,6 +770,12 @@ class MainViewModel : ViewModel() {
         availableMaterials = state.availableMaterials
         availableVariants = state.availableVariants
         availableLocations = state.availableLocations
+        spoolmanCardUidFieldSpoolCount = state.cardUidFieldSpoolCount
+        spoolmanCardUidFieldKeys = state.cardUidFieldKeys
+        spoolmanMaterialModifierFieldAvailable = state.materialModifierFieldAvailable
+        if (state.materialModifierFieldAvailable) {
+            materialModifierFieldDeclined = false
+        }
     }
 
     fun loadCurrentPrinterMapping() {
@@ -498,13 +796,15 @@ class MainViewModel : ViewModel() {
             printerMappingStatusMessage = null
 
             try {
-                when (val result = printerMappingUseCase.load(normalizeConnectionUrl(url))) {
+                when (val result = printerMappingUseCase.load(
+                    baseUrl = normalizeConnectionUrl(url),
+                    printerIntegrationMode = printerIntegrationMode
+                )) {
                     is PrinterMappingOperationResult.Loaded -> {
                         applyPrinterMappingSnapshot(result.snapshot)
                         printerMappingLoadVersion++
                         printerMappingSaveSuccessful = null
                         printerMappingStatusMessage = result.message
-                        showSnackbarMessage(result.message)
                     }
 
                     is PrinterMappingOperationResult.Failed -> {
@@ -557,6 +857,7 @@ class MainViewModel : ViewModel() {
             try {
                 when (val result = printerMappingUseCase.save(
                     baseUrl = normalizeConnectionUrl(url),
+                    printerIntegrationMode = printerIntegrationMode,
                     toolhead1SpoolId = e0,
                     toolhead2SpoolId = e1,
                     toolhead3SpoolId = e2,
@@ -592,5 +893,35 @@ class MainViewModel : ViewModel() {
         printerTool3SpoolId = snapshot.toolhead3SpoolId
         printerTool4SpoolId = snapshot.toolhead4SpoolId
         activePrinterSpoolId = snapshot.activeSpoolId
+        resolvedPrinterIntegrationMode = snapshot.integrationMode
     }
 }
+
+private fun buildTagConversionSaveRequest(
+    spool: FilamentSpool,
+    pending: PendingTagConversion
+): SpoolmanSaveRequest =
+    SpoolmanSaveRequest(
+        material = spool.material.ifBlank { pending.readData.type },
+        variant = spool.variant.ifBlank { pending.readData.subtype.ifBlank { "Basic" } },
+        materialModifier = spool.materialModifier,
+        brand = spool.brand.ifBlank { pending.readData.brand.ifBlank { "Unknown" } },
+        location = spool.location.orEmpty(),
+        colorHex = spool.colorHex ?: pending.readData.colorHex,
+        colorName = spool.spoolmanName.orEmpty().ifBlank {
+            spool.colorHex ?: pending.readData.colorHex ?: "Unknown"
+        },
+        minTemp = spool.minTemp?.toString() ?: pending.readData.minTemp,
+        maxTemp = spool.maxTemp?.toString() ?: pending.readData.maxTemp,
+        bedMinTemp = spool.bedMinTemp?.toString() ?: pending.readData.bedMinTemp.orEmpty(),
+        bedMaxTemp = spool.bedMaxTemp?.toString() ?: pending.readData.bedMaxTemp.orEmpty(),
+        lotNr = spool.lotNr.orEmpty(),
+        comment = spool.comment.orEmpty(),
+        remainingWeight = spool.remainingWeight?.let { String.format(Locale.US, "%.2f", it) }.orEmpty(),
+        emptySpoolWeight = spool.emptySpoolWeight?.let { String.format(Locale.US, "%.2f", it) }.orEmpty(),
+        existingSpoolId = spool.id,
+        cardUid = pending.cardUid
+    )
+
+private fun SpoolmanSaveRequest.withoutMaterialModifier(): SpoolmanSaveRequest =
+    copy(materialModifier = "", allowMaterialModifier = false)

@@ -4,7 +4,6 @@ import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.domain.models.Material
 import com.spoolstudio.app.ui.SpoolMode
 import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -13,6 +12,7 @@ class WriteOpenSpoolTagUseCaseTest {
         serialize = { data ->
             listOfNotNull(
                 data.type?.let { "type=$it" },
+                data.subtype?.let { "subtype=$it" },
                 data.spoolId?.let { "spool_id=$it" },
                 data.lotNr?.let { "lot_nr=$it" }
             ).joinToString(";")
@@ -54,18 +54,22 @@ class WriteOpenSpoolTagUseCaseTest {
     }
 
     @Test
-    fun buildPayloadReturnsNullForUnsupportedOpenSpoolMaterial() {
+    fun buildPayloadWritesCustomMaterialAndVariantDirectly() {
         val form = formState().apply {
             filamentType = "Other"
             customMaterial = "Mystery"
-            variant = "Basic"
+            variant = "Matte"
             brand = "Generic"
             colorHex = "FFFFFF"
             minTemp = "190"
             maxTemp = "220"
         }
 
-        assertNull(useCase.buildPayload(form, SpoolMode.CREATE, selectedSpool = null))
+        val payload = useCase.buildPayload(form, SpoolMode.CREATE, selectedSpool = null)
+
+        assertNotNull(payload)
+        assertTrue(payload!!.contains("type=Mystery"))
+        assertTrue(payload.contains("subtype=Matte"))
     }
 
     private fun formState(): SpoolFormState =

@@ -303,7 +303,7 @@ fun SpoolInfoCard(
                                 color = MaterialTheme.colorScheme.primary
                             )
 
-                            InfoRow("Lot", lotValue)
+                            InfoRow("Product / Lot", lotValue)
                             InfoRow("First use", firstUseValue)
                             InfoRow("Last use", lastUseValue)
                             InfoRow("Comment", commentValue)

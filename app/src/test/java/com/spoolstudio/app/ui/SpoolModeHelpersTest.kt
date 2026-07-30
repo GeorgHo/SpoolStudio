@@ -7,11 +7,11 @@ import org.junit.Test
 
 class SpoolModeHelpersTest {
     @Test
-    fun buildSpoolModeSourceDataKeepsSelectedSpoolMaterialForDuplicateForm() {
+    fun buildSpoolModeSourceDataKeepsSelectedSpoolFieldsForDuplicateForm() {
         val source = FilamentSpool(
             id = 42,
-            material = "PLA+",
-            variant = "Silk",
+            material = "PLA",
+            variant = "Plus Silk",
             brand = "GST 3D",
             colorHex = "00B1E7",
             minTemp = 200,
@@ -25,8 +25,8 @@ class SpoolModeHelpersTest {
 
         val result = buildSpoolModeSourceData(source, readData = null)
 
-        assertEquals("PLA+", result?.type)
-        assertEquals("Silk", result?.subtype)
+        assertEquals("PLA", result?.type)
+        assertEquals("Plus Silk", result?.subtype)
         assertEquals("GST 3D", result?.brand)
         assertNull(result?.colorHex)
         assertNull(result?.spoolId)

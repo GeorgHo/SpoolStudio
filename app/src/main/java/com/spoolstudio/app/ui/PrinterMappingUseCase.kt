@@ -15,30 +15,30 @@ sealed class PrinterMappingOperationResult {
 }
 
 class PrinterMappingUseCase(
-    private val loadMapping: suspend (String) -> PrinterMappingLoadResult =
-        { baseUrl -> PrinterMappingRepository().load(baseUrl) },
-    private val saveMapping: suspend (String, Int?, Int?, Int?, Int?, Int?) -> PrinterMappingSnapshot =
-        { baseUrl, toolhead1, toolhead2, toolhead3, toolhead4, activeSpoolId ->
+    private val loadMapping: suspend (String, PrinterIntegrationMode) -> PrinterMappingLoadResult =
+        { baseUrl, printerIntegrationMode -> PrinterMappingRepository().load(baseUrl, printerIntegrationMode) },
+    private val saveMapping: suspend (String, PrinterIntegrationMode, Int?, Int?, Int?, Int?, Int?) -> PrinterMappingSnapshot =
+        { baseUrl, printerIntegrationMode, toolhead1, toolhead2, toolhead3, toolhead4, activeSpoolId ->
             PrinterMappingRepository().save(
                 baseUrl = baseUrl,
                 toolhead1SpoolId = toolhead1,
                 toolhead2SpoolId = toolhead2,
                 toolhead3SpoolId = toolhead3,
                 toolhead4SpoolId = toolhead4,
-                activeSpoolId = activeSpoolId
+                activeSpoolId = activeSpoolId,
+                printerIntegrationMode = printerIntegrationMode
             )
         }
 ) {
-    suspend fun load(baseUrl: String): PrinterMappingOperationResult {
+    suspend fun load(
+        baseUrl: String,
+        printerIntegrationMode: PrinterIntegrationMode
+    ): PrinterMappingOperationResult {
         return try {
-            val result = loadMapping(baseUrl)
+            val result = loadMapping(baseUrl, printerIntegrationMode)
             PrinterMappingOperationResult.Loaded(
                 snapshot = result.snapshot,
-                message = if (result.activeSpoolAvailable) {
-                    "Printer mapping loaded"
-                } else {
-                    "Printer mapping loaded (active spool not available)"
-                }
+                message = printerMappingLoadedMessage(result)
             )
         } catch (error: Exception) {
             PrinterMappingOperationResult.Failed(printerMappingLoadErrorMessage(error))
@@ -47,6 +47,7 @@ class PrinterMappingUseCase(
 
     suspend fun save(
         baseUrl: String,
+        printerIntegrationMode: PrinterIntegrationMode,
         toolhead1SpoolId: Int?,
         toolhead2SpoolId: Int?,
         toolhead3SpoolId: Int?,
@@ -54,19 +55,25 @@ class PrinterMappingUseCase(
         activeSpoolId: Int?
     ): PrinterMappingOperationResult {
         return try {
+            val snapshot = saveMapping(
+                baseUrl,
+                printerIntegrationMode,
+                toolhead1SpoolId,
+                toolhead2SpoolId,
+                toolhead3SpoolId,
+                toolhead4SpoolId,
+                activeSpoolId
+            )
             PrinterMappingOperationResult.Saved(
-                snapshot = saveMapping(
-                    baseUrl,
-                    toolhead1SpoolId,
-                    toolhead2SpoolId,
-                    toolhead3SpoolId,
-                    toolhead4SpoolId,
-                    activeSpoolId
-                ),
-                message = "Mapping saved to printer"
+                snapshot = snapshot,
+                message = "Toolhead status saved to printer (${snapshot.integrationMode.label})"
             )
         } catch (error: Exception) {
             PrinterMappingOperationResult.Failed(printerMappingSaveErrorMessage(error))
         }
     }
+}
+
+private fun printerMappingLoadedMessage(result: PrinterMappingLoadResult): String {
+    return "Toolhead status loaded"
 }

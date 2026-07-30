@@ -3,6 +3,8 @@ package com.spoolstudio.app.ui
 import com.spoolstudio.app.data.remote.spoolman.SpoolmanService
 import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.domain.models.OpenSpoolData
+import com.spoolstudio.app.domain.models.normalizeCardUid
+import com.spoolstudio.app.domain.models.spoolLinkSpoolmanFields
 
 data class SpoolmanSaveInput(
     val baseUrl: String,
@@ -37,14 +39,19 @@ class SpoolmanSaveRepository(
             SpoolMode.CREATE, SpoolMode.DUPLICATE -> request.lotNr.trim()
         }
 
-        val vendor = service.createOrFindVendor(request.brand)
-        val composedMaterial = buildMaterialWithVariant(request.material, request.variant)
+        val cleanEmptySpoolWeight = parseRemainingWeight(request.emptySpoolWeight)
+        val vendor = service.createOrFindVendor(request.brand, cleanEmptySpoolWeight)
+        val filamentFields = spoolLinkSpoolmanFields(
+            material = request.material,
+            variant = request.variant,
+            materialModifier = request.materialModifier,
+            allowMaterialModifier = request.allowMaterialModifier
+        )
         val cleanColorName = request.colorName.trim().ifBlank { "Unknown" }
         val cleanColorHex = normalizedColorHex(request.colorHex)
         val nozzleTemp = request.minTemp.toIntOrNull()
         val bedTemp = request.bedMinTemp.toIntOrNull()
         val cleanRemainingWeight = parseRemainingWeight(request.remainingWeight)
-        val cleanEmptySpoolWeight = parseRemainingWeight(request.emptySpoolWeight)
 
         val finalSpool = when (actionMode) {
             SpoolMode.UPDATE -> updateSpool(
@@ -52,7 +59,9 @@ class SpoolmanSaveRepository(
                 input = input,
                 resolvedLotNr = resolvedLotNr,
                 vendorId = vendor.id ?: throw IllegalStateException("Vendor id missing"),
-                composedMaterial = composedMaterial,
+                material = filamentFields.material,
+                variant = filamentFields.variant,
+                materialModifier = filamentFields.materialModifier,
                 cleanColorName = cleanColorName,
                 cleanColorHex = cleanColorHex,
                 nozzleTemp = nozzleTemp,
@@ -66,7 +75,9 @@ class SpoolmanSaveRepository(
                 input = input,
                 resolvedLotNr = resolvedLotNr,
                 vendorId = vendor.id ?: throw IllegalStateException("Vendor id missing"),
-                composedMaterial = composedMaterial,
+                material = filamentFields.material,
+                variant = filamentFields.variant,
+                materialModifier = filamentFields.materialModifier,
                 cleanColorName = cleanColorName,
                 cleanColorHex = cleanColorHex,
                 nozzleTemp = nozzleTemp,
@@ -76,9 +87,19 @@ class SpoolmanSaveRepository(
             )
         }
 
+        val uid = normalizeCardUid(request.cardUid ?: input.readData?.cardUid)
+        val linkedSpool = if (uid.isNotBlank()) {
+            finalSpool.id?.let { spoolId ->
+                service.assignCardUidToSpool(spoolId, uid)
+                service.findFilamentBySpoolId(spoolId.toString())
+            } ?: finalSpool
+        } else {
+            finalSpool
+        } ?: finalSpool
+
         return SpoolmanSaveResult(
-            finalSpool = finalSpool,
-            tagData = buildTagData(finalSpool, request, resolvedLotNr),
+            finalSpool = linkedSpool,
+            tagData = buildTagData(linkedSpool, request.copy(cardUid = uid.ifBlank { request.cardUid }), resolvedLotNr),
             resolvedLotNr = resolvedLotNr,
             actionMode = actionMode
         )
@@ -89,7 +110,9 @@ class SpoolmanSaveRepository(
         input: SpoolmanSaveInput,
         resolvedLotNr: String,
         vendorId: Int,
-        composedMaterial: String,
+        material: String,
+        variant: String,
+        materialModifier: String,
         cleanColorName: String,
         cleanColorHex: String?,
         nozzleTemp: Int?,
@@ -111,7 +134,10 @@ class SpoolmanSaveRepository(
             service.updateFilament(
                 id = currentFilamentId,
                 name = cleanColorName,
-                material = composedMaterial,
+                material = material,
+                variant = variant,
+                materialModifier = materialModifier,
+                allowMaterialModifier = request.allowMaterialModifier,
                 vendorId = vendorId,
                 colorHex = cleanColorHex,
                 nozzleTemp = nozzleTemp,
@@ -121,7 +147,10 @@ class SpoolmanSaveRepository(
         } else {
             service.createOrFindFilament(
                 name = cleanColorName,
-                material = composedMaterial,
+                material = material,
+                variant = variant,
+                materialModifier = materialModifier,
+                allowMaterialModifier = request.allowMaterialModifier,
                 vendorId = vendorId,
                 colorHex = cleanColorHex,
                 nozzleTemp = nozzleTemp,
@@ -148,7 +177,9 @@ class SpoolmanSaveRepository(
         input: SpoolmanSaveInput,
         resolvedLotNr: String,
         vendorId: Int,
-        composedMaterial: String,
+        material: String,
+        variant: String,
+        materialModifier: String,
         cleanColorName: String,
         cleanColorHex: String?,
         nozzleTemp: Int?,
@@ -159,7 +190,10 @@ class SpoolmanSaveRepository(
         val request = input.request
         val filament = service.createOrFindFilament(
             name = cleanColorName,
-            material = composedMaterial,
+            material = material,
+            variant = variant,
+            materialModifier = materialModifier,
+            allowMaterialModifier = request.allowMaterialModifier,
             vendorId = vendorId,
             colorHex = cleanColorHex,
             nozzleTemp = nozzleTemp,

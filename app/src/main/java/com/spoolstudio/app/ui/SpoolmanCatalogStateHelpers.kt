@@ -8,7 +8,10 @@ data class SpoolmanCatalogState(
     val availableBrands: List<String>,
     val availableMaterials: List<String>,
     val availableVariants: List<String>,
-    val availableLocations: List<String>
+    val availableLocations: List<String>,
+    val cardUidFieldSpoolCount: Int,
+    val cardUidFieldKeys: List<String>,
+    val materialModifierFieldAvailable: Boolean
 )
 
 fun buildSpoolmanCatalogState(catalog: SpoolmanCatalog): SpoolmanCatalogState {
@@ -17,7 +20,10 @@ fun buildSpoolmanCatalogState(catalog: SpoolmanCatalog): SpoolmanCatalogState {
         availableBrands = catalog.vendorNames,
         availableMaterials = catalog.materialNames,
         availableVariants = catalog.variantNames,
-        availableLocations = catalog.locationNames
+        availableLocations = catalog.locationNames,
+        cardUidFieldSpoolCount = catalog.cardUidFieldSpoolCount,
+        cardUidFieldKeys = catalog.cardUidFieldKeys,
+        materialModifierFieldAvailable = catalog.materialModifierFieldAvailable
     )
 }
 
@@ -27,6 +33,9 @@ fun emptySpoolmanCatalogState(): SpoolmanCatalogState {
         availableBrands = emptyList(),
         availableMaterials = emptyList(),
         availableVariants = emptyList(),
-        availableLocations = emptyList()
+        availableLocations = emptyList(),
+        cardUidFieldSpoolCount = 0,
+        cardUidFieldKeys = emptyList(),
+        materialModifierFieldAvailable = false
     )
 }

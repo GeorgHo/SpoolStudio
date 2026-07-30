@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.domain.models.Material
 import com.spoolstudio.app.domain.models.OpenSpoolData
+import com.spoolstudio.app.domain.models.normalizeCardUid
 import com.spoolstudio.app.ui.SpoolMode
 import com.spoolstudio.app.ui.SpoolmanSaveRequest
 
@@ -14,6 +15,7 @@ class SpoolFormState(private val defaultMaterial: Material) {
     var colorName by mutableStateOf("")
     var filamentType by mutableStateOf("PLA")
     var customMaterial by mutableStateOf("")
+    var materialModifier by mutableStateOf("")
     var variant by mutableStateOf("Basic")
     var brand by mutableStateOf("Generic")
     var customBrand by mutableStateOf("")
@@ -30,6 +32,7 @@ class SpoolFormState(private val defaultMaterial: Material) {
     var colorHexInput by mutableStateOf("")
     var colorNameWasManuallyEdited by mutableStateOf(false)
     var isHexManuallySet by mutableStateOf(false)
+    var pendingCardUid by mutableStateOf<String?>(null)
 
     fun clearLocation() {
         location = ""
@@ -41,6 +44,7 @@ class SpoolFormState(private val defaultMaterial: Material) {
         colorName = ""
         filamentType = "PLA"
         customMaterial = ""
+        materialModifier = ""
         variant = "Basic"
         brand = "Generic"
         customBrand = ""
@@ -56,6 +60,7 @@ class SpoolFormState(private val defaultMaterial: Material) {
         colorHexInput = ""
         colorNameWasManuallyEdited = false
         isHexManuallySet = false
+        pendingCardUid = null
     }
 
     fun isRemainingWeightValid(): Boolean =
@@ -71,6 +76,7 @@ class SpoolFormState(private val defaultMaterial: Material) {
         buildSpoolmanSaveRequest(
             filamentType = filamentType,
             customMaterial = customMaterial,
+            materialModifier = materialModifier,
             variant = variant,
             brand = brand,
             customBrand = customBrand,
@@ -87,13 +93,15 @@ class SpoolFormState(private val defaultMaterial: Material) {
             remainingWeight = remainingWeight,
             emptySpoolWeight = emptySpoolWeight,
             spoolMode = spoolMode,
-            selectedSpool = selectedSpool
+            selectedSpool = selectedSpool,
+            cardUid = pendingCardUid
         )
 
     fun buildOpenSpoolTagData(spoolMode: SpoolMode, selectedSpool: FilamentSpool?): OpenSpoolData? =
         buildOpenSpoolTagData(
             filamentType = filamentType,
             customMaterial = customMaterial,
+            materialModifier = materialModifier,
             variant = variant,
             brand = brand,
             customBrand = customBrand,
@@ -111,6 +119,7 @@ class SpoolFormState(private val defaultMaterial: Material) {
         data.material?.let {
             filamentType = it
             customMaterial = ""
+            materialModifier = ""
         }
 
         variant = data.normalizedVariant
@@ -137,8 +146,6 @@ class SpoolFormState(private val defaultMaterial: Material) {
             }
         }
 
-        data.uid?.let {
-            lotNr = it.take(32)
-        }
+        pendingCardUid = normalizeCardUid(data.uid).takeIf { it.isNotBlank() }
     }
 }

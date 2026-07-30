@@ -5,11 +5,13 @@ import android.content.Context
 data class AppSettings(
     val spoolmanUrl: String,
     val moonrakerUrl: String,
+    val printerIntegrationMode: PrinterIntegrationMode,
     val spoolmanSortBy: String,
     val bambuMasterKey: String,
     val showLotNumber: Boolean,
     val showCommentField: Boolean,
-    val showEmptySpoolWeight: Boolean
+    val showEmptySpoolWeight: Boolean,
+    val materialModifierFieldDeclined: Boolean
 )
 
 object AppSettingsStore {
@@ -18,9 +20,11 @@ object AppSettingsStore {
     private const val SPOOLMAN_SORT_KEY = "spoolman_sort"
     private const val DEFAULT_URL = ""
     private const val MOONRAKER_URL_KEY = "moonraker_url"
+    private const val PRINTER_INTEGRATION_MODE_KEY = "printer_integration_mode"
     private const val SHOW_LOT_NUMBER_KEY = "show_lot_number"
     private const val SHOW_COMMENT_FIELD = "show_comment_field"
     private const val SHOW_EMPTY_SPOOL_WEIGHT = "show_empty_spool_weight"
+    private const val MATERIAL_MODIFIER_FIELD_DECLINED = "material_modifier_field_declined"
     private const val DEFAULT_MOONRAKER_URL = ""
     private const val BAMBU_MASTER_KEY = "bambu_master_key"
 
@@ -33,11 +37,15 @@ object AppSettingsStore {
                 prefs.getString(MOONRAKER_URL_KEY, DEFAULT_MOONRAKER_URL)
                     ?: DEFAULT_MOONRAKER_URL
             ),
+            printerIntegrationMode = PrinterIntegrationMode.fromStoredValue(
+                prefs.getString(PRINTER_INTEGRATION_MODE_KEY, PrinterIntegrationMode.PAXX12_SPOOL_LINK.storedValue)
+            ),
             spoolmanSortBy = prefs.getString(SPOOLMAN_SORT_KEY, "")?.ifBlank { "" } ?: "",
             bambuMasterKey = prefs.getString(BAMBU_MASTER_KEY, "")?.trim()?.uppercase() ?: "",
             showLotNumber = prefs.getBoolean(SHOW_LOT_NUMBER_KEY, false),
             showCommentField = prefs.getBoolean(SHOW_COMMENT_FIELD, false),
-            showEmptySpoolWeight = prefs.getBoolean(SHOW_EMPTY_SPOOL_WEIGHT, false)
+            showEmptySpoolWeight = prefs.getBoolean(SHOW_EMPTY_SPOOL_WEIGHT, false),
+            materialModifierFieldDeclined = prefs.getBoolean(MATERIAL_MODIFIER_FIELD_DECLINED, false)
         )
     }
 
@@ -45,6 +53,7 @@ object AppSettingsStore {
         context: Context,
         spoolmanUrl: String,
         moonrakerUrl: String,
+        printerIntegrationMode: PrinterIntegrationMode,
         spoolmanSortBy: String,
         bambuMasterKey: String,
         showCommentField: Boolean
@@ -53,9 +62,17 @@ object AppSettingsStore {
             .edit()
             .putString(SPOOLMAN_URL_KEY, normalizeUrl(spoolmanUrl))
             .putString(MOONRAKER_URL_KEY, normalizeUrl(moonrakerUrl))
+            .putString(PRINTER_INTEGRATION_MODE_KEY, printerIntegrationMode.storedValue)
             .putString(SPOOLMAN_SORT_KEY, spoolmanSortBy.ifBlank { "" })
             .putString(BAMBU_MASTER_KEY, bambuMasterKey.trim().uppercase())
             .putBoolean(SHOW_COMMENT_FIELD, showCommentField)
+            .apply()
+    }
+
+    fun saveMaterialModifierFieldDeclined(context: Context, value: Boolean) {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(MATERIAL_MODIFIER_FIELD_DECLINED, value)
             .apply()
     }
 

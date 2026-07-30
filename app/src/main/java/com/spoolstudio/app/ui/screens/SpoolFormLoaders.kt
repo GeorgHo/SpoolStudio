@@ -11,6 +11,7 @@ fun SpoolFormState.applySpoolSource(
     availableLocations: List<String>
 ) {
     filamentType = sourceSpool.material
+    materialModifier = sourceSpool.materialModifier
     variant = sourceSpool.variant.ifBlank { "Basic" }
     colorHex = sourceSpool.colorHex
     colorName = formatColorName(
@@ -49,4 +50,5 @@ fun SpoolFormState.applySpoolSource(
     emptySpoolWeight = formatLoadedEmptySpoolWeight(sourceSpool.emptySpoolWeight)
     colorHexInput = colorHex ?: ""
     colorNameWasManuallyEdited = false
+    pendingCardUid = sourceSpool.cardUids.firstOrNull()
 }

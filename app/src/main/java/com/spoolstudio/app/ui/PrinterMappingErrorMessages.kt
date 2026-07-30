@@ -3,7 +3,7 @@ package com.spoolstudio.app.ui
 private const val unknownPrinterMappingError = "Unknown printer error"
 
 fun printerMappingLoadErrorMessage(error: Exception): String =
-    "Loading printer mapping failed: ${friendlyPrinterMappingError(error, PrinterMappingOperation.Load)}"
+    "Loading toolhead status failed: ${friendlyPrinterMappingError(error, PrinterMappingOperation.Load)}"
 
 fun printerMappingSaveErrorMessage(error: Exception): String =
     "Save failed: ${friendlyPrinterMappingError(error, PrinterMappingOperation.Save)}"
@@ -45,6 +45,12 @@ private fun friendlyPrinterMappingError(
         }
         rawMessage.contains("active spool query failed", ignoreCase = true) -> {
             "Active spool could not be read. Check the printer Spoolman integration."
+        }
+        rawMessage.contains("requires firmware 1.5.0", ignoreCase = true) -> {
+            rawMessage
+        }
+        rawMessage.contains("Spoolman integration is not ready", ignoreCase = true) -> {
+            rawMessage
         }
         else -> compactPrinterError(rawMessage)
     }

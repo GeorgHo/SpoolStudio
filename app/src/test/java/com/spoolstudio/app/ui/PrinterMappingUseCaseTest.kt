@@ -7,46 +7,33 @@ import org.junit.Test
 
 class PrinterMappingUseCaseTest {
     @Test
-    fun loadReturnsMessageWhenActiveSpoolIsAvailable() = runBlocking {
-        val snapshot = PrinterMappingSnapshot(1, 2, null, null, 1)
+    fun loadReturnsSpoolLinkMessage() = runBlocking {
+        val snapshot = PrinterMappingSnapshot(1, 2, null, null, null, ResolvedPrinterIntegrationMode.PAXX12_SPOOL_LINK)
         val useCase = PrinterMappingUseCase(
-            loadMapping = { PrinterMappingLoadResult(snapshot, activeSpoolAvailable = true) },
-            saveMapping = { _, _, _, _, _, _ -> throw AssertionError("save must not be called") }
+            loadMapping = { _, _ -> PrinterMappingLoadResult(snapshot, activeSpoolAvailable = true) },
+            saveMapping = { _, _, _, _, _, _, _ -> throw AssertionError("save must not be called") }
         )
 
-        val result = useCase.load("http://printer.local")
-
-        assertTrue(result is PrinterMappingOperationResult.Loaded)
-        assertEquals("Printer mapping loaded", (result as PrinterMappingOperationResult.Loaded).message)
-        assertEquals(snapshot, result.snapshot)
-    }
-
-    @Test
-    fun loadReturnsMessageWhenActiveSpoolIsMissing() = runBlocking {
-        val snapshot = PrinterMappingSnapshot(1, null, null, null, null)
-        val useCase = PrinterMappingUseCase(
-            loadMapping = { PrinterMappingLoadResult(snapshot, activeSpoolAvailable = false) },
-            saveMapping = { _, _, _, _, _, _ -> throw AssertionError("save must not be called") }
-        )
-
-        val result = useCase.load("http://printer.local")
+        val result = useCase.load("http://printer.local", PrinterIntegrationMode.PAXX12_SPOOL_LINK)
 
         assertTrue(result is PrinterMappingOperationResult.Loaded)
         assertEquals(
-            "Printer mapping loaded (active spool not available)",
+            "Toolhead status loaded",
             (result as PrinterMappingOperationResult.Loaded).message
         )
+        assertEquals(snapshot, result.snapshot)
     }
 
     @Test
     fun saveReturnsFriendlyFailureMessage() = runBlocking {
         val useCase = PrinterMappingUseCase(
-            loadMapping = { throw AssertionError("load must not be called") },
-            saveMapping = { _, _, _, _, _, _ -> throw IllegalStateException("timeout after 10 seconds") }
+            loadMapping = { _, _ -> throw AssertionError("load must not be called") },
+            saveMapping = { _, _, _, _, _, _, _ -> throw IllegalStateException("timeout after 10 seconds") }
         )
 
         val result = useCase.save(
             baseUrl = "http://printer.local",
+            printerIntegrationMode = PrinterIntegrationMode.PAXX12_SPOOL_LINK,
             toolhead1SpoolId = 1,
             toolhead2SpoolId = null,
             toolhead3SpoolId = null,

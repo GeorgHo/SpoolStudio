@@ -10,7 +10,28 @@ import retrofit2.http.POST
 import retrofit2.http.GET
 import java.util.concurrent.TimeUnit
 
+data class MoonrakerPrinterInfo(
+    val firmwareVersion: String?,
+    val moonrakerVersion: String?,
+    val softwareVersion: String?,
+    val supportsSpoolLink: Boolean,
+    val hasSpoolmanComponent: Boolean?,
+    val hasSpoolLinkComponent: Boolean?,
+    val spoolmanIntegrationEnabled: Boolean?
+) {
+    val displayVersion: String?
+        get() = firmwareVersion ?: softwareVersion
+}
+
 interface MoonrakerApi {
+    @GET("server/info")
+    suspend fun getServerInfo(): Response<Map<String, @JvmSuppressWildcards Any>>
+
+    @GET("printer/info")
+    suspend fun getPrinterInfo(): Response<Map<String, @JvmSuppressWildcards Any>>
+
+    @GET("machine/system_info")
+    suspend fun getMachineSystemInfo(): Response<Map<String, @JvmSuppressWildcards Any>>
 
     @POST("printer/objects/query")
     suspend fun queryPrinterObjects(
@@ -43,7 +64,40 @@ class MoonrakerService(private val baseUrl: String) {
         .build()
         .create(MoonrakerApi::class.java)
 
-    suspend fun getToolMapping(): Map<String, Int?> {
+    suspend fun getPrinterInfo(): MoonrakerPrinterInfo {
+        val printerInfoResult = runCatching {
+            api.getPrinterInfo().resultOrThrow("Moonraker printer info query failed")
+        }.getOrNull()
+
+        val systemInfoResult = runCatching {
+            api.getMachineSystemInfo().resultOrThrow("Moonraker system info query failed")
+        }.getOrNull()
+
+        val serverInfoResult = runCatching {
+            api.getServerInfo().resultOrThrow("Moonraker server info query failed")
+        }.getOrNull()
+
+        val productInfo = (systemInfoResult?.get("system_info") as? Map<*, *>)
+            ?.get("product_info") as? Map<*, *>
+
+        val firmwareVersion = productInfo.stringValue("firmware_version")
+        val softwareVersion = printerInfoResult.stringValue("software_version")
+            ?: productInfo.stringValue("software_version")
+        val versionForFeatureGate = firmwareVersion ?: softwareVersion
+        val components = moonrakerComponentState(serverInfoResult?.listValue("components"))
+
+        return MoonrakerPrinterInfo(
+            firmwareVersion = firmwareVersion,
+            moonrakerVersion = serverInfoResult.stringValue("moonraker_version"),
+            softwareVersion = softwareVersion,
+            supportsSpoolLink = moonrakerVersionAtLeast(versionForFeatureGate, 1, 5, 0),
+            hasSpoolmanComponent = components?.hasSpoolman,
+            hasSpoolLinkComponent = components?.hasSpoolLink,
+            spoolmanIntegrationEnabled = components?.integrationEnabled
+        )
+    }
+
+    suspend fun getLegacyToolMapping(): Map<String, Int?> {
         val response = api.queryPrinterObjects(
             mapOf(
                 "objects" to mapOf(
@@ -55,19 +109,7 @@ class MoonrakerService(private val baseUrl: String) {
             )
         )
 
-        if (!response.isSuccessful) {
-            val errorText = response.errorBody()?.string()
-            throw IllegalStateException("Moonraker mapping query failed (${response.code()}): $errorText")
-        }
-
-        val body = response.body()
-            ?: throw IllegalStateException("Moonraker mapping response was empty")
-
-        val result = body["result"] as? Map<*, *>
-            ?: throw IllegalStateException("Moonraker response did not contain result")
-
-        val status = result["status"] as? Map<*, *>
-            ?: throw IllegalStateException("Moonraker response did not contain status")
+        val status = response.statusOrThrow("Moonraker legacy mapping query failed")
 
         return mapOf(
             "T0" to extractSpoolId(status["gcode_macro T0"]),
@@ -77,7 +119,33 @@ class MoonrakerService(private val baseUrl: String) {
         )
     }
 
-    suspend fun setToolSpool(tool: String, spoolId: Int?) {
+    suspend fun getSpoolLinkToolMapping(): Map<String, Int?> {
+        val response = api.queryPrinterObjects(
+            mapOf(
+                "objects" to mapOf(
+                    "print_task_config" to listOf("filament_spool_id")
+                )
+            )
+        )
+
+        val status = response.statusOrThrow("Moonraker SpoolLink mapping query failed")
+        val config = status["print_task_config"] as? Map<*, *>
+            ?: throw IllegalStateException("Moonraker response did not contain print_task_config")
+        val spoolIds = when (val raw = config["filament_spool_id"]) {
+            null -> emptyList<Any?>()
+            is List<*> -> raw
+            else -> throw IllegalStateException("Moonraker filament_spool_id had unexpected type")
+        }
+
+        return mapOf(
+            "T0" to spoolIds.getOrNull(0).toPositiveSpoolIdOrNull(),
+            "T1" to spoolIds.getOrNull(1).toPositiveSpoolIdOrNull(),
+            "T2" to spoolIds.getOrNull(2).toPositiveSpoolIdOrNull(),
+            "T3" to spoolIds.getOrNull(3).toPositiveSpoolIdOrNull()
+        )
+    }
+
+    suspend fun setLegacyToolSpool(tool: String, spoolId: Int?) {
         val value = spoolId ?: 0
         val variableName = "${tool.lowercase()}__spool_id"
 
@@ -92,7 +160,19 @@ class MoonrakerService(private val baseUrl: String) {
 
         if (!response.isSuccessful) {
             val errorText = response.errorBody()?.string()
-            throw IllegalStateException("Moonraker mapping write failed (${response.code()}): $errorText")
+            throw IllegalStateException("Moonraker legacy mapping write failed (${response.code()}): $errorText")
+        }
+    }
+
+    suspend fun setSpoolLinkToolSpool(lane: String, spoolId: Int?) {
+        val value = spoolId ?: 0
+        val response = api.sendGcode(
+            mapOf("script" to "SET_SPOOL_ID LANE=$lane SPOOL_ID=$value")
+        )
+
+        if (!response.isSuccessful) {
+            val errorText = response.errorBody()?.string()
+            throw IllegalStateException("Moonraker SpoolLink mapping write failed (${response.code()}): $errorText")
         }
     }
 
@@ -100,11 +180,7 @@ class MoonrakerService(private val baseUrl: String) {
         val map = raw as? Map<*, *> ?: return null
         val value = map["spool_id"] ?: return null
 
-        return when (value) {
-            is Number -> value.toInt()
-            is String -> value.toIntOrNull()
-            else -> null
-        }
+        return value.toPositiveSpoolIdOrNull()
     }
 
     suspend fun getActiveSpoolId(): Int? {
@@ -148,5 +224,93 @@ class MoonrakerService(private val baseUrl: String) {
             val errorText = response.errorBody()?.string()
             throw IllegalStateException("Moonraker active spool write failed (${response.code()}): $errorText")
         }
+    }
+
+    private fun Response<Map<String, @JvmSuppressWildcards Any>>.statusOrThrow(
+        context: String
+    ): Map<*, *> {
+        val result = resultOrThrow(context)
+
+        return result["status"] as? Map<*, *>
+            ?: throw IllegalStateException("$context: Moonraker response did not contain status")
+    }
+
+    private fun Response<Map<String, @JvmSuppressWildcards Any>>.resultOrThrow(
+        context: String
+    ): Map<*, *> {
+        if (!isSuccessful) {
+            val errorText = errorBody()?.string()
+            throw IllegalStateException("$context (${code()}): $errorText")
+        }
+
+        val body = body()
+            ?: throw IllegalStateException("$context: Moonraker response was empty")
+
+        val result = body["result"] as? Map<*, *>
+            ?: throw IllegalStateException("$context: Moonraker response did not contain result")
+
+        return result
+    }
+
+    private fun Any?.toPositiveSpoolIdOrNull(): Int? =
+        when (this) {
+            is Number -> toInt()
+            is String -> toIntOrNull()
+            else -> null
+        }?.takeIf { it > 0 }
+
+    private fun Map<*, *>?.stringValue(key: String): String? =
+        this?.get(key)?.toString()?.trim()?.takeIf { it.isNotBlank() }
+
+    private fun Map<*, *>?.listValue(key: String): List<*>? =
+        this?.get(key) as? List<*>
+
+}
+
+internal data class MoonrakerComponentState(
+    val hasSpoolman: Boolean,
+    val hasSpoolLink: Boolean
+) {
+    val integrationEnabled: Boolean
+        get() = hasSpoolman && hasSpoolLink
+}
+
+internal fun moonrakerComponentState(components: List<*>?): MoonrakerComponentState? {
+    val normalized = components
+        ?.mapNotNull { it?.toString()?.trim()?.lowercase() }
+        ?.toSet()
+        ?: return null
+
+    return MoonrakerComponentState(
+        hasSpoolman = "spoolman" in normalized,
+        hasSpoolLink = "spoollink" in normalized
+    )
+}
+
+internal fun moonrakerComponentsHaveSpoolmanIntegration(components: List<*>?): Boolean? {
+    return moonrakerComponentState(components)?.integrationEnabled
+}
+
+internal fun moonrakerVersionAtLeast(
+    version: String?,
+    minimumMajor: Int,
+    minimumMinor: Int,
+    minimumPatch: Int
+): Boolean {
+    val parts = Regex("""(\d+)(?:\.(\d+))?(?:\.(\d+))?""")
+        .find(version ?: return false)
+        ?.groupValues
+        ?.drop(1)
+        ?.map { it.toIntOrNull() ?: 0 }
+        ?: return false
+
+    val major = parts.getOrElse(0) { 0 }
+    val minor = parts.getOrElse(1) { 0 }
+    val patch = parts.getOrElse(2) { 0 }
+
+    return when {
+        major != minimumMajor -> major > minimumMajor
+        minor != minimumMinor -> minor > minimumMinor
+        else -> patch >= minimumPatch
     }
 }

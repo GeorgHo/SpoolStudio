@@ -2,11 +2,13 @@ package com.spoolstudio.app.ui.screens
 
 import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.domain.models.OpenSpoolData
+import com.spoolstudio.app.domain.models.normalizeCardUid
+import com.spoolstudio.app.domain.models.spoolLinkSpoolmanFields
+import com.spoolstudio.app.domain.models.spoolLinkTagFields
 import com.spoolstudio.app.ui.SpoolMode
 import com.spoolstudio.app.ui.SpoolmanSaveRequest
 import com.spoolstudio.app.ui.normalizedColorHex
 import com.spoolstudio.app.ui.parseRemainingWeight
-import com.spoolstudio.app.utils.OpenSpoolMaterialMapper
 import java.util.Locale
 
 fun resolveMaterialName(filamentType: String, customMaterial: String): String =
@@ -83,7 +85,7 @@ fun spoolFormValidationMessage(
     remainingWeight: String,
     emptySpoolWeight: String
 ): String? = when {
-    !isSpoolMaterialValid(filamentType, customMaterial) -> "Please enter a custom filament type"
+    !isSpoolMaterialValid(filamentType, customMaterial) -> "Please enter a custom material"
     !isSpoolVariantValid(variant) -> "Please enter a custom variant"
     !isSpoolBrandValid(brand, customBrand) -> "Please enter a custom brand"
     !isRemainingWeightValid(remainingWeight) -> "Please enter a valid remaining weight"
@@ -94,6 +96,7 @@ fun spoolFormValidationMessage(
 fun buildSpoolmanSaveRequest(
     filamentType: String,
     customMaterial: String,
+    materialModifier: String,
     variant: String,
     brand: String,
     customBrand: String,
@@ -110,11 +113,13 @@ fun buildSpoolmanSaveRequest(
     remainingWeight: String,
     emptySpoolWeight: String,
     spoolMode: SpoolMode,
-    selectedSpool: FilamentSpool?
+    selectedSpool: FilamentSpool?,
+    cardUid: String? = null
 ): SpoolmanSaveRequest =
     SpoolmanSaveRequest(
         material = resolveMaterialName(filamentType, customMaterial),
         variant = resolveVariantName(variant),
+        materialModifier = materialModifier.trim(),
         brand = resolveBrandName(brand, customBrand),
         location = resolveLocationName(location, customLocation),
         colorHex = colorHex,
@@ -127,7 +132,8 @@ fun buildSpoolmanSaveRequest(
         comment = comment,
         remainingWeight = remainingWeight,
         emptySpoolWeight = emptySpoolWeight,
-        existingSpoolId = if (spoolMode == SpoolMode.UPDATE) selectedSpool?.id else null
+        existingSpoolId = if (spoolMode == SpoolMode.UPDATE) selectedSpool?.id else null,
+        cardUid = cardUid
     )
 
 fun hasSpoolmanSaveChanges(request: SpoolmanSaveRequest, selectedSpool: FilamentSpool?): Boolean {
@@ -158,9 +164,19 @@ fun hasSpoolmanSaveChanges(request: SpoolmanSaveRequest, selectedSpool: Filament
 
     val requestedColorName = request.colorName.trim().ifBlank { "Unknown" }
     val selectedColorName = selectedSpool.spoolmanName.orEmpty().trim().ifBlank { "Unknown" }
+    val requestedCardUid = normalizeCardUid(request.cardUid)
+    val hasNewCardUid = requestedCardUid.isNotBlank() &&
+        selectedSpool.cardUids.none { it.equals(requestedCardUid, ignoreCase = true) }
 
-    return request.material.trim() != selectedSpool.material.trim() ||
-        request.variant.trim().ifBlank { "Basic" } != selectedSpool.variant.trim().ifBlank { "Basic" } ||
+    val requestedFields = spoolLinkSpoolmanFields(
+        material = request.material,
+        variant = request.variant,
+        materialModifier = request.materialModifier,
+        allowMaterialModifier = request.allowMaterialModifier
+    )
+    return requestedFields.material.trim() != selectedSpool.material.trim() ||
+        requestedFields.variant.trim().ifBlank { "Basic" } != selectedSpool.variant.trim().ifBlank { "Basic" } ||
+        requestedFields.materialModifier.trim() != selectedSpool.materialModifier.trim() ||
         request.brand.trim() != selectedSpool.brand.trim() ||
         normalizedColorHex(request.colorHex) != normalizedColorHex(selectedSpool.colorHex) ||
         requestedColorName != selectedColorName ||
@@ -172,12 +188,14 @@ fun hasSpoolmanSaveChanges(request: SpoolmanSaveRequest, selectedSpool: Filament
         requestedLotNr != selectedSpool.lotNr.orEmpty().trim() ||
         request.comment.trim().ifBlank { null } != selectedSpool.comment?.trim()?.ifBlank { null } ||
         remainingWeightChanged ||
-        emptySpoolWeightChanged
+        emptySpoolWeightChanged ||
+        hasNewCardUid
 }
 
 fun buildOpenSpoolTagData(
     filamentType: String,
     customMaterial: String,
+    materialModifier: String,
     variant: String,
     brand: String,
     customBrand: String,
@@ -192,20 +210,17 @@ fun buildOpenSpoolTagData(
 ): OpenSpoolData? {
     val materialName = resolveMaterialName(filamentType, customMaterial)
     val variantName = resolveVariantName(variant)
-    val openSpoolType = OpenSpoolMaterialMapper.toOpenSpoolType(
-        material = materialName,
-        variant = variantName
-    ) ?: return null
+    val fields = spoolLinkTagFields(materialName, variantName, materialModifier)
 
     return OpenSpoolData(
-        type = openSpoolType,
+        type = fields.material,
         colorHex = colorHex,
         brand = resolveBrandName(brand, customBrand),
         minTemp = minTemp,
         maxTemp = maxTemp,
         bedMinTemp = bedMinTemp.ifBlank { null },
         bedMaxTemp = bedMaxTemp.ifBlank { null },
-        subtype = variantName.ifBlank { "Basic" },
+        subtype = fields.variant.ifBlank { "Basic" },
         spoolId = if (spoolMode == SpoolMode.UPDATE) selectedSpool?.id?.toString() else null,
         lotNr = lotNr
     )

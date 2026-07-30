@@ -1,5 +1,7 @@
 package com.spoolstudio.app.ui.screens
 
+import com.spoolstudio.app.ui.PrinterIntegrationMode
+
 fun normalizeSettingsUrl(url: String): String {
     var result = url.trim()
 
@@ -42,6 +44,8 @@ fun hasSettingsChanges(
     savedSpoolmanUrl: String,
     tempMoonrakerUrl: String,
     savedMoonrakerUrl: String,
+    tempPrinterIntegrationMode: PrinterIntegrationMode,
+    savedPrinterIntegrationMode: PrinterIntegrationMode,
     tempSort: String,
     savedSort: String,
     tempBambuKey: String,
@@ -51,6 +55,7 @@ fun hasSettingsChanges(
 ): Boolean {
     return normalizeSettingsUrl(tempSpoolmanUrl) != normalizeSettingsUrl(savedSpoolmanUrl) ||
         normalizeMoonrakerSettingsUrl(tempMoonrakerUrl) != normalizeMoonrakerSettingsUrl(savedMoonrakerUrl) ||
+        tempPrinterIntegrationMode != savedPrinterIntegrationMode ||
         normalizeSettingsSort(tempSort) != normalizeSettingsSort(savedSort) ||
         tempBambuKey.trim().uppercase() != savedBambuKey.trim().uppercase() ||
         tempShowCommentField != savedShowCommentField

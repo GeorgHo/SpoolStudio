@@ -48,6 +48,7 @@ fun MainScreenContent(
             showSnackbar = viewModel.showSnackbar,
             showCommentField = viewModel.showCommentField,
             showEmptySpoolWeight = viewModel.showEmptySpoolWeight,
+            printerIntegrationMode = viewModel.printerIntegrationMode,
             spoolCount = viewModel.spools.size,
             activeSpoolCount = viewModel.spools.count { !it.archived },
             archivedSpoolCount = viewModel.spools.count { it.archived },
@@ -55,6 +56,18 @@ fun MainScreenContent(
             spoolmanMaterialCount = viewModel.availableMaterials.size,
             spoolmanLocationCount = viewModel.availableLocations.size,
             spoolmanColorCount = viewModel.spools.mapNotNull { it.colorHex?.takeIf(String::isNotBlank) }.distinct().size,
+            spoolmanCardUidFieldSpoolCount = viewModel.spoolmanCardUidFieldSpoolCount,
+            spoolmanCardUidFieldKeys = viewModel.spoolmanCardUidFieldKeys,
+            spoolmanMaterialModifierFieldAvailable = viewModel.spoolmanMaterialModifierFieldAvailable,
+            materialModifierFieldDeclined = viewModel.materialModifierFieldDeclined,
+            isCreatingMaterialModifierField = viewModel.isCreatingMaterialModifierField,
+            moonrakerFirmwareVersion = viewModel.moonrakerFirmwareVersion,
+            moonrakerVersion = viewModel.moonrakerVersion,
+            moonrakerSupportsSpoolLink = viewModel.moonrakerSupportsSpoolLink,
+            moonrakerHasSpoolmanComponent = viewModel.moonrakerHasSpoolmanComponent,
+            moonrakerHasSpoolLinkComponent = viewModel.moonrakerHasSpoolLinkComponent,
+            moonrakerSpoolmanIntegrationEnabled = viewModel.moonrakerSpoolmanIntegrationEnabled,
+            moonrakerDetectedModeLabel = viewModel.moonrakerDetectedModeLabel,
             onSnackbarDismiss = { viewModel.dismissSnackbar() },
 
             onTestMoonrakerConnection = { url ->
@@ -63,6 +76,9 @@ fun MainScreenContent(
 
             onTestSpoolmanConnection = { url ->
                 viewModel.testSpoolmanConnection(url)
+            },
+            onCreateMaterialModifierField = { url ->
+                viewModel.createMaterialModifierField(context, url)
             },
             onClearSpoolmanStatus = {
                 viewModel.clearSpoolmanStatus()
@@ -76,11 +92,12 @@ fun MainScreenContent(
             moonrakerStatus = viewModel.moonrakerStatus,
             moonrakerError = viewModel.moonrakerError,
             isTestingMoonraker = viewModel.isTestingMoonraker,
-            onSave = { newUrl, newMoonrakerUrl, newSort, newBambuKey, newShowCommentField ->
+            onSave = { newUrl, newMoonrakerUrl, newPrinterIntegrationMode, newSort, newBambuKey, newShowCommentField ->
                 viewModel.handleSettingsSave(
                     context,
                     newUrl,
                     newMoonrakerUrl,
+                    newPrinterIntegrationMode,
                     newSort,
                     newBambuKey,
                     newShowCommentField
@@ -102,6 +119,10 @@ fun MainScreenContent(
                 onWriteTag(data)
             },
             onReadTag = onReadTag,
+            isPrinterSpoolmanReady = viewModel.moonrakerSupportsSpoolLink == true &&
+                viewModel.moonrakerHasSpoolmanComponent == true &&
+                viewModel.moonrakerHasSpoolLinkComponent == true &&
+                viewModel.moonrakerSpoolmanIntegrationEnabled == true,
             readData = viewModel.readData,
             rawReadText = viewModel.rawReadText,
             rawReadVersion = viewModel.rawReadVersion,
@@ -131,24 +152,26 @@ fun MainScreenContent(
             printerTool2SpoolId = viewModel.printerTool2SpoolId,
             printerTool3SpoolId = viewModel.printerTool3SpoolId,
             printerTool4SpoolId = viewModel.printerTool4SpoolId,
-            printerMappingLoadVersion = viewModel.printerMappingLoadVersion,
             isLoadingPrinterMapping = viewModel.isLoadingPrinterMapping,
             onLoadCurrentPrinterMapping = { viewModel.loadCurrentPrinterMapping() },
             onTestMoonrakerConnection = { viewModel.testMoonrakerConnection() },
             onRefreshSelectedSpool = { id -> viewModel.refreshSelectedSpool(id) },
-            onSavePrinterMapping = { e0, e1, e2, e3, activeSpoolId ->
-                viewModel.savePrinterMapping(e0, e1, e2, e3, activeSpoolId)
-            },
-            activePrinterSpoolId = viewModel.activePrinterSpoolId,
+            printerIntegrationMode = viewModel.printerIntegrationMode,
+            resolvedPrinterIntegrationMode = viewModel.resolvedPrinterIntegrationMode,
             printerMappingSaveSuccessful = viewModel.printerMappingSaveSuccessful,
             showLotNumber = viewModel.showLotNumber,
             showCommentField = viewModel.showCommentField,
             showEmptySpoolWeight = viewModel.showEmptySpoolWeight,
+            materialModifierFieldEnabled = viewModel.materialModifierFieldEnabled,
+            showMaterialModifierFieldPrompt = viewModel.showMaterialModifierFieldPrompt,
+            isCreatingMaterialModifierField = viewModel.isCreatingMaterialModifierField,
+            onConfirmMaterialModifierField = { viewModel.confirmMaterialModifierFieldCreation(context) },
+            onDeclineMaterialModifierField = { viewModel.declineMaterialModifierFieldCreation(context) },
             onBambuExistingSpoolFound = {
                 viewModel.showSnackbarMessage("Identical spool found in Spoolman")
             },
             onCreateInSpoolman = { request ->
-                viewModel.saveToSpoolman(request)
+                viewModel.saveToSpoolman(context, request)
             },
             onCreateNewSpool = {
                 viewModel.duplicateCurrentSpool()
@@ -159,7 +182,11 @@ fun MainScreenContent(
             isDeletingSpool = viewModel.isDeletingSpool,
             onDeleteSelectedSpool = {
                 viewModel.deleteSelectedSpool()
-            }
+            },
+            pendingTagConversion = viewModel.pendingTagConversion,
+            isConvertingTag = viewModel.isConvertingTag,
+            onConfirmTagConversion = { viewModel.confirmTagConversion(context) },
+            onDeclineTagConversion = { viewModel.declineTagConversion() }
         )
     }
 }

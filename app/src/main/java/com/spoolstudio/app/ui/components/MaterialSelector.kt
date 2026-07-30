@@ -74,7 +74,7 @@ fun MaterialSelector(
                 value = selectedMaterial,
                 onValueChange = { },
                 readOnly = true,
-                label = { Text("Filament Type") },
+                label = { Text("Material") },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
                 textStyle = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),

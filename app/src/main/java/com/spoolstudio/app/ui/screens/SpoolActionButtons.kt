@@ -218,7 +218,7 @@ fun PrinterMappingButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
         )
     ) {
         Text(
-            "Printer Mapping",
+            "Toolhead Status",
             style = MaterialTheme.typography.labelLarge.copy(fontSize = 13.sp, lineHeight = 16.sp),
             fontWeight = FontWeight.SemiBold,
             maxLines = 1

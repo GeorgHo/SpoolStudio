@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.domain.models.OpenSpoolData
+import com.spoolstudio.app.domain.models.normalizeCardUid
 import com.spoolstudio.app.ui.SpoolMode
 import com.spoolstudio.app.utils.suggestColorName
 import kotlinx.coroutines.delay
@@ -27,6 +28,10 @@ fun SpoolStudioFormEffects(
                 spoolMode = spoolMode,
                 availableLocations = availableLocations
             )
+            val readUid = normalizeCardUid(readData?.cardUid)
+            if (readUid.isNotBlank()) {
+                form.pendingCardUid = readUid
+            }
         } else if (spoolMode == SpoolMode.CREATE && !suppressCreateReset) {
             form.resetForNewSpool()
         }
@@ -54,7 +59,7 @@ fun SnackbarAutoDismissEffect(
 ) {
     LaunchedEffect(showSnackbar, snackbarMessage, autoDismiss) {
         if (autoDismiss && showSnackbar && snackbarMessage.isNotBlank()) {
-            delay(2500)
+            delay(3500)
             onSnackbarDismiss()
         }
     }

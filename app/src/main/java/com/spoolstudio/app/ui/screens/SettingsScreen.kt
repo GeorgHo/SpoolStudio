@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.spoolstudio.app.ui.components.CustomSnackbar
 import com.spoolstudio.app.ui.components.SpoolStudioLogo
+import com.spoolstudio.app.ui.PrinterIntegrationMode
 import com.spoolstudio.app.ui.theme.SpoolStudioColors
 import com.spoolstudio.app.ui.theme.SpoolStudioShape
 import com.spoolstudio.app.ui.theme.spoolStudioBackground
@@ -64,6 +65,7 @@ fun SettingsScreen(
     bambuMasterKey: String,
     showCommentField: Boolean,
     showEmptySpoolWeight: Boolean,
+    printerIntegrationMode: PrinterIntegrationMode,
     spoolmanSortBy: String,
     snackbarMessage: String,
     showSnackbar: Boolean,
@@ -74,10 +76,23 @@ fun SettingsScreen(
     spoolmanMaterialCount: Int,
     spoolmanLocationCount: Int,
     spoolmanColorCount: Int,
+    spoolmanCardUidFieldSpoolCount: Int,
+    spoolmanCardUidFieldKeys: List<String>,
+    spoolmanMaterialModifierFieldAvailable: Boolean?,
+    materialModifierFieldDeclined: Boolean,
+    isCreatingMaterialModifierField: Boolean,
+    moonrakerFirmwareVersion: String?,
+    moonrakerVersion: String?,
+    moonrakerSupportsSpoolLink: Boolean?,
+    moonrakerHasSpoolmanComponent: Boolean?,
+    moonrakerHasSpoolLinkComponent: Boolean?,
+    moonrakerSpoolmanIntegrationEnabled: Boolean?,
+    moonrakerDetectedModeLabel: String?,
     onSnackbarDismiss: () -> Unit,
     onTestSpoolmanConnection: (String) -> Unit,
+    onCreateMaterialModifierField: (String) -> Unit,
     onTestMoonrakerConnection: (String) -> Unit,
-    onSave: (String, String, String, String, Boolean) -> Unit,
+    onSave: (String, String, PrinterIntegrationMode, String, String, Boolean) -> Unit,
     spoolmanStatus: String? = null,
     spoolmanError: String? = null,
     moonrakerStatus: String? = null,
@@ -95,6 +110,7 @@ fun SettingsScreen(
     var tempMoonrakerUrl by remember(moonrakerUrl) { mutableStateOf(moonrakerUrl) }
     var tempBambuKey by remember(bambuMasterKey) { mutableStateOf(bambuMasterKey) }
     var tempShowCommentField by remember(showCommentField) { mutableStateOf(showCommentField) }
+    var tempPrinterIntegrationMode by remember(printerIntegrationMode) { mutableStateOf(printerIntegrationMode) }
     var tempSort by remember(spoolmanSortBy) { mutableStateOf(spoolmanSortBy.ifBlank { "" }) }
     var sortExpanded by remember { mutableStateOf(false) }
     var showSpoolmanInfo by remember { mutableStateOf(false) }
@@ -102,7 +118,7 @@ fun SettingsScreen(
     val context = LocalContext.current
     val versionName = remember(context) {
         runCatching {
-            context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "2.0"
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "3.0"
         }.getOrDefault("2.0")
     }
 
@@ -132,6 +148,8 @@ fun SettingsScreen(
         savedSpoolmanUrl = spoolmanUrl,
         tempMoonrakerUrl = tempMoonrakerUrl,
         savedMoonrakerUrl = moonrakerUrl,
+        tempPrinterIntegrationMode = tempPrinterIntegrationMode,
+        savedPrinterIntegrationMode = printerIntegrationMode,
         tempSort = tempSort,
         savedSort = spoolmanSortBy,
         tempBambuKey = tempBambuKey,
@@ -209,6 +227,17 @@ fun SettingsScreen(
                     isError = spoolmanError != null
                 )
 
+                SettingsMaterialModifierFieldStatus(
+                    available = spoolmanMaterialModifierFieldAvailable,
+                    declined = materialModifierFieldDeclined,
+                    isCreating = isCreatingMaterialModifierField,
+                    onCreate = {
+                        val normalizedSpoolmanUrl = normalizeSettingsUrl(tempUrl)
+                        tempUrl = normalizedSpoolmanUrl
+                        onCreateMaterialModifierField(normalizedSpoolmanUrl)
+                    }
+                )
+
                 SettingsSecondaryButton(
                     text = if (showSpoolmanInfo) "Hide Spoolman Info" else "Show Spoolman Info",
                     onClick = { showSpoolmanInfo = !showSpoolmanInfo }
@@ -223,6 +252,8 @@ fun SettingsScreen(
                         materialCount = spoolmanMaterialCount,
                         locationCount = spoolmanLocationCount,
                         colorCount = spoolmanColorCount,
+                        cardUidFieldSpoolCount = spoolmanCardUidFieldSpoolCount,
+                        cardUidFieldKeys = spoolmanCardUidFieldKeys,
                         sortLabel = sortOptions.firstOrNull { it.second == tempSort }?.first ?: "Custom"
                     )
                 }
@@ -269,11 +300,32 @@ fun SettingsScreen(
                     message = moonrakerError ?: moonrakerStatus,
                     isError = moonrakerError != null
                 )
+
+                if (moonrakerError == null && (
+                    moonrakerFirmwareVersion != null ||
+                        moonrakerVersion != null ||
+                        moonrakerSupportsSpoolLink != null ||
+                        moonrakerHasSpoolmanComponent != null ||
+                        moonrakerHasSpoolLinkComponent != null ||
+                        moonrakerSpoolmanIntegrationEnabled != null ||
+                        moonrakerDetectedModeLabel != null
+                    )
+                ) {
+                    SettingsMoonrakerInfoSummary(
+                        firmwareVersion = moonrakerFirmwareVersion,
+                        moonrakerVersion = moonrakerVersion,
+                        supportsSpoolLink = moonrakerSupportsSpoolLink,
+                        hasSpoolmanComponent = moonrakerHasSpoolmanComponent,
+                        hasSpoolLinkComponent = moonrakerHasSpoolLinkComponent,
+                        spoolmanIntegrationEnabled = moonrakerSpoolmanIntegrationEnabled,
+                        detectedModeLabel = moonrakerDetectedModeLabel
+                    )
+                }
             }
 
             SettingsPanel(title = "Display") {
                 SettingsSwitchRow(
-                    label = "Show Lot Number",
+                    label = "Show Product / Lot Code",
                     checked = showLotNumber,
                     onCheckedChange = onShowLotNumberChanged
                 )
@@ -330,6 +382,7 @@ fun SettingsScreen(
                         onSave(
                             normalizeSettingsUrl(tempUrl),
                             normalizeMoonrakerSettingsUrl(tempMoonrakerUrl),
+                            tempPrinterIntegrationMode,
                             normalizeSettingsSort(tempSort),
                             tempBambuKey,
                             tempShowCommentField
@@ -470,6 +523,73 @@ private fun SettingsPanel(
 }
 
 @Composable
+private fun SettingsMaterialModifierFieldStatus(
+    available: Boolean?,
+    declined: Boolean,
+    isCreating: Boolean,
+    onCreate: () -> Unit
+) {
+    val statusText = when {
+        available == true && !declined -> "Ready"
+        declined -> "Disabled"
+        available == false -> "Missing"
+        else -> "Not tested"
+    }
+    val statusColor = when {
+        available == true && !declined -> SpoolStudioColors.Success
+        declined || available == false -> SpoolStudioColors.Error
+        else -> SpoolStudioColors.InkMuted
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                color = SpoolStudioColors.SurfaceMuted.copy(alpha = 0.45f),
+                shape = SpoolStudioShape.Small
+            )
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(7.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Material modifier",
+                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
+                color = SpoolStudioColors.Ink,
+                modifier = Modifier.width(112.dp)
+            )
+            Text(
+                text = statusText,
+                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 15.sp),
+                fontWeight = FontWeight.SemiBold,
+                color = statusColor,
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        if ((available != true || declined) && !isCreating) {
+            Text(
+                text = "Create this Spoolman extra field to keep modifiers such as Plus or HS outside printer-safe material data.",
+                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 14.sp),
+                color = SpoolStudioColors.InkMuted
+            )
+        }
+
+        if (available != true || declined) {
+            SettingsSecondaryButton(
+                text = if (isCreating) "Creating..." else "Create Material Modifier Field",
+                enabled = !isCreating,
+                onClick = onCreate
+            )
+        }
+    }
+}
+
+@Composable
 private fun SpoolmanInfoSummary(
     spoolCount: Int,
     activeSpoolCount: Int,
@@ -478,6 +598,8 @@ private fun SpoolmanInfoSummary(
     materialCount: Int,
     locationCount: Int,
     colorCount: Int,
+    cardUidFieldSpoolCount: Int,
+    cardUidFieldKeys: List<String>,
     sortLabel: String
 ) {
     Column(
@@ -497,6 +619,14 @@ private fun SpoolmanInfoSummary(
         SettingsInfoRow(label = "Materials", value = materialCount.toString())
         SettingsInfoRow(label = "Locations", value = locationCount.toString())
         SettingsInfoRow(label = "Colors", value = colorCount.toString())
+        SettingsInfoRow(
+            label = "Card UID data",
+            value = if (cardUidFieldSpoolCount > 0) {
+                "$cardUidFieldSpoolCount spools (${cardUidFieldKeys.joinToString().ifBlank { "extra" }})"
+            } else {
+                "Not found"
+            }
+        )
         SettingsInfoRow(label = "Sort", value = sortLabel)
 
         Text(
@@ -507,6 +637,77 @@ private fun SpoolmanInfoSummary(
         )
     }
 }
+
+@Composable
+private fun SettingsMoonrakerInfoSummary(
+    firmwareVersion: String?,
+    moonrakerVersion: String?,
+    supportsSpoolLink: Boolean?,
+    hasSpoolmanComponent: Boolean?,
+    hasSpoolLinkComponent: Boolean?,
+    spoolmanIntegrationEnabled: Boolean?,
+    detectedModeLabel: String?
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                color = SpoolStudioColors.SurfaceMuted.copy(alpha = 0.45f),
+                shape = SpoolStudioShape.Small
+            )
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(0.dp)
+    ) {
+        SettingsInfoRow(
+            label = "Printer firmware",
+            value = when (supportsSpoolLink) {
+                true -> "${firmwareVersion ?: "Unknown"} OK"
+                false -> "${firmwareVersion ?: "Unknown"} - requires 1.5.0+"
+                null -> "${firmwareVersion ?: "Unknown"} - not tested"
+            }
+        )
+        SettingsInfoRow(
+            label = "Moonraker",
+            value = if (moonrakerVersion.isNullOrBlank()) {
+                "Not tested"
+            } else {
+                "$moonrakerVersion OK"
+            }
+        )
+        SettingsInfoRow(
+            label = "Spoolman service",
+            value = when (hasSpoolmanComponent) {
+                true -> "Loaded"
+                false -> "Missing"
+                null -> "Not tested"
+            }
+        )
+        SettingsInfoRow(
+            label = "RFID bridge",
+            value = when (hasSpoolLinkComponent) {
+                true -> "Loaded"
+                false -> "Missing"
+                null -> "Not tested"
+            }
+        )
+
+        val integrationText = when (spoolmanIntegrationEnabled) {
+            true -> "Ready: printer Spoolman integration is active."
+            false -> "Not ready: enable Spoolman Integration in the printer config and restart Klipper/Moonraker."
+            null -> "Run the Moonraker connection test to check printer Spoolman integration."
+        }
+        Text(
+            text = integrationText,
+            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 14.sp),
+            color = when (spoolmanIntegrationEnabled) {
+                true -> SpoolStudioColors.Success
+                false -> SpoolStudioColors.Error
+                null -> SpoolStudioColors.InkMuted
+            }
+        )
+    }
+}
+
 @Composable
 private fun SettingsInfoRow(
     label: String,

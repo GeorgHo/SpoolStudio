@@ -2,6 +2,7 @@ package com.spoolstudio.app.ui.screens
 
 import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.ui.SpoolMode
+import com.spoolstudio.app.ui.SpoolmanSaveRequest
 import com.spoolstudio.app.ui.remainingWeightWarningThreshold
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -59,7 +60,7 @@ class SpoolFormHelpersTest {
     @Test
     fun validationMessageReportsFirstInvalidField() {
         assertEquals(
-            "Please enter a custom filament type",
+            "Please enter a custom material",
             spoolFormValidationMessage(
                 variant = "Basic",
                 brand = "Generic",
@@ -102,6 +103,7 @@ class SpoolFormHelpersTest {
         val request = buildSpoolmanSaveRequest(
             filamentType = "Other",
             customMaterial = "ASA",
+            materialModifier = "",
             variant = "Basic",
             brand = "Other",
             customBrand = "CustomBrand",
@@ -147,6 +149,7 @@ class SpoolFormHelpersTest {
         val tagData = buildOpenSpoolTagData(
             filamentType = "PLA",
             customMaterial = "",
+            materialModifier = "",
             variant = "Basic",
             brand = "Other",
             customBrand = "CustomBrand",
@@ -172,11 +175,12 @@ class SpoolFormHelpersTest {
     }
 
     @Test
-    fun buildOpenSpoolTagDataReturnsNullForUnsupportedMaterial() {
+    fun buildOpenSpoolTagDataWritesFormMaterialAndVariantDirectly() {
         val tagData = buildOpenSpoolTagData(
             filamentType = "Other",
             customMaterial = "Mystery",
-            variant = "Basic",
+            materialModifier = "",
+            variant = "Matte",
             brand = "Generic",
             customBrand = "",
             colorHex = null,
@@ -189,6 +193,82 @@ class SpoolFormHelpersTest {
             selectedSpool = null
         )
 
-        assertNull(tagData)
+        assertEquals("Mystery", tagData?.type)
+        assertEquals("Matte", tagData?.subtype)
+    }
+
+    @Test
+    fun cardUidMissingFromSelectedSpoolCountsAsSpoolmanChange() {
+        val selectedSpool = FilamentSpool(
+            id = 42,
+            material = "PLA",
+            variant = "Basic",
+            brand = "Generic",
+            colorHex = "00FF00",
+            minTemp = 190,
+            maxTemp = 220,
+            bedMinTemp = 40,
+            bedMaxTemp = 65,
+            remainingWeight = 1000f,
+            spoolmanName = "Green"
+        )
+        val request = SpoolmanSaveRequest(
+            material = "PLA",
+            variant = "Basic",
+            brand = "Generic",
+            location = "",
+            colorHex = "00FF00",
+            colorName = "Green",
+            minTemp = "190",
+            maxTemp = "220",
+            bedMinTemp = "40",
+            bedMaxTemp = "65",
+            lotNr = "",
+            comment = "",
+            remainingWeight = "1000",
+            emptySpoolWeight = "",
+            existingSpoolId = 42,
+            cardUid = "aa:bb:cc:dd"
+        )
+
+        assertTrue(hasSpoolmanSaveChanges(request, selectedSpool))
+    }
+
+    @Test
+    fun existingCardUidDoesNotCountAsSpoolmanChange() {
+        val selectedSpool = FilamentSpool(
+            id = 42,
+            material = "PLA",
+            variant = "Basic",
+            brand = "Generic",
+            colorHex = "00FF00",
+            minTemp = 190,
+            maxTemp = 220,
+            bedMinTemp = 40,
+            bedMaxTemp = 65,
+            remainingWeight = 1000f,
+            cardUids = listOf("AABBCCDD"),
+            spoolmanName = "Green"
+        )
+        val request = SpoolmanSaveRequest(
+            material = "PLA",
+            variant = "Basic",
+            brand = "Generic",
+            location = "",
+            colorHex = "00FF00",
+            colorName = "Green",
+            minTemp = "190",
+            maxTemp = "220",
+            bedMinTemp = "40",
+            bedMaxTemp = "65",
+            lotNr = "",
+            comment = "",
+            remainingWeight = "1000",
+            emptySpoolWeight = "",
+            existingSpoolId = 42,
+            cardUid = "aa:bb:cc:dd"
+        )
+
+        assertFalse(hasSpoolmanSaveChanges(request, selectedSpool))
     }
 }

@@ -78,7 +78,7 @@ class SpoolFormStateTest {
             minHotend = 230,
             maxHotend = 250,
             bedTemp = 80,
-            uid = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+            uid = "E653F0E1",
             normalizedVariant = "Basic"
         )
 
@@ -98,7 +98,8 @@ class SpoolFormStateTest {
         assertEquals("250", form.maxTemp)
         assertEquals("70", form.bedMinTemp)
         assertEquals("90", form.bedMaxTemp)
-        assertEquals("1234567890ABCDEFGHIJKLMNOPQRSTUV", form.lotNr)
+        assertEquals("", form.lotNr)
+        assertEquals("E653F0E1", form.pendingCardUid)
         assertEquals("1000", form.remainingWeight)
         assertEquals("180", form.emptySpoolWeight)
         assertEquals("Existing comment", form.comment)
@@ -158,8 +159,8 @@ class SpoolFormStateTest {
         }
         val sourceSpool = FilamentSpool(
             id = null,
-            material = "PLA+",
-            variant = "Silk",
+            material = "PLA",
+            variant = "Plus Silk",
             brand = "GST 3D",
             colorHex = null,
             location = null,
@@ -179,7 +180,8 @@ class SpoolFormStateTest {
             availableLocations = emptyList()
         )
 
-        assertEquals("PLA+", form.filamentType)
+        assertEquals("PLA", form.filamentType)
+        assertEquals("Plus Silk", form.variant)
         assertNull(form.colorHex)
         assertEquals("", form.colorHexInput)
         assertEquals("", form.colorName)

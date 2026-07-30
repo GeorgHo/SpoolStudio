@@ -30,6 +30,7 @@ object SpoolStudioColors {
     val GoldDark = Color(0xFF8C6700)
     val GoldSoft = Color(0xFFE7CF98)
     val AccentCyan = Color(0xFF16AFCF)
+    val Success = Color(0xFF2F8F46)
     val Error = Color(0xFFC64B4B)
 }
 

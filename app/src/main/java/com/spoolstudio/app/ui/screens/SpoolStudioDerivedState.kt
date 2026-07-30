@@ -27,8 +27,8 @@ fun spoolActionLabel(spoolMode: SpoolMode): String =
 
 fun printerMappingBusyLabel(operation: String?): String? =
     when (operation) {
-        "load" -> "Loading printer mapping..."
-        "save" -> "Saving printer mapping..."
+        "load" -> "Loading toolhead status..."
+        "save" -> "Saving toolhead status..."
         else -> null
     }
 

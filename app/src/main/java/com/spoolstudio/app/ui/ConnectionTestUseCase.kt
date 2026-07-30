@@ -4,10 +4,20 @@ sealed class ConnectionTestResult {
     data class Moonraker(
         val reachable: Boolean,
         val status: String?,
-        val error: String?
+        val error: String?,
+        val firmwareVersion: String?,
+        val moonrakerVersion: String?,
+        val supportsSpoolLink: Boolean?,
+        val hasSpoolmanComponent: Boolean?,
+        val hasSpoolLinkComponent: Boolean?,
+        val spoolmanIntegrationEnabled: Boolean?,
+        val detectedModeLabel: String?
     ) : ConnectionTestResult()
 
-    data class Spoolman(val status: String) : ConnectionTestResult()
+    data class Spoolman(
+        val status: String,
+        val materialModifierFieldAvailable: Boolean
+    ) : ConnectionTestResult()
     data class Failed(val error: String) : ConnectionTestResult()
 }
 
@@ -21,7 +31,9 @@ class ConnectionTestUseCase(
                 sortBy = sortBy,
                 forceRefresh = true
             )
-        }
+        },
+    private val testMaterialModifierField: suspend (String) -> Boolean =
+        { url -> com.spoolstudio.app.data.remote.spoolman.SpoolmanService(url).hasFilamentMaterialModifierField() }
 ) {
     fun validationError(inputUrl: String): String? =
         httpUrlValidationError(normalizeConnectionUrl(inputUrl))
@@ -35,7 +47,14 @@ class ConnectionTestUseCase(
             ConnectionTestResult.Moonraker(
                 reachable = result.reachable,
                 status = result.status,
-                error = result.error
+                error = result.error,
+                firmwareVersion = result.firmwareVersion,
+                moonrakerVersion = result.moonrakerVersion,
+                supportsSpoolLink = result.supportsSpoolLink,
+                hasSpoolmanComponent = result.hasSpoolmanComponent,
+                hasSpoolLinkComponent = result.hasSpoolLinkComponent,
+                spoolmanIntegrationEnabled = result.spoolmanIntegrationEnabled,
+                detectedModeLabel = result.detectedModeLabel
             )
         } catch (error: Exception) {
             ConnectionTestResult.Failed(connectionErrorMessage(error))
@@ -48,7 +67,11 @@ class ConnectionTestUseCase(
 
         return try {
             testSpoolmanConnection(normalizedUrl, sortBy)
-            ConnectionTestResult.Spoolman(status = "Spoolman reachable")
+            val materialModifierFieldAvailable = testMaterialModifierField(normalizedUrl)
+            ConnectionTestResult.Spoolman(
+                status = "Spoolman reachable",
+                materialModifierFieldAvailable = materialModifierFieldAvailable
+            )
         } catch (error: Exception) {
             ConnectionTestResult.Failed(connectionErrorMessage(error))
         }

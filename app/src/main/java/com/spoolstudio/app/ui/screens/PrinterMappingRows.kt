@@ -1,261 +1,147 @@
 package com.spoolstudio.app.ui.screens
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.Icon
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.spoolstudio.app.domain.models.FilamentSpool
-import com.spoolstudio.app.ui.components.SearchableDropdownDialog
+import com.spoolstudio.app.domain.models.displayMaterialWithModifier
 import com.spoolstudio.app.ui.components.SpoolStudioLogo
-import com.spoolstudio.app.ui.components.filterSpoolmanDropdownFilaments
 import com.spoolstudio.app.ui.theme.SpoolStudioColors
 import com.spoolstudio.app.ui.theme.SpoolStudioShape
 
 @Composable
-fun MappingRowPlaceholder(label: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.titleMedium
-        )
-
-        Text(
-            text = "No spool selected",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun MappingRowDropdown(
+fun MappingToolheadStatusCard(
     label: String,
-    spools: List<FilamentSpool>,
-    selectedSpoolId: Int?,
-    isActive: Boolean,
-    enabled: Boolean,
-    onSpoolSelected: (Int?) -> Unit,
-    onActiveCheckedChange: (Boolean) -> Unit
+    spool: FilamentSpool?,
+    showAppComposedData: Boolean = true,
+    modifier: Modifier = Modifier
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    var searchQuery by remember { mutableStateOf("") }
-    val focusManager = LocalFocusManager.current
-    val selectedSpool = spools.firstOrNull { it.id == selectedSpoolId }
-    val filteredSpools = filterSpoolmanDropdownFilaments(spools, searchQuery)
-    val showEmptyOption = searchQuery.isBlank() || "empty".contains(searchQuery.trim(), ignoreCase = true)
-    val options = buildList {
-        if (showEmptyOption) add(MappingSpoolOption.Empty)
-        filteredSpools.forEach { spool -> add(MappingSpoolOption.Spool(spool)) }
-    }
+    val accentColor = resolveSpoolColor(spool?.colorHex)
+    val title = spool?.let { it.spoolmanName?.takeIf(String::isNotBlank) ?: it.displayName }
+        ?: "No spool assigned"
+    val subtitle = spool?.let { mappingSubtitle(it, showAppComposedData) }.orEmpty()
+    val idText = spool?.id?.let { "ID #$it" } ?: "Empty"
 
-    @Suppress("DEPRECATION")
-    val iconColor = selectedSpool?.colorHex
-        ?.takeIf { it.isNotBlank() }
-        ?.let { hex ->
-            try {
-                Color(android.graphics.Color.parseColor("#$hex"))
-            } catch (_: Exception) {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            }
-        }
-        ?: MaterialTheme.colorScheme.onSurfaceVariant
-
-    val displayText = selectedSpool?.let { spool ->
-        mappingSpoolLabel(spool)
-    } ?: "Select from Spoolman"
-
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(2.dp)
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(SpoolStudioShape.Field)
+            .background(SpoolStudioColors.GraphiteRaised.copy(alpha = 0.72f))
+            .border(
+                width = 1.dp,
+                color = SpoolStudioColors.GraphiteMuted.copy(alpha = 0.9f),
+                shape = SpoolStudioShape.Field
+            )
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        Box(
+            modifier = Modifier.width(64.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.titleMedium,
-                color = SpoolStudioColors.OnGraphite,
-                modifier = Modifier.offset(y = (-7).dp)
-            )
-
             SpoolStudioLogo(
-                color = iconColor,
-                logoSize = 52.dp,
-                showTitle = false,
-                modifier = Modifier.width(52.dp)
+                color = accentColor,
+                logoSize = 58.dp,
+                showTitle = false
             )
         }
 
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { shouldExpand ->
-                if (shouldExpand && spools.isNotEmpty() && enabled) {
-                    searchQuery = ""
-                    focusManager.clearFocus(force = true)
-                    expanded = true
-                } else {
-                    expanded = false
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .offset(y = (-12).dp)
+        Spacer(modifier = Modifier.width(10.dp))
+
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            OutlinedButton(
-                onClick = {
-                    if (spools.isNotEmpty() && enabled) {
-                        searchQuery = ""
-                        focusManager.clearFocus(force = true)
-                        expanded = true
-                    }
-                },
-                enabled = spools.isNotEmpty() && enabled,
-                modifier = Modifier
-                    .menuAnchor(MenuAnchorType.PrimaryNotEditable)
-                    .fillMaxWidth()
-                    .height(50.dp),
-                shape = SpoolStudioShape.Field,
-                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = SpoolStudioColors.OnGraphite,
-                    disabledContentColor = SpoolStudioColors.OnGraphiteMuted.copy(alpha = 0.55f)
-                )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = displayText,
-                    modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (selectedSpool != null) {
-                        SpoolStudioColors.OnGraphite
-                    } else {
-                        SpoolStudioColors.OnGraphiteMuted
-                    },
+                    text = label,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = SpoolStudioColors.GoldSoft,
                     maxLines = 1
                 )
 
-                Icon(
-                    imageVector = Icons.Filled.ArrowDropDown,
-                    contentDescription = null,
-                    tint = SpoolStudioColors.OnGraphiteMuted
+                Text(
+                    text = idText,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = if (spool != null) SpoolStudioColors.OnGraphite else SpoolStudioColors.OnGraphiteMuted,
+                    maxLines = 1
                 )
             }
-        }
 
-        if (expanded) {
-            SearchableDropdownDialog(
-                title = label,
-                searchQuery = searchQuery,
-                onSearchQueryChange = { searchQuery = it },
-                items = options,
-                itemLabel = { it.label },
-                onItemSelected = { option ->
-                    onSpoolSelected(option.spoolId)
-                    expanded = false
-                    searchQuery = ""
-                    focusManager.clearFocus(force = true)
-                },
-                onDismiss = {
-                    expanded = false
-                    searchQuery = ""
-                    focusManager.clearFocus(force = true)
-                },
-                showDefaultDivider = true
+            HorizontalDivider(
+                color = SpoolStudioColors.GraphiteMuted.copy(alpha = 0.65f),
+                modifier = Modifier.padding(vertical = 2.dp)
             )
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 12.dp)
-                .offset(y = (-8).dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier.size(22.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Checkbox(
-                    checked = isActive,
-                    onCheckedChange = if (selectedSpoolId != null && enabled) {
-                        onActiveCheckedChange
-                    } else {
-                        null
-                    },
-                    modifier = Modifier.size(16.dp),
-                    enabled = selectedSpoolId != null && enabled
-                )
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
 
             Text(
-                text = "Active spool",
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (selectedSpoolId != null && enabled) {
-                    SpoolStudioColors.OnGraphite
-                } else {
-                    SpoolStudioColors.OnGraphiteMuted
-                }
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = if (spool != null) SpoolStudioColors.OnGraphite else SpoolStudioColors.OnGraphiteMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Text(
+                text = subtitle.ifBlank { "Waiting for printer data" },
+                style = MaterialTheme.typography.bodySmall,
+                color = if (subtitle.isNotBlank()) SpoolStudioColors.OnGraphiteMuted else SpoolStudioColors.OnGraphiteMuted.copy(alpha = 0.72f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+
+        if (spool != null) {
+            Spacer(modifier = Modifier.width(10.dp))
+            Box(
+                modifier = Modifier
+                    .size(12.dp)
+                    .clip(SpoolStudioShape.Small)
+                    .background(accentColor)
+                    .border(
+                        width = 1.dp,
+                        color = SpoolStudioColors.OnGraphite.copy(alpha = 0.65f),
+                        shape = SpoolStudioShape.Small
+                    )
             )
         }
     }
 }
 
-private sealed class MappingSpoolOption {
-    abstract val label: String
-    abstract val spoolId: Int?
-
-    data object Empty : MappingSpoolOption() {
-        override val label: String = "Empty"
-        override val spoolId: Int? = null
-    }
-
-    data class Spool(private val spool: FilamentSpool) : MappingSpoolOption() {
-        override val label: String = mappingSpoolLabel(spool)
-        override val spoolId: Int? = spool.id
-    }
-}
-
-private fun mappingSpoolLabel(spool: FilamentSpool): String =
+private fun mappingSubtitle(spool: FilamentSpool, showAppComposedData: Boolean): String =
     listOf(
-        "ID ${spool.id ?: "-"}",
         spool.brand,
-        spool.spoolmanName ?: spool.displayName,
-        spool.material
-    ).filter { it.isNotBlank() }
-        .joinToString(" - ")
+        if (showAppComposedData) {
+            displayMaterialWithModifier(spool.material, spool.materialModifier)
+        } else {
+            spool.material
+        },
+        spool.variant.ifBlank { "Basic" }
+    ).filterNotNull()
+        .filter { it.isNotBlank() }
+        .joinToString(" / ")

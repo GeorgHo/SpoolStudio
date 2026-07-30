@@ -5,17 +5,13 @@ import com.spoolstudio.app.domain.models.Material
 object MaterialDatabase {
         val materials = listOf(
                 Material("ABS", 240, 260, 90, 110),
-                Material("ABS+", 240, 270, 90, 110),
-                Material("APLA", 200, 220, 50, 60),
                 Material("ASA", 240, 260, 90, 110),
-                Material("ASA+", 245, 265, 90, 110),
                 Material("BVOH", 190, 215, 45, 60),
                 Material("CoPA", 250, 280, 70, 100),
 
                 // Material("CPE", 230, 260, 70, 90),
 
                 Material("HIPS", 220, 250, 90, 110),
-                Material("HT-PLA", 210, 240, 50, 70),
                 Material("MABS", 230, 260, 80, 100),
                 Material("PA6", 250, 280, 70, 100),
                 Material("PA12", 240, 270, 60, 90),
@@ -41,10 +37,8 @@ object MaterialDatabase {
 
                 Material("PET-CF", 260, 290, 80, 100),
                 Material("PETG", 220, 250, 70, 90),
-                Material("PETG+", 225, 260, 70, 90),
                 Material("PHA", 190, 220, 45, 60),
                 Material("PLA", 190, 220, 40, 65),
-                Material("PLA+", 200, 230, 50, 70),
 
                 // Material("PMMA", 230, 260, 80, 110),
 

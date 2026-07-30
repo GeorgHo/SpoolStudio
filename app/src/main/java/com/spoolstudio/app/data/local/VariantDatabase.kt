@@ -49,6 +49,8 @@ object VariantDatabase {
         "Silk Triple",
         "Silk-Like",
         "Sparkle",
+        "SnapSpeed",
+        "Support",
         "Tough",
         "Translucent",
         "Transparent",
@@ -57,6 +59,7 @@ object VariantDatabase {
         "85A",
         "90A",
         "95A",
+        "95A HF",
         "98A"
     )
 }

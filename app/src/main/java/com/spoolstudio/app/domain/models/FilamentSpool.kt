@@ -1,11 +1,13 @@
 package com.spoolstudio.app.domain.models
 
 import com.spoolstudio.app.data.local.MaterialDatabase
+import com.spoolstudio.app.domain.models.displayMaterialWithModifier
 
 data class FilamentSpool(
     val id: Int? = null,
     val material: String,
     val variant: String = "",
+    val materialModifier: String = "",
     val brand: String,
     val colorHex: String?,
     val minTemp: Int?,
@@ -22,10 +24,15 @@ data class FilamentSpool(
     val filamentId: Int? = null,
     val comment: String? = null,
     val firstUsed: String? = null,
-    val lastUsed: String? = null
+    val lastUsed: String? = null,
+    val cardUids: List<String> = emptyList()
 ) {
     val displayName: String
-        get() = if (variant.isNotEmpty()) "$material $variant" else material
+        get() = listOf(
+            displayMaterialWithModifier(material, materialModifier),
+            variant.takeIf { it.isNotBlank() && !it.equals("Basic", ignoreCase = true) }
+        ).filterNotNull()
+            .joinToString(" ")
 
     companion object {
         fun normalizeHexColor(input: String?): String? {
@@ -37,19 +44,21 @@ data class FilamentSpool(
             }
         }
         fun splitMaterialAndVariant(rawMaterial: String?): Pair<String, String> {
-            val clean = rawMaterial?.trim().orEmpty()
-            if (clean.isBlank()) return "" to ""
-            val idx = clean.indexOf('-')
-            return if (idx <= 0 || idx >= clean.length - 1) {
-                clean to ""
-            } else {
-                clean.substring(0, idx).trim() to clean.substring(idx + 1).trim()
-            }
+            return splitLegacyMaterialAndVariant(rawMaterial)
         }
 
         fun fromSpoolman(spool: SpoolmanSpool): FilamentSpool {
-            val (baseMaterial, variant) = splitMaterialAndVariant(spool.filament.material)
-            val materialData = MaterialDatabase.getMaterial(baseMaterial)
+            val (legacyMaterial, legacyVariant) = splitMaterialAndVariant(spool.filament.material)
+            val normalizedFields = normalizeSpoolLinkFilamentFields(
+                material = legacyMaterial,
+                variant = spool.filament.extra.stringValue("variant") ?: legacyVariant
+            )
+            val spoolStudioFields = spoolLinkSpoolmanFields(
+                material = normalizedFields.material,
+                variant = normalizedFields.variant,
+                materialModifier = spool.filament.extra.stringValue("material_modifier")
+            )
+            val materialData = MaterialDatabase.getMaterial(spoolStudioFields.material)
             val extruderTemp = spool.filament.settings_extruder_temp
             val bedTemp = spool.filament.settings_bed_temp
 
@@ -77,8 +86,9 @@ data class FilamentSpool(
 
             return FilamentSpool(
                 id = spool.id,
-                material = baseMaterial,
-                variant = variant,
+                material = spoolStudioFields.material,
+                variant = spoolStudioFields.variant,
+                materialModifier = spoolStudioFields.materialModifier,
                 brand = spool.filament.vendor?.name ?: "Unknown",
                 colorHex = normalizeHexColor(spool.filament.color_hex),
                 minTemp = minTemp,
@@ -95,16 +105,22 @@ data class FilamentSpool(
                 filamentId = spool.filament.id,
                 comment = spool.comment,
                 firstUsed = spool.first_used,
-                lastUsed = spool.last_used
+                lastUsed = spool.last_used,
+                cardUids = parseCardUids(
+                    spool.extra.stringValue("card_uids") ?: spool.extra.stringValue("card_uid")
+                )
             )
         }
 
         fun fromOpenSpool(spool: OpenSpoolData): FilamentSpool {
-            val material = MaterialDatabase.getMaterial(spool.type)
+            val fields = normalizeSpoolLinkFilamentFields(spool.type, spool.subtype)
+            val spoolStudioFields = spoolLinkSpoolmanFields(fields.material, fields.variant)
+            val material = MaterialDatabase.getMaterial(spoolStudioFields.material)
             return FilamentSpool(
                 id = spool.spoolId?.toIntOrNull(),
-                material = spool.type?.ifBlank { "PLA" } ?: "PLA",
-                variant = spool.subtype?.ifBlank { "Basic" } ?: "Basic",
+                material = spoolStudioFields.material,
+                variant = spoolStudioFields.variant,
+                materialModifier = spoolStudioFields.materialModifier,
                 brand = spool.brand,
                 location = null,
                 colorHex = normalizeHexColor(spool.colorHex),
@@ -113,6 +129,7 @@ data class FilamentSpool(
                 bedMinTemp = spool.bedMinTemp?.toIntOrNull() ?: material?.defaultBedMinTemp,
                 bedMaxTemp = spool.bedMaxTemp?.toIntOrNull() ?: material?.defaultBedMaxTemp,
                 lotNr = spool.lotNr,
+                cardUids = listOfNotNull(normalizeCardUid(spool.cardUid).takeIf { it.isNotBlank() }),
                 spoolmanName = "",
                 filamentId = null
             )

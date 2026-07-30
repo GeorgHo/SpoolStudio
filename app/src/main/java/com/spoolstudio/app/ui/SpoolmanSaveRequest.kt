@@ -3,6 +3,8 @@ package com.spoolstudio.app.ui
 data class SpoolmanSaveRequest(
     val material: String,
     val variant: String,
+    val materialModifier: String = "",
+    val allowMaterialModifier: Boolean = true,
     val brand: String,
     val location: String,
     val colorHex: String?,
@@ -15,5 +17,6 @@ data class SpoolmanSaveRequest(
     val comment: String,
     val remainingWeight: String,
     val emptySpoolWeight: String,
-    val existingSpoolId: Int?
+    val existingSpoolId: Int?,
+    val cardUid: String? = null
 )

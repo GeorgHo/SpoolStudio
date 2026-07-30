@@ -2,6 +2,8 @@ package com.spoolstudio.app.ui.screens
 
 import com.spoolstudio.app.data.local.VariantDatabase
 import com.spoolstudio.app.domain.models.FilamentSpool
+import com.spoolstudio.app.domain.models.normalizeCardUid
+import com.spoolstudio.app.domain.models.normalizeSpoolLinkFilamentFields
 
 data class BambuRfidFormData(
     val material: String?,
@@ -32,19 +34,22 @@ fun parseBambuRfidFormData(text: String, fallbackMaterial: String): BambuRfidFor
         ?.removePrefix("#")
         ?.uppercase()
 
+    val normalizedVariant = normalizeBambuVariant(
+        material = material ?: fallbackMaterial,
+        detailedType = detailedType
+    )
+    val fields = normalizeSpoolLinkFilamentFields(material ?: fallbackMaterial, normalizedVariant)
+
     return BambuRfidFormData(
-        material = material,
+        material = fields.material,
         detailedType = detailedType,
         colorHex = colorHex,
         spoolWeightGrams = parsedBambuInt(text, "Spool Weight"),
         minHotend = parsedBambuInt(text, "Min Hotend"),
         maxHotend = parsedBambuInt(text, "Max Hotend"),
         bedTemp = parsedBambuInt(text, "Bed Temp"),
-        uid = parsedBambuValue(text, "UID")?.trim(),
-        normalizedVariant = normalizeBambuVariant(
-            material = material ?: fallbackMaterial,
-            detailedType = detailedType
-        )
+        uid = normalizeCardUid(parsedBambuValue(text, "UID")).takeIf { it.isNotBlank() },
+        normalizedVariant = fields.variant
     )
 }
 
@@ -57,7 +62,7 @@ fun resolveBambuRfidApplyDecision(
         text = text,
         fallbackMaterial = fallbackMaterial
     )
-    val matchingSpool = findMatchingSpoolByLotNr(spools, bambuData.uid)
+    val matchingSpool = findMatchingSpoolByCardUid(spools, bambuData.uid)
 
     return when {
         matchingSpool == null -> {
@@ -121,12 +126,12 @@ fun normalizeHexForCompare(value: String?): String {
         .orEmpty()
 }
 
-fun findMatchingSpoolByLotNr(spools: List<FilamentSpool>, lotNrValue: String?): FilamentSpool? {
-    val normalizedLotNr = lotNrValue?.trim().orEmpty()
-    if (normalizedLotNr.isBlank()) return null
+fun findMatchingSpoolByCardUid(spools: List<FilamentSpool>, cardUidValue: String?): FilamentSpool? {
+    val normalizedUid = normalizeCardUid(cardUidValue)
+    if (normalizedUid.isBlank()) return null
 
     return spools.firstOrNull { spool ->
-        spool.lotNr?.trim().equals(normalizedLotNr, ignoreCase = true)
+        spool.cardUids.any { it.equals(normalizedUid, ignoreCase = true) }
     }
 }
 
@@ -136,8 +141,9 @@ fun isSameBambuData(
     normalizedVariant: String,
     colorHexValue: String?
 ): Boolean {
-    return spool.material.equals(material.orEmpty(), ignoreCase = true) &&
-        spool.variant.equals(normalizedVariant, ignoreCase = true) &&
+    val fields = normalizeSpoolLinkFilamentFields(material, normalizedVariant)
+    return spool.material.equals(fields.material, ignoreCase = true) &&
+        spool.variant.equals(fields.variant, ignoreCase = true) &&
         normalizeHexForCompare(spool.colorHex) == normalizeHexForCompare(colorHexValue)
 }
 
@@ -148,23 +154,24 @@ fun buildBambuDiffText(
     colorHexValue: String?
 ): String {
     val lines = mutableListOf<String>()
-    lines += "Spool with matching lot number found."
+    val fields = normalizeSpoolLinkFilamentFields(material, normalizedVariant)
+    lines += "Spool with matching card UID found."
     lines += ""
     lines += "ID: ${spool.id ?: "-"}"
-    lines += "Lot Number: ${spool.lotNr ?: "-"}"
+    lines += "Card UID: ${spool.cardUids.firstOrNull() ?: "-"}"
     lines += ""
 
-    if (!spool.material.equals(material.orEmpty(), ignoreCase = true)) {
+    if (!spool.material.equals(fields.material, ignoreCase = true)) {
         lines += "Material:"
         lines += "- Database: ${spool.material}"
-        lines += "- Bambu: ${material ?: "-"}"
+        lines += "- Bambu: ${fields.material}"
         lines += ""
     }
 
-    if (!spool.variant.equals(normalizedVariant, ignoreCase = true)) {
+    if (!spool.variant.equals(fields.variant, ignoreCase = true)) {
         lines += "Variant:"
         lines += "- Database: ${spool.variant.ifBlank { "Basic" }}"
-        lines += "- Bambu: ${normalizedVariant.ifBlank { "Basic" }}"
+        lines += "- Bambu: ${fields.variant.ifBlank { "Basic" }}"
         lines += ""
     }
 

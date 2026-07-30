@@ -1,5 +1,6 @@
 package com.spoolstudio.app.ui.screens
 
+import com.spoolstudio.app.ui.PrinterIntegrationMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -28,6 +29,8 @@ class SettingsScreenHelpersTest {
             savedSpoolmanUrl = "http://spoolman.local",
             tempMoonrakerUrl = "http://printer.local/",
             savedMoonrakerUrl = "http://printer.local",
+            tempPrinterIntegrationMode = PrinterIntegrationMode.PAXX12_SPOOL_LINK,
+            savedPrinterIntegrationMode = PrinterIntegrationMode.PAXX12_SPOOL_LINK,
             tempSort = "",
             savedSort = "",
             tempBambuKey = "abcd",
@@ -46,6 +49,8 @@ class SettingsScreenHelpersTest {
             savedSpoolmanUrl = "",
             tempMoonrakerUrl = "",
             savedMoonrakerUrl = "",
+            tempPrinterIntegrationMode = PrinterIntegrationMode.PAXX12_SPOOL_LINK,
+            savedPrinterIntegrationMode = PrinterIntegrationMode.PAXX12_SPOOL_LINK,
             tempSort = "",
             savedSort = "",
             tempBambuKey = "",

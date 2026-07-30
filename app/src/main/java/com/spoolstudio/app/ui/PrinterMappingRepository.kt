@@ -1,6 +1,5 @@
 package com.spoolstudio.app.ui
 
-import android.util.Log
 import com.spoolstudio.app.data.remote.moonraker.MoonrakerService
 
 data class PrinterMappingSnapshot(
@@ -8,7 +7,8 @@ data class PrinterMappingSnapshot(
     val toolhead2SpoolId: Int?,
     val toolhead3SpoolId: Int?,
     val toolhead4SpoolId: Int?,
-    val activeSpoolId: Int?
+    val activeSpoolId: Int?,
+    val integrationMode: ResolvedPrinterIntegrationMode
 )
 
 data class PrinterMappingLoadResult(
@@ -19,24 +19,20 @@ data class PrinterMappingLoadResult(
 class PrinterMappingRepository(
     private val serviceFactory: (String) -> MoonrakerService = ::MoonrakerService
 ) {
-    suspend fun load(baseUrl: String): PrinterMappingLoadResult {
+    suspend fun load(
+        baseUrl: String,
+        printerIntegrationMode: PrinterIntegrationMode
+    ): PrinterMappingLoadResult {
         val service = serviceFactory(baseUrl)
-        val mapping = service.getToolMapping()
-
-        val activeSpoolId = try {
-            service.getActiveSpoolId()
-        } catch (e: Exception) {
-            if (e.message?.contains("404") == true) {
-                Log.w("PrinterMappingRepository", "Spoolman not active on printer")
-            } else {
-                Log.w("PrinterMappingRepository", "Active spool error: ${e.message}")
-            }
-            null
-        }
+        ensureSpoolLinkFirmware(service)
+        val mapping = service.getSpoolLinkToolMapping()
 
         return PrinterMappingLoadResult(
-            snapshot = mapping.toPrinterMappingSnapshot(activeSpoolId),
-            activeSpoolAvailable = activeSpoolId != null
+            snapshot = mapping.toPrinterMappingSnapshot(
+                activeSpoolId = null,
+                integrationMode = ResolvedPrinterIntegrationMode.PAXX12_SPOOL_LINK
+            ),
+            activeSpoolAvailable = false
         )
     }
 
@@ -46,26 +42,53 @@ class PrinterMappingRepository(
         toolhead2SpoolId: Int?,
         toolhead3SpoolId: Int?,
         toolhead4SpoolId: Int?,
-        activeSpoolId: Int?
+        activeSpoolId: Int?,
+        printerIntegrationMode: PrinterIntegrationMode
     ): PrinterMappingSnapshot {
         val service = serviceFactory(baseUrl)
+        ensureSpoolLinkFirmware(service)
 
-        service.setToolSpool("T0", toolhead1SpoolId)
-        service.setToolSpool("T1", toolhead2SpoolId)
-        service.setToolSpool("T2", toolhead3SpoolId)
-        service.setToolSpool("T3", toolhead4SpoolId)
-        service.setActiveSpoolId(activeSpoolId)
+        service.setSpoolLinkToolSpool("E0", toolhead1SpoolId)
+        service.setSpoolLinkToolSpool("E1", toolhead2SpoolId)
+        service.setSpoolLinkToolSpool("E2", toolhead3SpoolId)
+        service.setSpoolLinkToolSpool("E3", toolhead4SpoolId)
 
-        return service.getToolMapping()
-            .toPrinterMappingSnapshot(service.getActiveSpoolId())
+        return service.getSpoolLinkToolMapping()
+            .toPrinterMappingSnapshot(
+                activeSpoolId = null,
+                integrationMode = ResolvedPrinterIntegrationMode.PAXX12_SPOOL_LINK
+            )
+    }
+
+    private suspend fun ensureSpoolLinkFirmware(service: MoonrakerService) {
+        val printerInfo = service.getPrinterInfo()
+        if (!printerInfo.supportsSpoolLink) {
+            val version = printerInfo.displayVersion ?: "unknown"
+            throw IllegalStateException(
+                "Paxx12 SpoolLink requires firmware 1.5.0 or newer. Detected firmware: $version. Use Spool Studio v2 for the old Paxx12 workflow."
+            )
+        }
+        if (
+            printerInfo.hasSpoolmanComponent == false ||
+            printerInfo.hasSpoolLinkComponent == false ||
+            printerInfo.spoolmanIntegrationEnabled == false
+        ) {
+            throw IllegalStateException(
+                "Printer Spoolman integration is not ready. Enable Spoolman Integration in the printer config and restart Klipper/Moonraker."
+            )
+        }
     }
 }
 
-private fun Map<String, Int?>.toPrinterMappingSnapshot(activeSpoolId: Int?): PrinterMappingSnapshot =
+private fun Map<String, Int?>.toPrinterMappingSnapshot(
+    activeSpoolId: Int?,
+    integrationMode: ResolvedPrinterIntegrationMode
+): PrinterMappingSnapshot =
     PrinterMappingSnapshot(
         toolhead1SpoolId = this["T0"]?.takeIf { it > 0 },
         toolhead2SpoolId = this["T1"]?.takeIf { it > 0 },
         toolhead3SpoolId = this["T2"]?.takeIf { it > 0 },
         toolhead4SpoolId = this["T3"]?.takeIf { it > 0 },
-        activeSpoolId = activeSpoolId
+        activeSpoolId = activeSpoolId,
+        integrationMode = integrationMode
     )

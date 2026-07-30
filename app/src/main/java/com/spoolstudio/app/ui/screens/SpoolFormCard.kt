@@ -73,6 +73,7 @@ import com.spoolstudio.app.data.local.BrandDatabase
 import com.spoolstudio.app.data.local.MaterialDatabase
 import com.spoolstudio.app.data.local.VariantDatabase
 import com.spoolstudio.app.domain.models.FilamentSpool
+import com.spoolstudio.app.domain.models.displayMaterialWithModifier
 import com.spoolstudio.app.ui.SpoolMode
 import com.spoolstudio.app.ui.components.ColorSelector
 import com.spoolstudio.app.ui.components.SearchableDropdownDialog
@@ -105,6 +106,7 @@ fun SpoolFormCard(
     showLotNumber: Boolean,
     showCommentField: Boolean,
     showEmptySpoolWeight: Boolean,
+    materialModifierFieldEnabled: Boolean,
     isRemainingWeightValid: Boolean,
     onSpoolSelected: (FilamentSpool?) -> Unit,
     onClearAllSpoolFields: () -> Unit,
@@ -142,6 +144,7 @@ fun SpoolFormCard(
             showLotNumber = showLotNumber,
             showCommentField = showCommentField,
             showEmptySpoolWeight = showEmptySpoolWeight,
+            materialModifierFieldEnabled = materialModifierFieldEnabled,
             isRemainingWeightValid = isRemainingWeightValid,
             onRefreshSpoolmanCatalogIfStale = onRefreshSpoolmanCatalogIfStale
         )
@@ -162,6 +165,7 @@ private fun SpoolDataCard(
     showLotNumber: Boolean,
     showCommentField: Boolean,
     showEmptySpoolWeight: Boolean,
+    materialModifierFieldEnabled: Boolean,
     isRemainingWeightValid: Boolean,
     onRefreshSpoolmanCatalogIfStale: () -> Unit
 ) {
@@ -175,6 +179,9 @@ private fun SpoolDataCard(
             values = MaterialDatabase.materials.map { it.name } + availableMaterials,
             trailing = listOf("Other")
         )
+    }
+    val materialModifierOptions = remember {
+        listOf("None", "Plus", "HS", "HF", "LW", "Aero", "2.0", "2.0 Plus", "Extra", "Super", "Rapid")
     }
     val variantOptions = remember(availableVariants) {
         prioritizedOptions(
@@ -199,6 +206,11 @@ private fun SpoolDataCard(
     }
     val emptySpoolWeightSuggestions = remember(spools) {
         buildEmptySpoolWeightSuggestions(spools)
+    }
+    LaunchedEffect(materialModifierFieldEnabled) {
+        if (!materialModifierFieldEnabled) {
+            form.materialModifier = ""
+        }
     }
 
     fun applyColorNameInput(input: String, finalize: Boolean = false) {
@@ -246,7 +258,7 @@ private fun SpoolDataCard(
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
             CompactDropdownRow(
-                label = "Filament Type",
+                label = "Material",
                 value = form.filamentType.ifBlank { "PLA" },
                 options = materialOptions,
                 onSelected = { material ->
@@ -275,6 +287,16 @@ private fun SpoolDataCard(
                     onValueChange = { form.customMaterial = it.take(40) }
                 )
             }
+
+            CompactDropdownRow(
+                label = "Material modifier",
+                value = form.materialModifier.ifBlank { "None" },
+                options = materialModifierOptions,
+                enabled = materialModifierFieldEnabled,
+                onSelected = { modifier ->
+                    form.materialModifier = if (modifier == "None") "" else modifier
+                }
+            )
 
             CompactDropdownRow(
                 label = "Variant",
@@ -418,7 +440,7 @@ private fun SpoolDataCard(
 
             if (showLotNumber) {
                 CompactTextRow(
-                    label = "Lot",
+                    label = "Product / Lot code",
                     value = form.lotNr,
                     placeholder = "",
                     showEditIcon = true,
@@ -509,7 +531,8 @@ private fun CompactDropdownRow(
     options: List<String>,
     onSelected: (String) -> Unit,
     onOpen: () -> Unit = {},
-    showTopDivider: Boolean = false
+    showTopDivider: Boolean = false,
+    enabled: Boolean = true
 ) {
     var expanded by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
@@ -531,6 +554,7 @@ private fun CompactDropdownRow(
             label = label,
             onClick = {
                 focusManager.clearFocus()
+                if (!enabled) return@CompactDataRow
                 if (!expanded) onOpen()
                 expanded = !expanded
             },
@@ -539,7 +563,7 @@ private fun CompactDropdownRow(
             Text(
                 text = value,
                 style = compactValueStyle(),
-                color = SpoolStudioColors.Ink,
+                color = if (enabled) SpoolStudioColors.Ink else SpoolStudioColors.InkMuted.copy(alpha = 0.65f),
                 textAlign = TextAlign.Start,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -548,7 +572,7 @@ private fun CompactDropdownRow(
             Icon(
                 imageVector = Icons.Default.ArrowDropDown,
                 contentDescription = null,
-                tint = SpoolStudioColors.InkMuted,
+                tint = SpoolStudioColors.InkMuted.copy(alpha = if (enabled) 1f else 0.45f),
                 modifier = Modifier
                     .padding(start = 6.dp)
                     .size(18.dp)
@@ -1564,6 +1588,8 @@ private fun SpoolHeroPanel(
 
             StatusInfoPanel(
                 newMode = isCreateMode,
+                cardUid = selectedSpool?.cardUids?.firstOrNull()
+                    ?: form.pendingCardUid.orEmpty(),
                 firstUse = if (isCreateMode) "-" else selectedSpool?.firstUsed?.let(::formatCompactDate) ?: "-",
                 lastUse = if (isCreateMode) "-" else selectedSpool?.lastUsed?.let(::formatCompactDate) ?: "-",
                 initialWeight = initialWeight,
@@ -1581,6 +1607,7 @@ private fun SpoolHeroPanel(
 @Composable
 private fun StatusInfoPanel(
     newMode: Boolean,
+    cardUid: String,
     firstUse: String,
     lastUse: String,
     initialWeight: String,
@@ -1590,7 +1617,7 @@ private fun StatusInfoPanel(
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier.height(164.dp),
+        modifier = modifier.height(184.dp),
         shape = SpoolStudioShape.Small,
         colors = CardDefaults.cardColors(containerColor = SpoolStudioColors.Graphite.copy(alpha = 0.74f)),
         border = BorderStroke(
@@ -1601,9 +1628,13 @@ private fun StatusInfoPanel(
         Column(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 9.dp)
         ) {
+            StatusUidLine(cardUid.ifBlank { "-" }, modifier = Modifier.height(21.dp))
+            Spacer(modifier = Modifier.height(6.dp))
+            StatusPanelDivider()
+            Spacer(modifier = Modifier.height(6.dp))
             if (newMode) {
                 Column(
-                    modifier = Modifier.height(54.dp),
+                    modifier = Modifier.height(44.dp),
                     verticalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
                     Text(
@@ -1624,16 +1655,11 @@ private fun StatusInfoPanel(
                     )
                 }
             } else {
-                StatusInfoLine("First use", firstUse, modifier = Modifier.height(30.dp))
-                StatusInfoLine("Last use", lastUse, modifier = Modifier.height(30.dp))
+                StatusInfoLine("First use", firstUse, modifier = Modifier.height(28.dp))
+                StatusInfoLine("Last use", lastUse, modifier = Modifier.height(28.dp))
             }
             Spacer(modifier = Modifier.height(8.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .background(SpoolStudioColors.GraphiteMuted.copy(alpha = 0.75f))
-            )
+            StatusPanelDivider()
             Spacer(modifier = Modifier.height(8.dp))
             StatusInfoLine("Initial", initialWeight, modifier = Modifier.height(21.dp))
             StatusInfoLine(
@@ -1658,6 +1684,16 @@ private fun StatusInfoPanel(
 }
 
 @Composable
+private fun StatusPanelDivider() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(1.dp)
+            .background(SpoolStudioColors.GraphiteMuted.copy(alpha = 0.75f))
+    )
+}
+
+@Composable
 private fun RemainingFillBar(
     percent: Float,
     color: Color
@@ -1675,6 +1711,36 @@ private fun RemainingFillBar(
                 .height(7.dp)
                 .clip(CircleShape)
                 .background(color)
+        )
+    }
+}
+
+@Composable
+private fun StatusUidLine(
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        Text(
+            text = "UID",
+            style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp, lineHeight = 14.sp),
+            color = SpoolStudioColors.OnGraphiteMuted,
+            maxLines = 1,
+            modifier = Modifier.width(28.dp)
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.labelMedium.copy(fontSize = 10.sp, lineHeight = 12.sp),
+            fontWeight = FontWeight.SemiBold,
+            color = SpoolStudioColors.OnGraphite,
+            textAlign = TextAlign.End,
+            maxLines = 1,
+            overflow = TextOverflow.Clip,
+            modifier = Modifier.weight(1f)
         )
     }
 }
@@ -1775,7 +1841,7 @@ private fun EditTray(content: @Composable ColumnScope.() -> Unit) {
 private fun FilamentSummaryList(form: SpoolFormState) {
     val colorValue = form.colorName.ifBlank { form.colorHex?.let { "#$it" } ?: "No Color" }
     Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-        SummaryRow("Type", form.filamentType.ifBlank { "PLA" })
+        SummaryRow("Material", displayMaterialWithModifier(form.filamentType.ifBlank { "PLA" }, form.materialModifier))
         SummaryDivider()
         SummaryRow("Variant", form.variant.ifBlank { "Basic" })
         SummaryDivider()

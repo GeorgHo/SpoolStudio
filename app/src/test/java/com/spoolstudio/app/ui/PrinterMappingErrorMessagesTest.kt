@@ -32,7 +32,7 @@ class PrinterMappingErrorMessagesTest {
         val error = IllegalStateException("Unable to resolve host printer.local")
 
         assertEquals(
-            "Loading printer mapping failed: Printer host is not reachable. Check the Moonraker URL.",
+            "Loading toolhead status failed: Printer host is not reachable. Check the Moonraker URL.",
             printerMappingLoadErrorMessage(error)
         )
     }

@@ -61,7 +61,7 @@ fun SpoolDetailsSection(
                     onLotNrChange(input)
                 }
             },
-            label = { Text("Lot Number") },
+            label = { Text("Product / Lot code") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             shape = SpoolStudioShape.Field

@@ -3,12 +3,7 @@ package com.spoolstudio.app.ui
 import android.util.Log
 import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.domain.models.OpenSpoolData
-
-fun buildMaterialWithVariant(material: String, variant: String): String {
-    val cleanMaterial = material.trim().ifBlank { "Unknown" }
-    val cleanVariant = variant.trim().ifBlank { "Basic" }
-    return "$cleanMaterial - $cleanVariant"
-}
+import com.spoolstudio.app.domain.models.spoolLinkTagFields
 
 fun normalizedColorHex(colorHex: String?): String? =
     colorHex?.trim()?.removePrefix("#")?.uppercase()?.ifBlank { null }
@@ -36,14 +31,17 @@ fun buildTagData(
     request: SpoolmanSaveRequest,
     resolvedLotNr: String
 ): OpenSpoolData? {
+    val fields = spoolLinkTagFields(request.material, request.variant, request.materialModifier)
     return try {
         OpenSpoolData.toOpenSpoolData(spool).copy(
             minTemp = request.minTemp,
             maxTemp = request.maxTemp,
             bedMinTemp = request.bedMinTemp.ifBlank { null },
             bedMaxTemp = request.bedMaxTemp.ifBlank { null },
-            subtype = request.variant.ifBlank { "Basic" },
-            lotNr = resolvedLotNr.ifBlank { null }
+            type = fields.material,
+            subtype = fields.variant.ifBlank { "Basic" },
+            lotNr = resolvedLotNr.ifBlank { null },
+            cardUid = request.cardUid
         )
     } catch (e: IllegalArgumentException) {
         Log.w("SpoolStudio", "Saved spool cannot be converted to OpenSpool tag data", e)

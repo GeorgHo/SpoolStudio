@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.spoolstudio.app.ui.PrinterIntegrationMode
 import com.spoolstudio.app.ui.theme.SpoolStudioColors
 
 @Composable
@@ -36,6 +37,45 @@ fun SettingsSortDropdown(
     expanded: Boolean,
     onExpandedChange: () -> Unit,
     onSortSelected: (String) -> Unit
+) {
+    SettingsOptionDropdown(
+        label = "Sort",
+        options = sortOptions,
+        selectedValue = selectedSort,
+        fallbackLabel = "Default (ID)",
+        expanded = expanded,
+        onExpandedChange = onExpandedChange,
+        onOptionSelected = onSortSelected
+    )
+}
+
+@Composable
+fun SettingsPrinterIntegrationDropdown(
+    selectedMode: PrinterIntegrationMode,
+    expanded: Boolean,
+    onExpandedChange: () -> Unit,
+    onModeSelected: (PrinterIntegrationMode) -> Unit
+) {
+    SettingsOptionDropdown(
+        label = "Printer mode",
+        options = PrinterIntegrationMode.entries.map { it.label to it },
+        selectedValue = selectedMode,
+        fallbackLabel = PrinterIntegrationMode.PAXX12_SPOOL_LINK.label,
+        expanded = expanded,
+        onExpandedChange = onExpandedChange,
+        onOptionSelected = onModeSelected
+    )
+}
+
+@Composable
+private fun <T> SettingsOptionDropdown(
+    label: String,
+    options: List<Pair<String, T>>,
+    selectedValue: T,
+    fallbackLabel: String,
+    expanded: Boolean,
+    onExpandedChange: () -> Unit,
+    onOptionSelected: (T) -> Unit
 ) {
     Box(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -51,13 +91,13 @@ fun SettingsSortDropdown(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Sort",
+                    text = label,
                     style = MaterialTheme.typography.bodyMedium,
                     color = SpoolStudioColors.Ink,
                     modifier = Modifier.weight(0.82f)
                 )
                 Text(
-                    text = sortOptions.find { it.second == selectedSort }?.first ?: "Default (ID)",
+                    text = options.find { it.second == selectedValue }?.first ?: fallbackLabel,
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontSize = 15.sp,
                         lineHeight = 19.sp,
@@ -80,10 +120,10 @@ fun SettingsSortDropdown(
             expanded = expanded,
             onDismissRequest = onExpandedChange
         ) {
-            sortOptions.forEach { (label, value) ->
+            options.forEach { (optionLabel, value) ->
                 DropdownMenuItem(
-                    text = { Text(label) },
-                    onClick = { onSortSelected(value) }
+                    text = { Text(optionLabel) },
+                    onClick = { onOptionSelected(value) }
                 )
             }
         }

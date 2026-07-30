@@ -10,6 +10,7 @@ import org.bouncycastle.crypto.digests.SHA256Digest
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator
 import org.bouncycastle.crypto.params.HKDFParameters
 import com.spoolstudio.app.domain.models.BambuRfidParser
+import org.json.JSONObject
 
 class NfcManager(private val context: android.content.Context) {
     private fun ByteArray.toHexString(separator: String = " "): String =
@@ -70,7 +71,7 @@ class NfcManager(private val context: android.content.Context) {
                 }
 
                 if (!payload.isNullOrBlank()) {
-                    return payload
+                    return payload.withCardUid(tag.id.toHexString(separator = ""))
                 }
             }
         } catch (_: Exception) {
@@ -161,17 +162,32 @@ class NfcManager(private val context: android.content.Context) {
             null
         }
     }
+
+    private fun String.withCardUid(uid: String): String =
+        try {
+            val cleanJson = if (startsWith("{")) this else dropWhile { it != '{' }
+            val json = JSONObject(cleanJson)
+            if (json.optString("protocol") == "openspool" && json.optString("card_uid").isBlank()) {
+                json.put("card_uid", uid)
+                json.toString()
+            } else {
+                this
+            }
+        } catch (_: Exception) {
+            this
+        }
     
     fun writeTag(tag: Tag, data: String): Boolean {
         return try {
             val ndef = Ndef.get(tag) ?: return false
             ndef.connect()
+            val payload = data.withCardUid(tag.id.toHexString(separator = ""))
             
             val record = NdefRecord(
                 NdefRecord.TNF_MIME_MEDIA,
                 "application/json".toByteArray(),
                 ByteArray(0),
-                data.toByteArray(Charset.forName("UTF-8"))
+                payload.toByteArray(Charset.forName("UTF-8"))
             )
             val message = NdefMessage(arrayOf(record))
             

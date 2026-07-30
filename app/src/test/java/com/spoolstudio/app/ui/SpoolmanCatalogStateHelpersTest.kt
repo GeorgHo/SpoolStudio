@@ -27,7 +27,9 @@ class SpoolmanCatalogStateHelpersTest {
                 vendorNames = listOf("Generic", "GST 3D"),
                 materialNames = listOf("PLA", "PETG"),
                 variantNames = listOf("Basic", "Matte"),
-                locationNames = listOf("Shelf A")
+                locationNames = listOf("Shelf A"),
+                cardUidFieldSpoolCount = 3,
+                cardUidFieldKeys = listOf("card_uids")
             )
         )
 
@@ -36,6 +38,8 @@ class SpoolmanCatalogStateHelpersTest {
         assertEquals(listOf("PLA", "PETG"), state.availableMaterials)
         assertEquals(listOf("Basic", "Matte"), state.availableVariants)
         assertEquals(listOf("Shelf A"), state.availableLocations)
+        assertEquals(3, state.cardUidFieldSpoolCount)
+        assertEquals(listOf("card_uids"), state.cardUidFieldKeys)
     }
 
     @Test
@@ -47,5 +51,7 @@ class SpoolmanCatalogStateHelpersTest {
         assertTrue(state.availableMaterials.isEmpty())
         assertTrue(state.availableVariants.isEmpty())
         assertTrue(state.availableLocations.isEmpty())
+        assertEquals(0, state.cardUidFieldSpoolCount)
+        assertTrue(state.cardUidFieldKeys.isEmpty())
     }
 }

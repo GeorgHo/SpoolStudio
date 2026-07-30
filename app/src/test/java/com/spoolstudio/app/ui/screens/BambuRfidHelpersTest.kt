@@ -13,7 +13,7 @@ class BambuRfidHelpersTest {
         Min Hotend: 190 C
         Max Hotend: 220 C
         Bed Temp: 65 C
-        UID: TAG-123
+        UID: E653F0E1
     """.trimIndent()
 
     @Test
@@ -25,7 +25,7 @@ class BambuRfidHelpersTest {
     }
 
     @Test
-    fun decisionAppliesNewDataWhenLotNumberIsUnknown() {
+    fun decisionAppliesNewDataWhenCardUidIsUnknown() {
         val decision = resolveBambuRfidApplyDecision(
             text = bambuText,
             fallbackMaterial = "PLA",
@@ -33,7 +33,7 @@ class BambuRfidHelpersTest {
         )
 
         assertTrue(decision is BambuRfidApplyDecision.ApplyNewData)
-        assertEquals("TAG-123", (decision as BambuRfidApplyDecision.ApplyNewData).data.uid)
+        assertEquals("E653F0E1", (decision as BambuRfidApplyDecision.ApplyNewData).data.uid)
     }
 
     @Test
@@ -82,7 +82,7 @@ class BambuRfidHelpersTest {
             maxTemp = 220,
             bedMinTemp = 55,
             bedMaxTemp = 75,
-            lotNr = "TAG-123",
+            cardUids = listOf("E653F0E1"),
             spoolmanName = "PLA White"
         )
 
@@ -97,7 +97,7 @@ class BambuRfidHelpersTest {
     }
 
     @Test
-    fun decisionShowsDifferenceWhenLotNumberMatchesButContentDiffers() {
+    fun decisionShowsDifferenceWhenCardUidMatchesButContentDiffers() {
         val differentSpool = FilamentSpool(
             id = 7,
             material = "PETG",
@@ -108,7 +108,7 @@ class BambuRfidHelpersTest {
             maxTemp = 250,
             bedMinTemp = 70,
             bedMaxTemp = 90,
-            lotNr = "TAG-123",
+            cardUids = listOf("E653F0E1"),
             spoolmanName = "PETG Black"
         )
 
