@@ -48,10 +48,27 @@ class PrinterMappingRepository(
         val service = serviceFactory(baseUrl)
         ensureSpoolLinkFirmware(service)
 
-        service.setSpoolLinkToolSpool("E0", toolhead1SpoolId)
-        service.setSpoolLinkToolSpool("E1", toolhead2SpoolId)
-        service.setSpoolLinkToolSpool("E2", toolhead3SpoolId)
-        service.setSpoolLinkToolSpool("E3", toolhead4SpoolId)
+        service.setSpoolLinkToolSpool(0, toolhead1SpoolId)
+        service.setSpoolLinkToolSpool(1, toolhead2SpoolId)
+        service.setSpoolLinkToolSpool(2, toolhead3SpoolId)
+        service.setSpoolLinkToolSpool(3, toolhead4SpoolId)
+
+        return service.getSpoolLinkToolMapping()
+            .toPrinterMappingSnapshot(
+                activeSpoolId = null,
+                integrationMode = ResolvedPrinterIntegrationMode.PAXX12_SPOOL_LINK
+            )
+    }
+
+    suspend fun assignToolhead(
+        baseUrl: String,
+        toolheadIndex: Int,
+        spoolId: Int?,
+        printerIntegrationMode: PrinterIntegrationMode
+    ): PrinterMappingSnapshot {
+        val service = serviceFactory(baseUrl)
+        ensureSpoolLinkFirmware(service)
+        service.setSpoolLinkToolSpool(toolheadIndex, spoolId)
 
         return service.getSpoolLinkToolMapping()
             .toPrinterMappingSnapshot(

@@ -1,5 +1,6 @@
 package com.spoolstudio.app.data.remote.moonraker
 
+import kotlinx.coroutines.delay
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Response
@@ -164,16 +165,30 @@ class MoonrakerService(private val baseUrl: String) {
         }
     }
 
-    suspend fun setSpoolLinkToolSpool(lane: String, spoolId: Int?) {
+    suspend fun setSpoolLinkToolSpool(toolheadIndex: Int, spoolId: Int?) {
+        require(toolheadIndex in 0..3) { "Toolhead index must be between 0 and 3" }
         val value = spoolId ?: 0
+        val script = "SET_PRINT_FILAMENT_CONFIG CONFIG_EXTRUDER=$toolheadIndex FILAMENT_SPOOL_ID=$value FORCE=1"
         val response = api.sendGcode(
-            mapOf("script" to "SET_SPOOL_ID LANE=$lane SPOOL_ID=$value")
+            mapOf("script" to script)
         )
 
         if (!response.isSuccessful) {
             val errorText = response.errorBody()?.string()
             throw IllegalStateException("Moonraker SpoolLink mapping write failed (${response.code()}): $errorText")
         }
+
+        val expected = value.takeIf { it > 0 }
+        repeat(3) { attempt ->
+            delay(if (attempt == 0) 350 else 700)
+            val actual = getSpoolLinkToolMapping()["T$toolheadIndex"]
+            if (actual == expected) return
+        }
+
+        val actual = getSpoolLinkToolMapping()["T$toolheadIndex"]
+        throw IllegalStateException(
+            "Printer did not accept the toolhead assignment. Expected ${expected ?: "empty"} on Toolhead ${toolheadIndex + 1}, but printer reports ${actual ?: "empty"}."
+        )
     }
 
     private fun extractSpoolId(raw: Any?): Int? {

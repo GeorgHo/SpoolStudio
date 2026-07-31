@@ -28,6 +28,15 @@ class PrinterMappingUseCase(
                 activeSpoolId = activeSpoolId,
                 printerIntegrationMode = printerIntegrationMode
             )
+        },
+    private val assignToolheadMapping: suspend (String, PrinterIntegrationMode, Int, Int?) -> PrinterMappingSnapshot =
+        { baseUrl, printerIntegrationMode, toolheadIndex, spoolId ->
+            PrinterMappingRepository().assignToolhead(
+                baseUrl = baseUrl,
+                toolheadIndex = toolheadIndex,
+                spoolId = spoolId,
+                printerIntegrationMode = printerIntegrationMode
+            )
         }
 ) {
     suspend fun load(
@@ -67,6 +76,29 @@ class PrinterMappingUseCase(
             PrinterMappingOperationResult.Saved(
                 snapshot = snapshot,
                 message = "Toolhead status saved to printer (${snapshot.integrationMode.label})"
+            )
+        } catch (error: Exception) {
+            PrinterMappingOperationResult.Failed(printerMappingSaveErrorMessage(error))
+        }
+    }
+
+    suspend fun assignToolhead(
+        baseUrl: String,
+        printerIntegrationMode: PrinterIntegrationMode,
+        toolheadIndex: Int,
+        spoolId: Int?
+    ): PrinterMappingOperationResult {
+        return try {
+            val snapshot = assignToolheadMapping(
+                baseUrl,
+                printerIntegrationMode,
+                toolheadIndex,
+                spoolId
+            )
+            val target = spoolId?.let { "spool ID #$it" } ?: "no spool"
+            PrinterMappingOperationResult.Saved(
+                snapshot = snapshot,
+                message = "Toolhead ${toolheadIndex + 1} assigned to $target"
             )
         } catch (error: Exception) {
             PrinterMappingOperationResult.Failed(printerMappingSaveErrorMessage(error))

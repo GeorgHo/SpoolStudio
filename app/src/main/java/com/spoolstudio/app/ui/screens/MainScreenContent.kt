@@ -154,6 +154,9 @@ fun MainScreenContent(
             printerTool4SpoolId = viewModel.printerTool4SpoolId,
             isLoadingPrinterMapping = viewModel.isLoadingPrinterMapping,
             onLoadCurrentPrinterMapping = { viewModel.loadCurrentPrinterMapping() },
+            onAssignPrinterToolhead = { toolheadIndex, spoolId ->
+                viewModel.assignPrinterToolhead(toolheadIndex, spoolId)
+            },
             onTestMoonrakerConnection = { viewModel.testMoonrakerConnection() },
             onRefreshSelectedSpool = { id -> viewModel.refreshSelectedSpool(id) },
             printerIntegrationMode = viewModel.printerIntegrationMode,

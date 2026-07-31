@@ -887,6 +887,54 @@ class MainViewModel : ViewModel() {
         }
     }
 
+    fun assignPrinterToolhead(
+        toolheadIndex: Int,
+        spoolId: Int?
+    ) {
+        val url = moonrakerUrl
+        if (url.isBlank()) {
+            printerMappingSaveSuccessful = false
+            printerMappingStatusMessage = "Moonraker URL missing"
+            showSnackbarMessage("Moonraker URL missing")
+            return
+        }
+
+        if (isLoadingPrinterMapping) return
+
+        viewModelScope.launch {
+            isLoadingPrinterMapping = true
+            printerMappingOperation = "save"
+            printerMappingSaveSuccessful = null
+            printerMappingStatusMessage = null
+            try {
+                when (val result = printerMappingUseCase.assignToolhead(
+                    baseUrl = normalizeConnectionUrl(url),
+                    printerIntegrationMode = printerIntegrationMode,
+                    toolheadIndex = toolheadIndex,
+                    spoolId = spoolId
+                )) {
+                    is PrinterMappingOperationResult.Saved -> {
+                        applyPrinterMappingSnapshot(result.snapshot)
+                        printerMappingLoadVersion++
+                        printerMappingSaveSuccessful = true
+                        printerMappingStatusMessage = null
+                    }
+
+                    is PrinterMappingOperationResult.Failed -> {
+                        printerMappingSaveSuccessful = false
+                        printerMappingStatusMessage = result.message
+                        showSnackbarMessage(result.message)
+                    }
+
+                    is PrinterMappingOperationResult.Loaded -> Unit
+                }
+            } finally {
+                printerMappingOperation = null
+                isLoadingPrinterMapping = false
+            }
+        }
+    }
+
     private fun applyPrinterMappingSnapshot(snapshot: PrinterMappingSnapshot) {
         printerTool1SpoolId = snapshot.toolhead1SpoolId
         printerTool2SpoolId = snapshot.toolhead2SpoolId

@@ -8,10 +8,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,6 +39,8 @@ fun MappingToolheadStatusCard(
     label: String,
     spool: FilamentSpool?,
     showAppComposedData: Boolean = true,
+    assignEnabled: Boolean = true,
+    onAssignClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val accentColor = resolveSpoolColor(spool?.colorHex)
@@ -116,19 +124,55 @@ fun MappingToolheadStatusCard(
             )
         }
 
-        if (spool != null) {
-            Spacer(modifier = Modifier.width(10.dp))
-            Box(
+        Spacer(modifier = Modifier.width(10.dp))
+
+        Box(
+            modifier = Modifier
+                .width(32.dp)
+                .height(70.dp)
+        ) {
+            if (spool != null) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .offset(y = (-12).dp)
+                        .size(12.dp)
+                        .clip(SpoolStudioShape.Small)
+                        .background(accentColor)
+                        .border(
+                            width = 1.dp,
+                            color = SpoolStudioColors.OnGraphite.copy(alpha = 0.65f),
+                            shape = SpoolStudioShape.Small
+                        )
+                )
+            } else {
+                Spacer(
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .offset(y = (-12).dp)
+                        .size(12.dp)
+                )
+            }
+
+            IconButton(
+                onClick = onAssignClick,
+                enabled = assignEnabled,
                 modifier = Modifier
-                    .size(12.dp)
-                    .clip(SpoolStudioShape.Small)
-                    .background(accentColor)
-                    .border(
-                        width = 1.dp,
-                        color = SpoolStudioColors.OnGraphite.copy(alpha = 0.65f),
-                        shape = SpoolStudioShape.Small
-                    )
-            )
+                    .align(Alignment.CenterEnd)
+                    .offset(x = 8.dp, y = 12.dp)
+                    .size(30.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = "Assign spool manually",
+                    modifier = Modifier.size(22.dp),
+                    tint = if (assignEnabled) {
+                        SpoolStudioColors.Gold
+                    } else {
+                        SpoolStudioColors.OnGraphiteMuted.copy(alpha = 0.45f)
+                    }
+                )
+            }
         }
     }
 }

@@ -88,6 +88,7 @@ fun SpoolStudioScreen(
     printerMappingOperation: String? = null,
     onClearPrinterMappingDialogFeedback: () -> Unit = {},
     onLoadCurrentPrinterMapping: () -> Unit = {},
+    onAssignPrinterToolhead: (Int, Int?) -> Unit = { _, _ -> },
     showLotNumber: Boolean = false,
     showCommentField: Boolean = false,
     showEmptySpoolWeight: Boolean = false,
@@ -334,7 +335,8 @@ fun SpoolStudioScreen(
                 onClearPrinterMappingDialogFeedback()
                 showPrinterMappingDialog = false
             },
-            onLoadCurrentPrinterMapping = onLoadCurrentPrinterMapping
+            onLoadCurrentPrinterMapping = onLoadCurrentPrinterMapping,
+            onAssignPrinterToolhead = onAssignPrinterToolhead
         )
 
         BambuRfidDialogHost(
