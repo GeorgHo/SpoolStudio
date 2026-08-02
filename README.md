@@ -85,7 +85,7 @@ Recommended migration workflow:
 ### 2. Connect Spoolman
 
 - Open **Settings**.
-- Enter your Spoolman URL, for example `http://10.201.0.1:8000`.
+- Enter your Spoolman URL, for example `http://10.201.0.68:8000`.
 - Tap **Test Spoolman Connection**.
 - Use **Show Spoolman Info** to inspect the connected Spoolman instance.
 
