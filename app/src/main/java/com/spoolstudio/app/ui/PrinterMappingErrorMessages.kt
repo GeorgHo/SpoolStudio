@@ -52,6 +52,9 @@ private fun friendlyPrinterMappingError(
         rawMessage.contains("Spoolman integration is not ready", ignoreCase = true) -> {
             rawMessage
         }
+        rawMessage.contains("SET_SPOOL_ID is not available", ignoreCase = true) -> {
+            "Paxx12 SET_SPOOL_ID is not available on the printer. Enable the AFC/SpoolLink firmware configuration, restart Klipper/Moonraker, then try again."
+        }
         else -> compactPrinterError(rawMessage)
     }
 }

@@ -1,8 +1,10 @@
 package com.spoolstudio.app.ui.components
 
 import android.graphics.Bitmap
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -32,6 +35,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import com.spoolstudio.app.ui.theme.SpoolStudioColors
+import com.spoolstudio.app.ui.theme.SpoolStudioShape
 
 @Composable
 fun ColorPhotoDialog(
@@ -43,13 +49,18 @@ fun ColorPhotoDialog(
     onUseDetectedColor: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Card(
             modifier = Modifier
-                .padding(20.dp)
+                .padding(horizontal = 28.dp)
                 .fillMaxWidth(),
-            shape = RoundedCornerShape(32.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
+            shape = SpoolStudioShape.Dialog,
+            elevation = CardDefaults.cardElevation(defaultElevation = 16.dp),
+            colors = CardDefaults.cardColors(containerColor = SpoolStudioColors.Graphite),
+            border = BorderStroke(1.dp, SpoolStudioColors.GraphiteMuted.copy(alpha = 0.85f))
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -59,7 +70,8 @@ fun ColorPhotoDialog(
                 Text(
                     text = "Detect color from photo",
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = SpoolStudioColors.OnGraphite
                 )
 
                 Image(
@@ -69,6 +81,7 @@ fun ColorPhotoDialog(
                         .fillMaxWidth()
                         .height(320.dp)
                         .clip(RoundedCornerShape(20.dp))
+                        .border(1.dp, SpoolStudioColors.GraphiteMuted.copy(alpha = 0.85f), RoundedCornerShape(20.dp))
                         .onSizeChanged(onPhotoViewSizeChange)
                         .pointerInput(bitmap) {
                             detectTapGestures { offset ->
@@ -89,20 +102,22 @@ fun ColorPhotoDialog(
                                 .size(42.dp)
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(Color(android.graphics.Color.parseColor("#$hex")))
+                                .border(1.dp, SpoolStudioColors.GraphiteMuted, RoundedCornerShape(12.dp))
                         )
 
                         Column {
                             Text(
                                 text = "#$hex",
                                 style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                color = SpoolStudioColors.OnGraphite
                             )
 
                             if (detectedName.isNotBlank()) {
                                 Text(
                                     text = detectedName,
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = SpoolStudioColors.OnGraphiteMuted
                                 )
                             }
                         }
@@ -113,7 +128,13 @@ fun ColorPhotoDialog(
                     onClick = onUseDetectedColor,
                     enabled = detectedHex != null,
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = SpoolStudioShape.Button,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = SpoolStudioColors.AccentCyan,
+                        contentColor = Color.White,
+                        disabledContainerColor = SpoolStudioColors.GraphiteRaised,
+                        disabledContentColor = SpoolStudioColors.OnGraphiteMuted.copy(alpha = 0.55f)
+                    )
                 ) {
                     Text("Use detected color")
                 }
@@ -121,7 +142,11 @@ fun ColorPhotoDialog(
                 OutlinedButton(
                     onClick = onDismiss,
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = SpoolStudioShape.Button,
+                    border = BorderStroke(1.dp, SpoolStudioColors.GoldSoft.copy(alpha = 0.72f)),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = SpoolStudioColors.GoldSoft
+                    )
                 ) {
                     Text("Cancel")
                 }

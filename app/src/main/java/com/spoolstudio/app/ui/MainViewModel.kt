@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.spoolstudio.app.data.remote.spoolman.SpoolmanLegacyFilamentConversion
 import com.spoolstudio.app.data.remote.spoolman.SpoolmanService
 import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.domain.models.OpenSpoolData
@@ -139,9 +140,17 @@ class MainViewModel : ViewModel() {
         private set
     var moonrakerSpoolmanIntegrationEnabled by mutableStateOf<Boolean?>(null)
         private set
+    var moonrakerSetSpoolIdCommandAvailable by mutableStateOf<Boolean?>(null)
+        private set
     var moonrakerDetectedModeLabel by mutableStateOf<String?>(null)
         private set
     var isTestingMoonraker by mutableStateOf(false)
+        private set
+    var legacyFilamentConversions by mutableStateOf<List<SpoolmanLegacyFilamentConversion>>(emptyList())
+        private set
+    var isScanningLegacyFilaments by mutableStateOf(false)
+        private set
+    var isConvertingLegacyFilaments by mutableStateOf(false)
         private set
 
     //BAM
@@ -626,6 +635,7 @@ class MainViewModel : ViewModel() {
         moonrakerHasSpoolmanComponent = null
         moonrakerHasSpoolLinkComponent = null
         moonrakerSpoolmanIntegrationEnabled = null
+        moonrakerSetSpoolIdCommandAvailable = null
         moonrakerDetectedModeLabel = null
 
         val validationError = connectionTestUseCase.validationError(inputUrl)
@@ -650,6 +660,7 @@ class MainViewModel : ViewModel() {
                         moonrakerHasSpoolmanComponent = result.hasSpoolmanComponent
                         moonrakerHasSpoolLinkComponent = result.hasSpoolLinkComponent
                         moonrakerSpoolmanIntegrationEnabled = result.spoolmanIntegrationEnabled
+                        moonrakerSetSpoolIdCommandAvailable = result.setSpoolIdCommandAvailable
                         moonrakerDetectedModeLabel = result.detectedModeLabel
                     }
 
@@ -662,6 +673,7 @@ class MainViewModel : ViewModel() {
                         moonrakerHasSpoolmanComponent = null
                         moonrakerHasSpoolLinkComponent = null
                         moonrakerSpoolmanIntegrationEnabled = null
+                        moonrakerSetSpoolIdCommandAvailable = null
                         moonrakerDetectedModeLabel = null
                     }
 
@@ -730,7 +742,70 @@ class MainViewModel : ViewModel() {
         moonrakerHasSpoolmanComponent = null
         moonrakerHasSpoolLinkComponent = null
         moonrakerSpoolmanIntegrationEnabled = null
+        moonrakerSetSpoolIdCommandAvailable = null
         moonrakerDetectedModeLabel = null
+    }
+
+    fun scanLegacyFilamentConversions(targetUrl: String = spoolmanUrl) {
+        val normalizedUrl = normalizeConnectionUrl(targetUrl)
+        val validationError = connectionTestUseCase.validationError(normalizedUrl)
+        if (validationError != null) {
+            spoolmanError = validationError
+            showSnackbarMessage(validationError)
+            return
+        }
+        if (isScanningLegacyFilaments) return
+
+        viewModelScope.launch {
+            isScanningLegacyFilaments = true
+            try {
+                legacyFilamentConversions = SpoolmanService(normalizedUrl).findLegacyFilamentConversions()
+                showSnackbarMessage(
+                    if (legacyFilamentConversions.isEmpty()) {
+                        "No legacy Spoolman materials found"
+                    } else {
+                        "${legacyFilamentConversions.size} legacy filament records found"
+                    }
+                )
+            } catch (e: Exception) {
+                showSnackbarMessage("Legacy scan failed: ${e.message ?: "Unknown error"}", autoDismiss = false)
+            } finally {
+                isScanningLegacyFilaments = false
+            }
+        }
+    }
+
+    fun clearLegacyFilamentConversions() {
+        legacyFilamentConversions = emptyList()
+    }
+
+    fun convertLegacyFilaments(filamentIds: Set<Int>, targetUrl: String = spoolmanUrl) {
+        if (filamentIds.isEmpty()) {
+            showSnackbarMessage("Select at least one filament record")
+            return
+        }
+        val normalizedUrl = normalizeConnectionUrl(targetUrl)
+        val validationError = connectionTestUseCase.validationError(normalizedUrl)
+        if (validationError != null) {
+            spoolmanError = validationError
+            showSnackbarMessage(validationError)
+            return
+        }
+        if (isConvertingLegacyFilaments) return
+
+        viewModelScope.launch {
+            isConvertingLegacyFilaments = true
+            try {
+                val converted = SpoolmanService(normalizedUrl).convertLegacyFilaments(filamentIds)
+                legacyFilamentConversions = emptyList()
+                showSnackbarMessage("$converted filament records converted")
+                loadSpoolmanFilaments()
+            } catch (e: Exception) {
+                showSnackbarMessage("Legacy conversion failed: ${e.message ?: "Unknown error"}", autoDismiss = false)
+            } finally {
+                isConvertingLegacyFilaments = false
+            }
+        }
     }
 
     fun beginPrinterMappingDialogSession() {

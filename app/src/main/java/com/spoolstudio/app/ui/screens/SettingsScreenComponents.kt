@@ -1,5 +1,7 @@
 package com.spoolstudio.app.ui.screens
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.ui.draw.clip
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
@@ -17,8 +20,10 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -29,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.spoolstudio.app.ui.PrinterIntegrationMode
 import com.spoolstudio.app.ui.theme.SpoolStudioColors
+import com.spoolstudio.app.ui.theme.SpoolStudioShape
 
 @Composable
 fun SettingsSortDropdown(
@@ -93,7 +99,7 @@ private fun <T> SettingsOptionDropdown(
                 Text(
                     text = label,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = SpoolStudioColors.Ink,
+                    color = SpoolStudioColors.OnGraphite,
                     modifier = Modifier.weight(0.82f)
                 )
                 Text(
@@ -103,27 +109,35 @@ private fun <T> SettingsOptionDropdown(
                         lineHeight = 19.sp,
                         fontWeight = FontWeight.SemiBold
                     ),
-                    color = SpoolStudioColors.Ink,
+                    color = SpoolStudioColors.OnGraphite,
                     maxLines = 1,
                     modifier = Modifier.weight(1.55f)
                 )
                 Icon(
                     imageVector = Icons.Default.ArrowDropDown,
                     contentDescription = null,
-                    tint = SpoolStudioColors.InkMuted
+                    tint = SpoolStudioColors.OnGraphiteMuted
                 )
             }
-            HorizontalDivider(color = SpoolStudioColors.OutlineSoft.copy(alpha = 0.75f))
+            HorizontalDivider(color = SpoolStudioColors.GraphiteMuted.copy(alpha = 0.75f))
         }
 
         DropdownMenu(
             expanded = expanded,
-            onDismissRequest = onExpandedChange
+            onDismissRequest = onExpandedChange,
+            modifier = Modifier
+                .clip(SpoolStudioShape.Small)
+                .background(SpoolStudioColors.Graphite)
+                .border(1.dp, SpoolStudioColors.GraphiteMuted.copy(alpha = 0.85f), SpoolStudioShape.Small)
         ) {
             options.forEach { (optionLabel, value) ->
                 DropdownMenuItem(
-                    text = { Text(optionLabel) },
-                    onClick = { onOptionSelected(value) }
+                    text = { Text(optionLabel, color = SpoolStudioColors.OnGraphite) },
+                    onClick = { onOptionSelected(value) },
+                    colors = MenuDefaults.itemColors(
+                        textColor = SpoolStudioColors.OnGraphite,
+                        trailingIconColor = SpoolStudioColors.OnGraphiteMuted
+                    )
                 )
             }
         }
@@ -175,12 +189,19 @@ fun SettingsSwitchRow(
         Text(
             text = label,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface
+            color = SpoolStudioColors.OnGraphite
         )
 
         Switch(
             checked = checked,
-            onCheckedChange = onCheckedChange
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Color.White,
+                checkedTrackColor = SpoolStudioColors.Gold,
+                uncheckedThumbColor = SpoolStudioColors.Surface,
+                uncheckedTrackColor = SpoolStudioColors.GraphiteMuted,
+                uncheckedBorderColor = SpoolStudioColors.GraphiteMuted
+            )
         )
     }
 }

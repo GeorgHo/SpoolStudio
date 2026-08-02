@@ -239,6 +239,16 @@ fun SpoolmanFilamentDropdown(
                     focusManager.clearFocus()
                     expanded = false
                 },
+                itemContent = { filament ->
+                    SpoolmanDialogSpoolRow(
+                        filament = filament,
+                        onClick = {
+                            onFilamentSelected(filament)
+                            focusManager.clearFocus()
+                            expanded = false
+                        }
+                    )
+                },
                 topContent = {
                     if (onClearAll != null) {
                         DropdownDialogItem(
@@ -353,6 +363,16 @@ private fun DarkSpoolmanDropdown(
                     focusManager.clearFocus()
                     onExpandedChange(false)
                 },
+                itemContent = { filament ->
+                    SpoolmanDialogSpoolRow(
+                        filament = filament,
+                        onClick = {
+                            onFilamentSelected(filament)
+                            focusManager.clearFocus()
+                            onExpandedChange(false)
+                        }
+                    )
+                },
                 topContent = {
                     if (onClearAll != null) {
                         DropdownDialogItem(
@@ -415,5 +435,103 @@ private fun SelectorPill(
             color = pillTextColor,
             maxLines = 1
         )
+    }
+}
+
+@Composable
+private fun SpoolmanDialogSpoolRow(
+    filament: FilamentSpool,
+    onClick: () -> Unit
+) {
+    val materialParts = listOf(
+        filament.brand,
+        listOf(filament.material, filament.materialModifier)
+            .filter { it.isNotBlank() && !it.equals("None", ignoreCase = true) }
+            .joinToString(" "),
+        filament.variant
+    ).filter { it.isNotBlank() && !it.equals("None", ignoreCase = true) }
+    val title = filament.spoolmanName?.takeIf(String::isNotBlank) ?: filament.displayName
+    val subtitle = materialParts.joinToString(" / ")
+    val idText = filament.id?.let { "ID #$it" } ?: "No ID"
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(SpoolStudioShape.Field)
+            .background(SpoolStudioColors.GraphiteRaised.copy(alpha = 0.72f))
+            .border(
+                width = 1.dp,
+                color = SpoolStudioColors.GraphiteMuted.copy(alpha = 0.85f),
+                shape = SpoolStudioShape.Field
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier.size(width = 56.dp, height = 60.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            SpoolStudioLogo(
+                color = dialogSpoolColor(filament.colorHex),
+                logoSize = 48.dp,
+                showTitle = false,
+                modifier = Modifier.padding(top = 6.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.width(10.dp))
+
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = SpoolStudioColors.OnGraphite,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = SpoolStudioColors.OnGraphiteMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+
+        Spacer(modifier = Modifier.width(10.dp))
+
+        Box(
+            modifier = Modifier
+                .clip(SpoolStudioShape.Small)
+                .background(SpoolStudioColors.Graphite.copy(alpha = 0.78f))
+                .border(
+                    width = 1.dp,
+                    color = SpoolStudioColors.GraphiteMuted.copy(alpha = 0.9f),
+                    shape = SpoolStudioShape.Small
+                )
+                .padding(horizontal = 10.dp, vertical = 6.dp)
+        ) {
+            Text(
+                text = idText,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = SpoolStudioColors.OnGraphite,
+                maxLines = 1
+            )
+        }
+    }
+}
+
+private fun dialogSpoolColor(colorHex: String?): Color {
+    val normalized = colorHex?.trim()?.removePrefix("#").orEmpty()
+    return if (normalized.matches(Regex("^[A-Fa-f0-9]{6}$"))) {
+        Color(android.graphics.Color.parseColor("#$normalized"))
+    } else {
+        Color(0xFF4A423D)
     }
 }

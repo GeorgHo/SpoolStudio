@@ -68,9 +68,9 @@ class PrinterMappingRepository(
     ): PrinterMappingSnapshot {
         val service = serviceFactory(baseUrl)
         ensureSpoolLinkFirmware(service)
-        service.setSpoolLinkToolSpool(toolheadIndex, spoolId)
+        val mapping = service.setSpoolLinkToolSpool(toolheadIndex, spoolId)
 
-        return service.getSpoolLinkToolMapping()
+        return mapping
             .toPrinterMappingSnapshot(
                 activeSpoolId = null,
                 integrationMode = ResolvedPrinterIntegrationMode.PAXX12_SPOOL_LINK
@@ -88,10 +88,11 @@ class PrinterMappingRepository(
         if (
             printerInfo.hasSpoolmanComponent == false ||
             printerInfo.hasSpoolLinkComponent == false ||
-            printerInfo.spoolmanIntegrationEnabled == false
+            printerInfo.spoolmanIntegrationEnabled == false ||
+            printerInfo.setSpoolIdCommandAvailable != true
         ) {
             throw IllegalStateException(
-                "Printer Spoolman integration is not ready. Enable Spoolman Integration in the printer config and restart Klipper/Moonraker."
+                "Printer Spoolman integration is not ready. Enable Spoolman Integration and AFC options in the printer config, then restart Klipper/Moonraker."
             )
         }
     }

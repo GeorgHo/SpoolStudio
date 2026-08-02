@@ -29,12 +29,16 @@ fun Map<String, JsonElement>?.toRequestExtraMap(): MutableMap<String, Any?> =
         }
     }?.toMutableMap() ?: mutableMapOf()
 
-fun normalizeCardUid(value: String?): String =
-    value
-        ?.trim()
-        ?.filter { it.isDigit() || it.uppercaseChar() in 'A'..'F' }
-        ?.uppercase()
-        .orEmpty()
+fun normalizeCardUid(value: String?): String {
+    val trimmed = value?.trim().orEmpty()
+    val withoutKnownPrefix = trimmed
+        .replace(Regex("""(?i)^card[_\s-]*uid\s*[:=]\s*"""), "")
+        .replace(Regex("""(?i)^uid\s*[:=]\s*"""), "")
+
+    return withoutKnownPrefix
+        .filter { it.isDigit() || it.uppercaseChar() in 'A'..'F' }
+        .uppercase()
+}
 
 fun parseCardUids(value: String?): List<String> =
     value

@@ -324,7 +324,10 @@ private fun AssignToolheadSpoolDialog(
     onDismiss: () -> Unit,
     onSpoolSelected: (Int?) -> Unit
 ) {
-    val filteredSpools = filterSpoolmanDropdownFilaments(spools, searchQuery)
+    val paxx12Spools = remember(spools) {
+        spools.filter { spool -> spool.isPaxx12FieldFormat }
+    }
+    val filteredSpools = filterSpoolmanDropdownFilaments(paxx12Spools, searchQuery)
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -379,7 +382,7 @@ private fun AssignToolheadSpoolDialog(
                     }
 
                     Text(
-                        text = "Manual assignments can be replaced when the printer reads an RFID tag for this toolhead.",
+                        text = "Only converted paxx12-format spools are shown. Spools without UID data can still be replaced when the printer reads an RFID tag.",
                         style = MaterialTheme.typography.bodySmall,
                         color = SpoolStudioColors.OnGraphiteMuted
                     )
@@ -426,11 +429,33 @@ private fun AssignToolheadSpoolDialog(
                             .heightIn(max = 300.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
+                        if (filteredSpools.isEmpty()) {
+                            item {
+                                Text(
+                                    text = if (paxx12Spools.isEmpty()) {
+                                        "No converted paxx12-format spools found."
+                                    } else {
+                                        "No converted spool matches the search."
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = SpoolStudioColors.OnGraphiteMuted,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(
+                                            SpoolStudioColors.GraphiteRaised.copy(alpha = 0.52f),
+                                            SpoolStudioShape.Small
+                                        )
+                                        .padding(horizontal = 12.dp, vertical = 10.dp)
+                                )
+                            }
+                        }
                         items(filteredSpools) { spool ->
+                            val hasUid = spool.cardUids.isNotEmpty()
                             AssignSpoolRow(
                                 title = spool.spoolmanName?.takeIf(String::isNotBlank) ?: spool.displayName,
                                 subtitle = spoolmanDropdownListLabel(spool),
                                 idText = "ID #${spool.id}",
+                                warningText = if (hasUid) null else "No UID stored",
                                 accentColor = resolveSpoolColor(spool.colorHex),
                                 onClick = { onSpoolSelected(spool.id) }
                             )
@@ -447,6 +472,7 @@ private fun AssignSpoolRow(
     title: String,
     subtitle: String,
     idText: String,
+    warningText: String? = null,
     accentColor: Color,
     onClick: () -> Unit
 ) {
@@ -465,13 +491,14 @@ private fun AssignSpoolRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
-            modifier = Modifier.width(54.dp),
+            modifier = Modifier.size(width = 56.dp, height = 60.dp),
             contentAlignment = Alignment.Center
         ) {
             SpoolStudioLogo(
                 color = accentColor,
-                logoSize = 46.dp,
-                showTitle = false
+                logoSize = 48.dp,
+                showTitle = false,
+                modifier = Modifier.padding(top = 6.dp)
             )
         }
 
@@ -496,6 +523,15 @@ private fun AssignSpoolRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+            if (warningText != null) {
+                Text(
+                    text = warningText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = SpoolStudioColors.GoldSoft,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
 
         Spacer(modifier = Modifier.width(10.dp))

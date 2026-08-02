@@ -19,6 +19,7 @@ import com.spoolstudio.app.domain.models.normalizeCardUid
 import com.spoolstudio.app.domain.models.normalizeSpoolLinkFilamentFields
 import com.spoolstudio.app.domain.models.parseCardUids
 import com.spoolstudio.app.domain.models.spoolLinkSpoolmanFields
+import com.spoolstudio.app.domain.models.splitLegacyMaterialAndVariant
 import com.spoolstudio.app.domain.models.stringValue
 import com.spoolstudio.app.domain.models.toRequestExtraMap
 import okhttp3.OkHttpClient
@@ -119,6 +120,43 @@ data class SpoolmanCatalog(
     val materialModifierFieldAvailable: Boolean = false
 )
 
+data class SpoolmanLegacyFilamentConversion(
+    val filamentId: Int,
+    val name: String,
+    val vendorName: String,
+    val spoolIds: List<Int>,
+    val currentMaterial: String,
+    val currentVariant: String,
+    val currentMaterialModifier: String,
+    val targetMaterial: String,
+    val targetVariant: String,
+    val targetMaterialModifier: String
+) {
+    val affectedSpoolCount: Int
+        get() = spoolIds.size
+
+    val currentLabel: String
+        get() {
+            val (_, embeddedVariant) = splitLegacyMaterialAndVariant(currentMaterial)
+            return buildList {
+                add(currentMaterial)
+                currentMaterialModifier.takeIf { it.isNotBlank() }?.let { add(it) }
+                currentVariant
+                    .takeIf { it.isNotBlank() }
+                    .takeUnless { it.equals("Basic", ignoreCase = true) }
+                    .takeUnless { it.equals(embeddedVariant, ignoreCase = true) }
+                    ?.let { add(it) }
+            }.joinToString(" / ")
+        }
+
+    val targetLabel: String
+        get() = buildList {
+            add(targetMaterial)
+            targetMaterialModifier.takeIf { it.isNotBlank() }?.let { add(it) }
+            targetVariant.takeIf { it.isNotBlank() }?.let { add(it) }
+        }.joinToString(" / ")
+}
+
 class SpoolmanService(private val baseUrl: String) {
     private var cachedCatalog: SpoolmanCatalog? = null
     private var lastFetchTime = 0L
@@ -140,7 +178,10 @@ class SpoolmanService(private val baseUrl: String) {
 
     companion object {
         private const val PAGE_SIZE = 100
+        private const val SPOOL_ENTITY_TYPE = "spool"
         private const val FILAMENT_ENTITY_TYPE = "filament"
+        private const val CARD_UIDS_FIELD_KEY = "card_uids"
+        private const val VARIANT_FIELD_KEY = "variant"
         const val MATERIAL_MODIFIER_FIELD_KEY = "material_modifier"
     }
 
@@ -211,21 +252,137 @@ class SpoolmanService(private val baseUrl: String) {
         hasMaterialModifierField(fetchExtraFields(FILAMENT_ENTITY_TYPE))
 
     suspend fun createFilamentMaterialModifierField(): Boolean {
-        val response = api.addOrUpdateExtraField(
+        ensureExtraTextField(
             entityType = FILAMENT_ENTITY_TYPE,
             key = MATERIAL_MODIFIER_FIELD_KEY,
-            request = SpoolmanExtraFieldRequest(
-                name = "Material modifier",
-                order = 20,
-                field_type = "text"
-            )
+            name = "Material modifier",
+            order = 20,
+            errorContext = "Material modifier field"
         )
-        if (!response.isSuccessful) {
-            val errorText = response.errorBody()?.string()
-            throw IllegalStateException("Material modifier field could not be created (${response.code()}): $errorText")
-        }
         cachedCatalog = null
         return hasFilamentMaterialModifierField()
+    }
+
+    suspend fun ensurePaxx12SpoolLinkFields() {
+        ensureExtraTextField(
+            entityType = SPOOL_ENTITY_TYPE,
+            key = CARD_UIDS_FIELD_KEY,
+            name = "Card UIDs",
+            order = 1,
+            defaultValue = encodeSpoolmanExtraString(""),
+            errorContext = "Paxx12 Card UIDs field"
+        )
+        ensureExtraTextField(
+            entityType = FILAMENT_ENTITY_TYPE,
+            key = VARIANT_FIELD_KEY,
+            name = "Variant",
+            order = 1,
+            defaultValue = encodeSpoolmanExtraString(""),
+            errorContext = "Paxx12 Variant field"
+        )
+    }
+
+    suspend fun findLegacyFilamentConversions(): List<SpoolmanLegacyFilamentConversion> {
+        val rawSpools = fetchAllRawSpools(includeArchived = true)
+        return rawSpools
+            .groupBy { it.filament.id }
+            .mapNotNull { (_, spools) ->
+                val filament = spools.firstOrNull()?.filament ?: return@mapNotNull null
+                buildLegacyFilamentConversion(
+                    filament = filament,
+                    spoolIds = spools.mapNotNull { it.id }.distinct().sorted()
+                )
+            }
+            .sortedWith(compareBy<SpoolmanLegacyFilamentConversion> { it.vendorName.lowercase() }
+                .thenBy { it.name.lowercase() }
+                .thenBy { it.filamentId })
+    }
+
+    suspend fun convertLegacyFilaments(filamentIds: Set<Int>): Int {
+        if (filamentIds.isEmpty()) return 0
+        val candidates = findLegacyFilamentConversions()
+            .filter { it.filamentId in filamentIds }
+        if (candidates.isEmpty()) return 0
+
+        ensurePaxx12SpoolLinkFields()
+        if (candidates.any { it.targetMaterialModifier.isNotBlank() }) {
+            createFilamentMaterialModifierField()
+        }
+
+        candidates.forEach { candidate ->
+            val response = api.getFilament(candidate.filamentId)
+            if (!response.isSuccessful) {
+                val errorText = response.errorBody()?.string()
+                throw IllegalStateException(
+                    "Filament ${candidate.filamentId} could not be loaded for conversion (${response.code()}): $errorText"
+                )
+            }
+            val filament = response.body()
+                ?: throw IllegalStateException("Filament ${candidate.filamentId} conversion response was empty")
+            val extra = filament.extra.toRequestExtraMap()
+            extra[VARIANT_FIELD_KEY] = encodeSpoolmanExtraString(candidate.targetVariant.ifBlank { "Basic" })
+            if (candidate.targetMaterialModifier.isBlank()) {
+                extra.remove(MATERIAL_MODIFIER_FIELD_KEY)
+            } else {
+                extra[MATERIAL_MODIFIER_FIELD_KEY] = encodeSpoolmanExtraString(candidate.targetMaterialModifier)
+            }
+
+            val updateResponse = api.updateFilament(
+                candidate.filamentId,
+                mapOf(
+                    "material" to candidate.targetMaterial,
+                    "extra" to extra
+                )
+            )
+            if (!updateResponse.isSuccessful) {
+                val errorText = updateResponse.errorBody()?.string()
+                throw IllegalStateException(
+                    "Filament ${candidate.filamentId} could not be converted (${updateResponse.code()}): $errorText"
+                )
+            }
+        }
+
+        cachedCatalog = null
+        return candidates.size
+    }
+
+    private fun buildLegacyFilamentConversion(
+        filament: SpoolmanFilament,
+        spoolIds: List<Int>
+    ): SpoolmanLegacyFilamentConversion? {
+        val rawMaterial = normalizeText(filament.material)
+        if (rawMaterial.isBlank()) return null
+
+        val (legacyMaterial, legacyVariant) = splitLegacyMaterialAndVariant(rawMaterial)
+        val currentVariant = filament.extra.stringValue(VARIANT_FIELD_KEY)
+            ?: legacyVariant.ifBlank { "Basic" }
+        val currentModifier = filament.extra.stringValue(MATERIAL_MODIFIER_FIELD_KEY).orEmpty()
+        val fields = spoolLinkSpoolmanFields(
+            material = legacyMaterial,
+            variant = currentVariant,
+            materialModifier = currentModifier,
+            allowMaterialModifier = true
+        )
+
+        val needsConversion =
+            !rawMaterial.equals(fields.material, ignoreCase = true) ||
+                !currentVariant.equals(fields.variant, ignoreCase = true) ||
+                !currentModifier.equals(fields.materialModifier, ignoreCase = true)
+
+        if (!needsConversion) return null
+
+        return SpoolmanLegacyFilamentConversion(
+            filamentId = filament.id,
+            name = filament.name.ifBlank { "Filament #${filament.id}" },
+            vendorName = filament.vendor?.name.orEmpty().ifBlank { "Unknown brand" },
+            spoolIds = spoolIds,
+            currentMaterial = rawMaterial,
+            currentVariant = currentVariant,
+            currentMaterialModifier = currentModifier,
+            targetMaterial = fields.material,
+            targetVariant = fields.variant.ifBlank { "Basic" },
+            targetMaterialModifier = fields.materialModifier
+        )
     }
 
     private suspend fun fetchExtraFields(entityType: String): List<SpoolmanExtraField> {
@@ -235,6 +392,40 @@ class SpoolmanService(private val baseUrl: String) {
         } catch (_: Exception) {
             emptyList()
         }
+    }
+
+    private suspend fun ensureExtraTextField(
+        entityType: String,
+        key: String,
+        name: String,
+        order: Int,
+        defaultValue: String? = null,
+        errorContext: String
+    ) {
+        val fields = fetchExtraFields(entityType)
+        if (fields.any { field ->
+                field.key.equals(key, ignoreCase = true) &&
+                    field.field_type.equals("text", ignoreCase = true)
+            }
+        ) {
+            return
+        }
+
+        val response = api.addOrUpdateExtraField(
+            entityType = entityType,
+            key = key,
+            request = SpoolmanExtraFieldRequest(
+                name = name,
+                order = order,
+                field_type = "text",
+                default_value = defaultValue
+            )
+        )
+        if (!response.isSuccessful) {
+            val errorText = response.errorBody()?.string()
+            throw IllegalStateException("$errorContext could not be created (${response.code()}): $errorText")
+        }
+        cachedCatalog = null
     }
 
     private fun hasMaterialModifierField(fields: List<SpoolmanExtraField>): Boolean =
@@ -593,6 +784,7 @@ class SpoolmanService(private val baseUrl: String) {
     suspend fun assignCardUidToSpool(spoolId: Int, cardUid: String) {
         val normalizedUid = normalizeCardUid(cardUid)
         if (normalizedUid.isBlank()) return
+        ensurePaxx12SpoolLinkFields()
 
         val targetResponse = api.getSpool(spoolId)
         if (!targetResponse.isSuccessful) {

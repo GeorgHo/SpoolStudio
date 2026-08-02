@@ -3,6 +3,7 @@ package com.spoolstudio.app.ui.screens
 import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.domain.models.Material
 import com.spoolstudio.app.ui.SpoolMode
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -20,7 +21,7 @@ class WriteOpenSpoolTagUseCaseTest {
     )
 
     @Test
-    fun buildPayloadIncludesSelectedSpoolIdForUpdateMode() {
+    fun buildPayloadOmitsSelectedSpoolIdForUpdateMode() {
         val form = formState().apply {
             filamentType = "PLA"
             variant = "Basic"
@@ -49,7 +50,7 @@ class WriteOpenSpoolTagUseCaseTest {
 
         assertNotNull(payload)
         assertTrue(payload!!.contains("type=PLA"))
-        assertTrue(payload.contains("spool_id=42"))
+        assertFalse(payload.contains("spool_id=42"))
         assertTrue(payload.contains("lot_nr=LOT-42"))
     }
 

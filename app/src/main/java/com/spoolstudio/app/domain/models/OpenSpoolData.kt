@@ -29,7 +29,6 @@ data class OpenSpoolData(
             put("max_temp", maxTemp)
             bedMinTemp?.let { put("bed_min_temp", it) }
             bedMaxTemp?.let { put("bed_max_temp", it) }
-            spoolId?.let { put("spool_id", it) }
             lotNr?.let { put("lot_nr", it) }
             cardUid?.let { put("card_uid", normalizeCardUid(it)) }
             // if (subtype.isNotEmpty()) put("subtype", subtype)
@@ -67,22 +66,6 @@ data class OpenSpoolData(
             }
         }
 
-        /*
-        fun toOpenSpoolData(spool: FilamentSpool): OpenSpoolData {
-            return OpenSpoolData(
-                type = spool.material,
-                colorHex = spool.colorHex,
-                brand = spool.brand,
-                minTemp = spool.minTemp?.toString() ?: "200",
-                maxTemp = spool.maxTemp?.toString() ?: "220",
-                bedMinTemp = spool.bedMinTemp?.toString(),
-                bedMaxTemp = spool.bedMaxTemp?.toString(),
-                subtype = spool.variant.ifBlank { "Basic" },
-                spoolId = spool.id?.toString(),
-                lotNr = spool.lotNr
-            )
-        }
-        */
         fun toOpenSpoolData(spool: FilamentSpool): OpenSpoolData {
             val fields = spoolLinkTagFields(spool.material, spool.variant, spool.materialModifier)
 
@@ -95,7 +78,7 @@ data class OpenSpoolData(
                 bedMinTemp = spool.bedMinTemp?.toString(),
                 bedMaxTemp = spool.bedMaxTemp?.toString(),
                 subtype = fields.variant.ifBlank { "Basic" },
-                spoolId = spool.id?.toString(),
+                spoolId = null,
                 lotNr = spool.lotNr,
                 cardUid = spool.cardUids.firstOrNull()
             )

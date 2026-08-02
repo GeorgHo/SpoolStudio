@@ -67,7 +67,11 @@ fun MainScreenContent(
             moonrakerHasSpoolmanComponent = viewModel.moonrakerHasSpoolmanComponent,
             moonrakerHasSpoolLinkComponent = viewModel.moonrakerHasSpoolLinkComponent,
             moonrakerSpoolmanIntegrationEnabled = viewModel.moonrakerSpoolmanIntegrationEnabled,
+            moonrakerSetSpoolIdCommandAvailable = viewModel.moonrakerSetSpoolIdCommandAvailable,
             moonrakerDetectedModeLabel = viewModel.moonrakerDetectedModeLabel,
+            legacyFilamentConversions = viewModel.legacyFilamentConversions,
+            isScanningLegacyFilaments = viewModel.isScanningLegacyFilaments,
+            isConvertingLegacyFilaments = viewModel.isConvertingLegacyFilaments,
             onSnackbarDismiss = { viewModel.dismissSnackbar() },
 
             onTestMoonrakerConnection = { url ->
@@ -79,6 +83,15 @@ fun MainScreenContent(
             },
             onCreateMaterialModifierField = { url ->
                 viewModel.createMaterialModifierField(context, url)
+            },
+            onScanLegacyFilamentConversions = { url ->
+                viewModel.scanLegacyFilamentConversions(url)
+            },
+            onClearLegacyFilamentConversions = {
+                viewModel.clearLegacyFilamentConversions()
+            },
+            onConvertLegacyFilaments = { url, ids ->
+                viewModel.convertLegacyFilaments(ids, url)
             },
             onClearSpoolmanStatus = {
                 viewModel.clearSpoolmanStatus()
@@ -122,7 +135,8 @@ fun MainScreenContent(
             isPrinterSpoolmanReady = viewModel.moonrakerSupportsSpoolLink == true &&
                 viewModel.moonrakerHasSpoolmanComponent == true &&
                 viewModel.moonrakerHasSpoolLinkComponent == true &&
-                viewModel.moonrakerSpoolmanIntegrationEnabled == true,
+                viewModel.moonrakerSpoolmanIntegrationEnabled == true &&
+                viewModel.moonrakerSetSpoolIdCommandAvailable == true,
             readData = viewModel.readData,
             rawReadText = viewModel.rawReadText,
             rawReadVersion = viewModel.rawReadVersion,

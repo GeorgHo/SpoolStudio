@@ -1,6 +1,9 @@
 package com.spoolstudio.app.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -23,6 +27,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,6 +48,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
@@ -56,6 +63,13 @@ import com.spoolstudio.app.ui.theme.SpoolStudioColors
 import com.spoolstudio.app.ui.theme.SpoolStudioShape
 import com.spoolstudio.app.ui.theme.spoolStudioBackground
 import androidx.compose.ui.window.Dialog
+import com.spoolstudio.app.data.remote.spoolman.SpoolmanLegacyFilamentConversion
+
+private enum class LegacyConversionSortMode(val label: String) {
+    SPOOL_ID("Spool ID"),
+    FILAMENT_ID("Filament ID"),
+    BRAND("Brand")
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,10 +101,17 @@ fun SettingsScreen(
     moonrakerHasSpoolmanComponent: Boolean?,
     moonrakerHasSpoolLinkComponent: Boolean?,
     moonrakerSpoolmanIntegrationEnabled: Boolean?,
+    moonrakerSetSpoolIdCommandAvailable: Boolean?,
     moonrakerDetectedModeLabel: String?,
+    legacyFilamentConversions: List<SpoolmanLegacyFilamentConversion>,
+    isScanningLegacyFilaments: Boolean,
+    isConvertingLegacyFilaments: Boolean,
     onSnackbarDismiss: () -> Unit,
     onTestSpoolmanConnection: (String) -> Unit,
     onCreateMaterialModifierField: (String) -> Unit,
+    onScanLegacyFilamentConversions: (String) -> Unit,
+    onClearLegacyFilamentConversions: () -> Unit,
+    onConvertLegacyFilaments: (String, Set<Int>) -> Unit,
     onTestMoonrakerConnection: (String) -> Unit,
     onSave: (String, String, PrinterIntegrationMode, String, String, Boolean) -> Unit,
     spoolmanStatus: String? = null,
@@ -114,7 +135,9 @@ fun SettingsScreen(
     var tempSort by remember(spoolmanSortBy) { mutableStateOf(spoolmanSortBy.ifBlank { "" }) }
     var sortExpanded by remember { mutableStateOf(false) }
     var showSpoolmanInfo by remember { mutableStateOf(false) }
+    var showMoonrakerInfo by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
+    var showLegacyConversionDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val versionName = remember(context) {
         runCatching {
@@ -129,6 +152,12 @@ fun SettingsScreen(
     }
     var lastTestedMoonrakerUrl by remember(moonrakerUrl) {
         mutableStateOf(normalizeMoonrakerSettingsUrl(moonrakerUrl))
+    }
+
+    LaunchedEffect(legacyFilamentConversions) {
+        if (legacyFilamentConversions.isNotEmpty()) {
+            showLegacyConversionDialog = true
+        }
     }
 
     val sortOptions = listOf(
@@ -227,17 +256,6 @@ fun SettingsScreen(
                     isError = spoolmanError != null
                 )
 
-                SettingsMaterialModifierFieldStatus(
-                    available = spoolmanMaterialModifierFieldAvailable,
-                    declined = materialModifierFieldDeclined,
-                    isCreating = isCreatingMaterialModifierField,
-                    onCreate = {
-                        val normalizedSpoolmanUrl = normalizeSettingsUrl(tempUrl)
-                        tempUrl = normalizedSpoolmanUrl
-                        onCreateMaterialModifierField(normalizedSpoolmanUrl)
-                    }
-                )
-
                 SettingsSecondaryButton(
                     text = if (showSpoolmanInfo) "Hide Spoolman Info" else "Show Spoolman Info",
                     onClick = { showSpoolmanInfo = !showSpoolmanInfo }
@@ -255,6 +273,31 @@ fun SettingsScreen(
                         cardUidFieldSpoolCount = spoolmanCardUidFieldSpoolCount,
                         cardUidFieldKeys = spoolmanCardUidFieldKeys,
                         sortLabel = sortOptions.firstOrNull { it.second == tempSort }?.first ?: "Custom"
+                    )
+
+                    SettingsMaterialModifierFieldStatus(
+                        available = spoolmanMaterialModifierFieldAvailable,
+                        declined = materialModifierFieldDeclined,
+                        isCreating = isCreatingMaterialModifierField,
+                        onCreate = {
+                            val normalizedSpoolmanUrl = normalizeSettingsUrl(tempUrl)
+                            tempUrl = normalizedSpoolmanUrl
+                            onCreateMaterialModifierField(normalizedSpoolmanUrl)
+                        }
+                    )
+
+                    SettingsSecondaryButton(
+                        text = if (isScanningLegacyFilaments) {
+                            "Scanning legacy materials..."
+                        } else {
+                            "Scan legacy Spoolman materials"
+                        },
+                        enabled = !isScanningLegacyFilaments && !isConvertingLegacyFilaments,
+                        onClick = {
+                            val normalizedSpoolmanUrl = normalizeSettingsUrl(tempUrl)
+                            tempUrl = normalizedSpoolmanUrl
+                            onScanLegacyFilamentConversions(normalizedSpoolmanUrl)
+                        }
                     )
                 }
             }
@@ -301,16 +344,12 @@ fun SettingsScreen(
                     isError = moonrakerError != null
                 )
 
-                if (moonrakerError == null && (
-                    moonrakerFirmwareVersion != null ||
-                        moonrakerVersion != null ||
-                        moonrakerSupportsSpoolLink != null ||
-                        moonrakerHasSpoolmanComponent != null ||
-                        moonrakerHasSpoolLinkComponent != null ||
-                        moonrakerSpoolmanIntegrationEnabled != null ||
-                        moonrakerDetectedModeLabel != null
-                    )
-                ) {
+                SettingsSecondaryButton(
+                    text = if (showMoonrakerInfo) "Hide Moonraker Info" else "Show Moonraker Info",
+                    onClick = { showMoonrakerInfo = !showMoonrakerInfo }
+                )
+
+                if (showMoonrakerInfo) {
                     SettingsMoonrakerInfoSummary(
                         firmwareVersion = moonrakerFirmwareVersion,
                         moonrakerVersion = moonrakerVersion,
@@ -318,6 +357,7 @@ fun SettingsScreen(
                         hasSpoolmanComponent = moonrakerHasSpoolmanComponent,
                         hasSpoolLinkComponent = moonrakerHasSpoolLinkComponent,
                         spoolmanIntegrationEnabled = moonrakerSpoolmanIntegrationEnabled,
+                        setSpoolIdCommandAvailable = moonrakerSetSpoolIdCommandAvailable,
                         detectedModeLabel = moonrakerDetectedModeLabel
                     )
                 }
@@ -405,6 +445,23 @@ fun SettingsScreen(
                 onDismiss = { showAboutDialog = false }
             )
         }
+
+        if (showLegacyConversionDialog && legacyFilamentConversions.isNotEmpty()) {
+            LegacyFilamentConversionDialog(
+                candidates = legacyFilamentConversions,
+                isConverting = isConvertingLegacyFilaments,
+                onDismiss = {
+                    showLegacyConversionDialog = false
+                    onClearLegacyFilamentConversions()
+                },
+                onConvert = { selectedIds ->
+                    val normalizedSpoolmanUrl = normalizeSettingsUrl(tempUrl)
+                    tempUrl = normalizedSpoolmanUrl
+                    onConvertLegacyFilaments(normalizedSpoolmanUrl, selectedIds)
+                    showLegacyConversionDialog = false
+                }
+            )
+        }
     }
 }
 
@@ -437,7 +494,7 @@ private fun SettingsTextField(
                     fontSize = 14.sp,
                     lineHeight = 17.sp
                 ),
-                color = SpoolStudioColors.Ink,
+                color = SpoolStudioColors.OnGraphite,
                 maxLines = 1,
                 modifier = Modifier.width(112.dp)
             )
@@ -452,19 +509,20 @@ private fun SettingsTextField(
                     fontSize = 15.sp,
                     lineHeight = 19.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = SpoolStudioColors.Ink
+                    color = SpoolStudioColors.OnGraphite
                 ),
+                cursorBrush = SolidColor(SpoolStudioColors.AccentCyan),
                 modifier = Modifier
                     .weight(1.75f)
                     .clipToBounds()
             )
         }
-        HorizontalDivider(color = SpoolStudioColors.OutlineSoft.copy(alpha = 0.75f))
+        HorizontalDivider(color = SpoolStudioColors.GraphiteMuted.copy(alpha = 0.75f))
         if (supportingText != null) {
             Text(
                 text = supportingText,
                 style = MaterialTheme.typography.bodySmall,
-                color = SpoolStudioColors.InkMuted,
+                color = SpoolStudioColors.OnGraphiteMuted,
                 modifier = Modifier.padding(top = 4.dp)
             )
         }
@@ -502,19 +560,20 @@ private fun SettingsPanel(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = SpoolStudioShape.Small,
-        colors = CardDefaults.cardColors(containerColor = SpoolStudioColors.Surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        shape = SpoolStudioShape.Dialog,
+        colors = CardDefaults.cardColors(containerColor = SpoolStudioColors.Graphite),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        border = BorderStroke(1.dp, SpoolStudioColors.GraphiteMuted.copy(alpha = 0.85f))
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(9.dp)
         ) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp, lineHeight = 22.sp),
                 fontWeight = FontWeight.SemiBold,
-                color = SpoolStudioColors.Ink
+                color = SpoolStudioColors.OnGraphite
             )
 
             content()
@@ -538,14 +597,14 @@ private fun SettingsMaterialModifierFieldStatus(
     val statusColor = when {
         available == true && !declined -> SpoolStudioColors.Success
         declined || available == false -> SpoolStudioColors.Error
-        else -> SpoolStudioColors.InkMuted
+        else -> SpoolStudioColors.OnGraphiteMuted
     }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .background(
-                color = SpoolStudioColors.SurfaceMuted.copy(alpha = 0.45f),
+                color = SpoolStudioColors.GraphiteRaised.copy(alpha = 0.62f),
                 shape = SpoolStudioShape.Small
             )
             .padding(horizontal = 10.dp, vertical = 8.dp),
@@ -559,7 +618,7 @@ private fun SettingsMaterialModifierFieldStatus(
             Text(
                 text = "Material modifier",
                 style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
-                color = SpoolStudioColors.Ink,
+                color = SpoolStudioColors.OnGraphite,
                 modifier = Modifier.width(112.dp)
             )
             Text(
@@ -575,7 +634,7 @@ private fun SettingsMaterialModifierFieldStatus(
             Text(
                 text = "Create this Spoolman extra field to keep modifiers such as Plus or HS outside printer-safe material data.",
                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 14.sp),
-                color = SpoolStudioColors.InkMuted
+                color = SpoolStudioColors.OnGraphiteMuted
             )
         }
 
@@ -606,7 +665,7 @@ private fun SpoolmanInfoSummary(
         modifier = Modifier
             .fillMaxWidth()
             .background(
-                color = SpoolStudioColors.SurfaceMuted.copy(alpha = 0.45f),
+                color = SpoolStudioColors.GraphiteRaised.copy(alpha = 0.62f),
                 shape = SpoolStudioShape.Small
             )
             .padding(horizontal = 10.dp, vertical = 8.dp),
@@ -632,7 +691,7 @@ private fun SpoolmanInfoSummary(
         Text(
             text = "Values are based on the currently loaded Spoolman catalog.",
             style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 14.sp),
-            color = SpoolStudioColors.InkMuted,
+            color = SpoolStudioColors.OnGraphiteMuted,
             modifier = Modifier.padding(top = 6.dp)
         )
     }
@@ -646,13 +705,14 @@ private fun SettingsMoonrakerInfoSummary(
     hasSpoolmanComponent: Boolean?,
     hasSpoolLinkComponent: Boolean?,
     spoolmanIntegrationEnabled: Boolean?,
+    setSpoolIdCommandAvailable: Boolean?,
     detectedModeLabel: String?
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .background(
-                color = SpoolStudioColors.SurfaceMuted.copy(alpha = 0.45f),
+                color = SpoolStudioColors.GraphiteRaised.copy(alpha = 0.62f),
                 shape = SpoolStudioShape.Small
             )
             .padding(horizontal = 10.dp, vertical = 8.dp),
@@ -690,9 +750,21 @@ private fun SettingsMoonrakerInfoSummary(
                 null -> "Not tested"
             }
         )
+        SettingsInfoRow(
+            label = "Assignment command",
+            value = when (setSpoolIdCommandAvailable) {
+                true -> "SET_SPOOL_ID loaded"
+                false -> "SET_SPOOL_ID missing"
+                null -> "Not tested"
+            }
+        )
 
         val integrationText = when (spoolmanIntegrationEnabled) {
-            true -> "Ready: printer Spoolman integration is active."
+            true -> if (setSpoolIdCommandAvailable == false) {
+                "Not ready: SET_SPOOL_ID is missing. Enable AFC/Spoolman options and restart Klipper/Moonraker."
+            } else {
+                "Ready: printer Spoolman integration is active."
+            }
             false -> "Not ready: enable Spoolman Integration in the printer config and restart Klipper/Moonraker."
             null -> "Run the Moonraker connection test to check printer Spoolman integration."
         }
@@ -700,9 +772,9 @@ private fun SettingsMoonrakerInfoSummary(
             text = integrationText,
             style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 14.sp),
             color = when (spoolmanIntegrationEnabled) {
-                true -> SpoolStudioColors.Success
+                true -> if (setSpoolIdCommandAvailable == false) SpoolStudioColors.Error else SpoolStudioColors.Success
                 false -> SpoolStudioColors.Error
-                null -> SpoolStudioColors.InkMuted
+                null -> SpoolStudioColors.OnGraphiteMuted
             }
         )
     }
@@ -724,18 +796,237 @@ private fun SettingsInfoRow(
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
-                color = SpoolStudioColors.Ink,
+                color = SpoolStudioColors.OnGraphite,
                 modifier = Modifier.width(112.dp)
             )
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodyMedium.copy(fontSize = 15.sp),
                 fontWeight = FontWeight.SemiBold,
-                color = SpoolStudioColors.Ink,
+                color = SpoolStudioColors.OnGraphite,
                 modifier = Modifier.weight(1f)
             )
         }
-        HorizontalDivider(color = SpoolStudioColors.OutlineSoft.copy(alpha = 0.75f))
+        HorizontalDivider(color = SpoolStudioColors.GraphiteMuted.copy(alpha = 0.75f))
+    }
+}
+
+@Composable
+private fun LegacyFilamentConversionDialog(
+    candidates: List<SpoolmanLegacyFilamentConversion>,
+    isConverting: Boolean,
+    onDismiss: () -> Unit,
+    onConvert: (Set<Int>) -> Unit
+) {
+    var selectedIds by remember(candidates) {
+        mutableStateOf(candidates.map { it.filamentId }.toSet())
+    }
+    var sortMode by remember { mutableStateOf(LegacyConversionSortMode.SPOOL_ID) }
+    val sortedCandidates = remember(candidates, sortMode) {
+        when (sortMode) {
+            LegacyConversionSortMode.SPOOL_ID -> candidates.sortedWith(
+                compareBy<SpoolmanLegacyFilamentConversion> { it.spoolIds.minOrNull() ?: Int.MAX_VALUE }
+                    .thenBy { it.filamentId }
+            )
+            LegacyConversionSortMode.FILAMENT_ID -> candidates.sortedBy { it.filamentId }
+            LegacyConversionSortMode.BRAND -> candidates.sortedWith(
+                compareBy<SpoolmanLegacyFilamentConversion> { it.vendorName.lowercase() }
+                    .thenBy { it.name.lowercase() }
+                    .thenBy { it.filamentId }
+            )
+        }
+    }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = SpoolStudioShape.Dialog,
+            colors = CardDefaults.cardColors(containerColor = SpoolStudioColors.Graphite),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+            border = BorderStroke(1.dp, SpoolStudioColors.GraphiteMuted.copy(alpha = 0.85f))
+        ) {
+            Column(
+                modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Legacy material conversion",
+                            style = MaterialTheme.typography.titleLarge.copy(fontSize = 22.sp),
+                            fontWeight = FontWeight.SemiBold,
+                            color = SpoolStudioColors.OnGraphite
+                        )
+                        Text(
+                            text = "Choose which Spoolman filament records should be converted to the paxx12 v3 field layout.",
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, lineHeight = 16.sp),
+                            color = SpoolStudioColors.OnGraphiteMuted
+                        )
+                    }
+                    IconButton(onClick = onDismiss) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close",
+                            tint = SpoolStudioColors.OnGraphite
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    SettingsSecondaryButton(
+                        text = "Select all",
+                        enabled = !isConverting,
+                        onClick = { selectedIds = candidates.map { it.filamentId }.toSet() },
+                        modifier = Modifier.weight(1f)
+                    )
+                    SettingsSecondaryButton(
+                        text = "Clear",
+                        enabled = !isConverting,
+                        onClick = { selectedIds = emptySet() },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Sort by",
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                        color = SpoolStudioColors.OnGraphiteMuted
+                    )
+                    LegacyConversionSortMode.entries.forEach { mode ->
+                        val selected = mode == sortMode
+                        Text(
+                            text = mode.label,
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontSize = 12.sp,
+                                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium
+                            ),
+                            color = if (selected) SpoolStudioColors.Graphite else SpoolStudioColors.GoldSoft,
+                            modifier = Modifier
+                                .background(
+                                    color = if (selected) SpoolStudioColors.GoldSoft else Color.Transparent,
+                                    shape = SpoolStudioShape.Small
+                                )
+                                .border(
+                                    width = 1.dp,
+                                    color = if (selected) SpoolStudioColors.GoldSoft else SpoolStudioColors.GraphiteMuted,
+                                    shape = SpoolStudioShape.Small
+                                )
+                                .clickable(enabled = !isConverting) { sortMode = mode }
+                                .padding(horizontal = 8.dp, vertical = 5.dp)
+                        )
+                    }
+                }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 380.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(7.dp)
+                ) {
+                    sortedCandidates.forEach { candidate ->
+                        val checked = candidate.filamentId in selectedIds
+                        val spoolIdText = when (candidate.spoolIds.size) {
+                            0 -> "No affected spool IDs"
+                            1 -> "Spool ID #${candidate.spoolIds.first()}"
+                            else -> "Spool IDs ${candidate.spoolIds.joinToString { "#$it" }}"
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    color = SpoolStudioColors.GraphiteRaised.copy(alpha = 0.72f),
+                                    shape = SpoolStudioShape.Small
+                                )
+                                .clickable(enabled = !isConverting) {
+                                    selectedIds = if (checked) {
+                                        selectedIds - candidate.filamentId
+                                    } else {
+                                        selectedIds + candidate.filamentId
+                                    }
+                                }
+                                .padding(horizontal = 8.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Checkbox(
+                                checked = checked,
+                                onCheckedChange = { enabled ->
+                                    selectedIds = if (enabled) {
+                                        selectedIds + candidate.filamentId
+                                    } else {
+                                        selectedIds - candidate.filamentId
+                                    }
+                                },
+                                enabled = !isConverting,
+                                colors = CheckboxDefaults.colors(
+                                    checkedColor = SpoolStudioColors.AccentCyan,
+                                    uncheckedColor = SpoolStudioColors.OnGraphiteMuted,
+                                    checkmarkColor = SpoolStudioColors.Graphite
+                                )
+                            )
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(3.dp)
+                            ) {
+                                Text(
+                                    text = "${candidate.vendorName} - ${candidate.name}",
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = SpoolStudioColors.OnGraphite
+                                )
+                                Text(
+                                    text = "Filament #${candidate.filamentId} - $spoolIdText",
+                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                    color = SpoolStudioColors.OnGraphiteMuted
+                                )
+                                Text(
+                                    text = "${candidate.currentLabel} -> ${candidate.targetLabel}",
+                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 15.sp),
+                                    color = SpoolStudioColors.GoldSoft
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Text(
+                    text = "Only selected filament records are patched. Existing spools, UID assignments and product / lot codes are kept.",
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 15.sp),
+                    color = SpoolStudioColors.OnGraphiteMuted
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    SettingsSecondaryButton(
+                        text = "Cancel",
+                        enabled = !isConverting,
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f)
+                    )
+                    SettingsPrimaryButton(
+                        text = if (isConverting) "Converting..." else "Convert selected",
+                        enabled = !isConverting && selectedIds.isNotEmpty(),
+                        onClick = { onConvert(selectedIds) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -851,8 +1142,8 @@ private fun SettingsPrimaryButton(
         colors = ButtonDefaults.buttonColors(
             containerColor = SpoolStudioColors.Gold,
             contentColor = Color.White,
-            disabledContainerColor = SpoolStudioColors.SurfaceMuted,
-            disabledContentColor = SpoolStudioColors.InkMuted.copy(alpha = 0.55f)
+            disabledContainerColor = SpoolStudioColors.GraphiteRaised,
+            disabledContentColor = SpoolStudioColors.OnGraphiteMuted.copy(alpha = 0.55f)
         )
     ) {
         Text(text, maxLines = 1)
@@ -875,7 +1166,11 @@ private fun SettingsSecondaryButton(
             .height(44.dp),
         colors = ButtonDefaults.outlinedButtonColors(
             contentColor = SpoolStudioColors.AccentCyan,
-            disabledContentColor = SpoolStudioColors.InkMuted.copy(alpha = 0.55f)
+            disabledContentColor = SpoolStudioColors.OnGraphiteMuted.copy(alpha = 0.55f)
+        ),
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (enabled) SpoolStudioColors.GraphiteMuted else SpoolStudioColors.GraphiteMuted.copy(alpha = 0.45f)
         )
     ) {
         Text(text, maxLines = 1)

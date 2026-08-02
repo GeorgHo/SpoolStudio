@@ -1,5 +1,7 @@
 package com.spoolstudio.app.data.remote.moonraker
 
+import com.spoolstudio.app.ui.friendlyPrinterMappingError
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -31,6 +33,18 @@ class MoonrakerServiceTest {
             moonrakerComponentsHaveSpoolmanIntegration(
                 listOf("database", "mqtt", "extensions")
             ) == true
+        )
+    }
+
+    @Test
+    fun missingSetSpoolIdReturnsPaxx12PrerequisiteMessage() {
+        assertEquals(
+            "Paxx12 SET_SPOOL_ID is not available on the printer. Enable the AFC/SpoolLink firmware configuration, restart Klipper/Moonraker, then try again.",
+            friendlyPrinterMappingError(
+                IllegalStateException(
+                    "SET_SPOOL_ID is not available on the printer. Enable the Paxx12 AFC/SpoolLink firmware configuration and restart Klipper/Moonraker."
+                )
+            )
         )
     }
 }

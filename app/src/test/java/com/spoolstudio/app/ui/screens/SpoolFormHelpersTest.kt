@@ -170,7 +170,7 @@ class SpoolFormHelpersTest {
         assertNull(tagData?.bedMinTemp)
         assertEquals("65", tagData?.bedMaxTemp)
         assertEquals("Basic", tagData?.subtype)
-        assertEquals("42", tagData?.spoolId)
+        assertNull(tagData?.spoolId)
         assertEquals("LOT-42", tagData?.lotNr)
     }
 

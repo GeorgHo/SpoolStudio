@@ -27,6 +27,7 @@ class SpoolmanSaveRepository(
 ) {
     suspend fun save(input: SpoolmanSaveInput): SpoolmanSaveResult {
         val service = serviceFactory(input.baseUrl)
+        service.ensurePaxx12SpoolLinkFields()
         val request = input.request
         val actionMode = input.mode
 

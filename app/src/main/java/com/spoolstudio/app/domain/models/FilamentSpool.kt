@@ -25,7 +25,8 @@ data class FilamentSpool(
     val comment: String? = null,
     val firstUsed: String? = null,
     val lastUsed: String? = null,
-    val cardUids: List<String> = emptyList()
+    val cardUids: List<String> = emptyList(),
+    val isPaxx12FieldFormat: Boolean = false
 ) {
     val displayName: String
         get() = listOf(
@@ -49,9 +50,11 @@ data class FilamentSpool(
 
         fun fromSpoolman(spool: SpoolmanSpool): FilamentSpool {
             val (legacyMaterial, legacyVariant) = splitMaterialAndVariant(spool.filament.material)
+            val hasLegacyMaterialLayout = legacyVariant.isNotBlank()
+            val paxx12Variant = spool.filament.extra.stringValue("variant")
             val normalizedFields = normalizeSpoolLinkFilamentFields(
                 material = legacyMaterial,
-                variant = spool.filament.extra.stringValue("variant") ?: legacyVariant
+                variant = paxx12Variant ?: legacyVariant
             )
             val spoolStudioFields = spoolLinkSpoolmanFields(
                 material = normalizedFields.material,
@@ -108,7 +111,8 @@ data class FilamentSpool(
                 lastUsed = spool.last_used,
                 cardUids = parseCardUids(
                     spool.extra.stringValue("card_uids") ?: spool.extra.stringValue("card_uid")
-                )
+                ),
+                isPaxx12FieldFormat = !hasLegacyMaterialLayout && !paxx12Variant.isNullOrBlank()
             )
         }
 
@@ -131,7 +135,8 @@ data class FilamentSpool(
                 lotNr = spool.lotNr,
                 cardUids = listOfNotNull(normalizeCardUid(spool.cardUid).takeIf { it.isNotBlank() }),
                 spoolmanName = "",
-                filamentId = null
+                filamentId = null,
+                isPaxx12FieldFormat = true
             )
         }
     }

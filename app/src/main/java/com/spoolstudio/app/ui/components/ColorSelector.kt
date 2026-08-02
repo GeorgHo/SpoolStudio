@@ -21,6 +21,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -28,6 +29,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -171,7 +173,7 @@ fun ColorSelector(
                     Icon(
                         imageVector = Icons.Default.ArrowDropDown,
                         contentDescription = null,
-                        tint = SpoolStudioColors.InkMuted
+                        tint = SpoolStudioColors.OnGraphiteMuted
                     )
                 },
                 onClick = { expanded = true }
@@ -183,7 +185,7 @@ fun ColorSelector(
                 modifier = Modifier
                     .zIndex(1f)
                     .clip(SpoolStudioShape.Small)
-                    .background(SpoolStudioColors.Surface)
+                    .background(SpoolStudioColors.Graphite)
             ) {
                 DropdownMenuItem(
                     text = { Text("No Color") },
@@ -191,10 +193,11 @@ fun ColorSelector(
                         onColorSelected(null)
                         onColorNameChange("")
                         expanded = false
-                    }
+                    },
+                    colors = colorMenuItemColors()
                 )
 
-                HorizontalDivider()
+                HorizontalDivider(color = SpoolStudioColors.GraphiteMuted.copy(alpha = 0.75f))
 
                 commonColorPresets.forEach { (name, hex) ->
                     DropdownMenuItem(
@@ -208,20 +211,21 @@ fun ColorSelector(
                                         .size(15.dp)
                                         .clip(CircleShape)
                                         .background(Color(android.graphics.Color.parseColor("#$hex")))
-                                        .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
+                                        .border(1.dp, SpoolStudioColors.GraphiteMuted, CircleShape)
                                 )
-                                Text(name)
+                                Text(name, color = SpoolStudioColors.OnGraphite)
                             }
                         },
                         onClick = {
                             onColorSelected(hex)
                             onColorNameChange(name)
                             expanded = false
-                        }
+                        },
+                        colors = colorMenuItemColors()
                     )
                 }
 
-                HorizontalDivider()
+                HorizontalDivider(color = SpoolStudioColors.GraphiteMuted.copy(alpha = 0.75f))
 
                 DropdownMenuItem(
                     text = { Text("Color Wheel") },
@@ -229,7 +233,8 @@ fun ColorSelector(
                         originalColor = selectedColor
                         showColorPicker = true
                         expanded = false
-                    }
+                    },
+                    colors = colorMenuItemColors()
                 )
 
                 DropdownMenuItem(
@@ -237,7 +242,8 @@ fun ColorSelector(
                     onClick = {
                         expanded = false
                         takePhotoLauncher.launch(null)
-                    }
+                    },
+                    colors = colorMenuItemColors()
                 )
 
                 DropdownMenuItem(
@@ -247,7 +253,8 @@ fun ColorSelector(
                         pickPhotoLauncher.launch(
                             PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                         )
-                    }
+                    },
+                    colors = colorMenuItemColors()
                 )
             }
         }
@@ -265,9 +272,9 @@ fun ColorSelector(
                 shape = SpoolStudioShape.Dialog,
                 elevation = CardDefaults.cardElevation(defaultElevation = 16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF424242)
+                    containerColor = SpoolStudioColors.Graphite
                 ),
-                border = BorderStroke(1.dp, Color.Gray.copy(alpha = 0.3f))
+                border = BorderStroke(1.dp, SpoolStudioColors.GraphiteMuted.copy(alpha = 0.85f))
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -277,7 +284,7 @@ fun ColorSelector(
                     Text(
                         text = "Choose color",
                         style = MaterialTheme.typography.titleMedium,
-                        color = Color.White,
+                        color = SpoolStudioColors.OnGraphite,
                         fontWeight = FontWeight.Bold
                     )
 
@@ -302,14 +309,22 @@ fun ColorSelector(
                                 showColorPicker = false
                             },
                             modifier = Modifier.weight(1f),
-                            shape = SpoolStudioShape.Button
+                            shape = SpoolStudioShape.Button,
+                            border = BorderStroke(1.dp, SpoolStudioColors.GoldSoft.copy(alpha = 0.72f)),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = SpoolStudioColors.GoldSoft
+                            )
                         ) {
                             Text("Cancel")
                         }
                         Button(
                             onClick = { showColorPicker = false },
                             modifier = Modifier.weight(1f),
-                            shape = SpoolStudioShape.Button
+                            shape = SpoolStudioShape.Button,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = SpoolStudioColors.AccentCyan,
+                                contentColor = Color.White
+                            )
                         ) {
                             Text("Done")
                         }
@@ -343,6 +358,13 @@ fun ColorSelector(
 }
 
 @Composable
+private fun colorMenuItemColors() = MenuDefaults.itemColors(
+    textColor = SpoolStudioColors.OnGraphite,
+    leadingIconColor = SpoolStudioColors.OnGraphiteMuted,
+    trailingIconColor = SpoolStudioColors.OnGraphiteMuted
+)
+
+@Composable
 private fun ColorSelectorRow(
     label: String,
     value: String,
@@ -365,7 +387,7 @@ private fun ColorSelectorRow(
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodyMedium,
-                color = SpoolStudioColors.Ink,
+                color = SpoolStudioColors.OnGraphite,
                 modifier = Modifier.weight(1f)
             )
             if (leading != null) {
@@ -374,7 +396,7 @@ private fun ColorSelectorRow(
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = SpoolStudioColors.Ink,
+                color = SpoolStudioColors.OnGraphite,
                 maxLines = 1,
                 modifier = Modifier.weight(1.25f)
             )
@@ -387,7 +409,7 @@ private fun ColorSelectorRow(
                 }
             }
         }
-        HorizontalDivider(color = SpoolStudioColors.InkMuted.copy(alpha = 0.18f))
+        HorizontalDivider(color = SpoolStudioColors.GraphiteMuted.copy(alpha = 0.75f))
     }
 }
 
@@ -424,7 +446,7 @@ private fun InlineColorTextField(
         Text(
             text = label,
             style = MaterialTheme.typography.bodyMedium,
-            color = SpoolStudioColors.Ink,
+            color = SpoolStudioColors.OnGraphite,
             modifier = Modifier.weight(1f)
         )
         Row(
@@ -440,7 +462,7 @@ private fun InlineColorTextField(
                         lineHeight = 19.sp,
                         fontWeight = FontWeight.SemiBold
                     ),
-                    color = SpoolStudioColors.InkMuted
+                    color = SpoolStudioColors.OnGraphiteMuted
                 )
             }
             BasicTextField(
@@ -481,7 +503,7 @@ private fun InlineColorTextField(
                 fontSize = 15.sp,
                 lineHeight = 19.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = SpoolStudioColors.Ink
+                color = SpoolStudioColors.OnGraphite
             ),
             decorationBox = { innerTextField ->
                 Box(contentAlignment = Alignment.CenterStart) {
@@ -493,7 +515,7 @@ private fun InlineColorTextField(
                                 lineHeight = 19.sp,
                                 fontWeight = FontWeight.SemiBold
                             ),
-                            color = SpoolStudioColors.InkMuted
+                            color = SpoolStudioColors.OnGraphiteMuted
                         )
                     }
                     innerTextField()
@@ -502,7 +524,7 @@ private fun InlineColorTextField(
             )
         }
     }
-    HorizontalDivider(color = SpoolStudioColors.InkMuted.copy(alpha = 0.18f))
+    HorizontalDivider(color = SpoolStudioColors.GraphiteMuted.copy(alpha = 0.75f))
 }
 
 @Composable
@@ -519,7 +541,7 @@ private fun ColorSwatch(hex: String?) {
                 .size(18.dp)
                 .clip(CircleShape)
                 .background(safeColor)
-                .border(1.dp, SpoolStudioColors.InkMuted, CircleShape)
+                .border(1.dp, SpoolStudioColors.GraphiteMuted, CircleShape)
         )
     } else {
         NoColorIcon(size = 18.dp)

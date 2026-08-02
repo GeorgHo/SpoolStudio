@@ -221,7 +221,7 @@ fun buildOpenSpoolTagData(
         bedMinTemp = bedMinTemp.ifBlank { null },
         bedMaxTemp = bedMaxTemp.ifBlank { null },
         subtype = fields.variant.ifBlank { "Basic" },
-        spoolId = if (spoolMode == SpoolMode.UPDATE) selectedSpool?.id?.toString() else null,
+        spoolId = null,
         lotNr = lotNr
     )
 }

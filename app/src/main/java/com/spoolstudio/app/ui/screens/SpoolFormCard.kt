@@ -37,6 +37,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -472,9 +473,9 @@ private fun SpoolDataCard(
                     .fillMaxWidth()
                     .padding(horizontal = 28.dp),
                 shape = SpoolStudioShape.Dialog,
-                colors = CardDefaults.cardColors(containerColor = SpoolStudioColors.Surface),
+                colors = CardDefaults.cardColors(containerColor = SpoolStudioColors.Graphite),
                 elevation = CardDefaults.cardElevation(defaultElevation = 14.dp),
-                border = BorderStroke(1.dp, SpoolStudioColors.OutlineSoft)
+                border = BorderStroke(1.dp, SpoolStudioColors.GraphiteMuted.copy(alpha = 0.85f))
             ) {
                 Column(
                     modifier = Modifier.padding(start = 14.dp, top = 10.dp, end = 14.dp, bottom = 14.dp),
@@ -489,13 +490,13 @@ private fun SpoolDataCard(
                             text = "Color",
                             style = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp, lineHeight = 22.sp),
                             fontWeight = FontWeight.SemiBold,
-                            color = SpoolStudioColors.Ink
+                            color = SpoolStudioColors.OnGraphite
                         )
                         IconButton(onClick = { showColorDialog = false }) {
                             Icon(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = "Close",
-                                tint = SpoolStudioColors.Ink
+                                tint = SpoolStudioColors.OnGraphite
                             )
                         }
                     }
@@ -675,9 +676,9 @@ private fun BrandDialog(
                 .fillMaxWidth()
                 .padding(horizontal = 28.dp),
             shape = SpoolStudioShape.Dialog,
-            colors = CardDefaults.cardColors(containerColor = SpoolStudioColors.Surface),
+            colors = CardDefaults.cardColors(containerColor = SpoolStudioColors.Graphite),
             elevation = CardDefaults.cardElevation(defaultElevation = 14.dp),
-            border = BorderStroke(1.dp, SpoolStudioColors.OutlineSoft)
+            border = BorderStroke(1.dp, SpoolStudioColors.GraphiteMuted.copy(alpha = 0.85f))
         ) {
             Column(
                 modifier = Modifier.padding(start = 14.dp, top = 10.dp, end = 14.dp, bottom = 14.dp),
@@ -692,13 +693,13 @@ private fun BrandDialog(
                         text = "Brand",
                         style = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp, lineHeight = 22.sp),
                         fontWeight = FontWeight.SemiBold,
-                        color = SpoolStudioColors.Ink
+                        color = SpoolStudioColors.OnGraphite
                     )
                     IconButton(onClick = onDismiss) {
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "Close",
-                            tint = SpoolStudioColors.Ink
+                            tint = SpoolStudioColors.OnGraphite
                         )
                     }
                 }
@@ -711,7 +712,24 @@ private fun BrandDialog(
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .focusRequester(focusRequester)
+                        .focusRequester(focusRequester),
+                    shape = SpoolStudioShape.Field,
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(
+                        fontSize = 16.sp,
+                        lineHeight = 22.sp,
+                        fontWeight = FontWeight.SemiBold
+                    ),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = SpoolStudioColors.OnGraphite,
+                        unfocusedTextColor = SpoolStudioColors.OnGraphite,
+                        focusedLabelColor = SpoolStudioColors.AccentCyan,
+                        unfocusedLabelColor = SpoolStudioColors.OnGraphiteMuted,
+                        focusedBorderColor = SpoolStudioColors.AccentCyan,
+                        unfocusedBorderColor = SpoolStudioColors.GraphiteMuted,
+                        cursorColor = SpoolStudioColors.AccentCyan,
+                        focusedContainerColor = SpoolStudioColors.GraphiteRaised.copy(alpha = 0.48f),
+                        unfocusedContainerColor = SpoolStudioColors.GraphiteRaised.copy(alpha = 0.48f)
+                    )
                 )
 
                 if (uniqueSuggestions.isNotEmpty()) {
@@ -719,7 +737,7 @@ private fun BrandDialog(
                         text = "Used brands",
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = SpoolStudioColors.InkMuted,
+                        color = SpoolStudioColors.OnGraphiteMuted,
                         modifier = Modifier.padding(top = 2.dp)
                     )
                     Column(
@@ -733,18 +751,25 @@ private fun BrandDialog(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .clip(SpoolStudioShape.Field)
+                                    .background(SpoolStudioColors.GraphiteRaised.copy(alpha = 0.72f))
+                                    .border(
+                                        width = 1.dp,
+                                        color = SpoolStudioColors.GraphiteMuted.copy(alpha = 0.85f),
+                                        shape = SpoolStudioShape.Field
+                                    )
                                     .clickable {
                                         onValueChange(suggestion)
                                         onDismiss()
                                     }
-                                    .padding(vertical = 9.dp),
+                                    .padding(horizontal = 12.dp, vertical = 9.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
                                     text = suggestion,
                                     style = compactValueStyle(),
-                                    color = SpoolStudioColors.Ink,
+                                    color = SpoolStudioColors.OnGraphite,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.weight(1f)
@@ -756,7 +781,7 @@ private fun BrandDialog(
                                     modifier = Modifier.size(16.dp)
                                 )
                             }
-                            CompactDivider()
+                            Spacer(modifier = Modifier.height(8.dp))
                         }
                     }
                 }
@@ -769,11 +794,12 @@ private fun BrandDialog(
                     Text(
                         text = "Generic",
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                        color = SpoolStudioColors.GoldDark,
+                        color = SpoolStudioColors.GoldSoft,
                         textAlign = TextAlign.Center,
                         modifier = Modifier
                             .weight(1f)
                             .clip(SpoolStudioShape.Button)
+                            .border(1.dp, SpoolStudioColors.GoldSoft.copy(alpha = 0.72f), SpoolStudioShape.Button)
                             .clickable {
                                 onValueChange("Generic")
                                 onDismiss()
@@ -788,7 +814,7 @@ private fun BrandDialog(
                         modifier = Modifier
                             .weight(1f)
                             .clip(SpoolStudioShape.Button)
-                            .background(SpoolStudioColors.Gold)
+                            .background(SpoolStudioColors.AccentCyan)
                             .clickable {
                                 onValueChange(draft.text.ifBlank { "Generic" })
                                 onDismiss()
@@ -978,15 +1004,18 @@ private fun EmptySpoolWeightDialog(
     var draft by remember(value) { mutableStateOf(TextFieldValue(value, selection = TextRange(0, value.length))) }
     val focusRequester = remember { FocusRequester() }
 
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(18.dp),
+                .padding(horizontal = 28.dp),
             shape = SpoolStudioShape.Dialog,
-            colors = CardDefaults.cardColors(containerColor = SpoolStudioColors.Surface),
+            colors = CardDefaults.cardColors(containerColor = SpoolStudioColors.Graphite),
             elevation = CardDefaults.cardElevation(defaultElevation = 14.dp),
-            border = BorderStroke(1.dp, SpoolStudioColors.OutlineSoft)
+            border = BorderStroke(1.dp, SpoolStudioColors.GraphiteMuted.copy(alpha = 0.85f))
         ) {
             Column(
                 modifier = Modifier.padding(start = 14.dp, top = 10.dp, end = 14.dp, bottom = 14.dp),
@@ -1001,13 +1030,13 @@ private fun EmptySpoolWeightDialog(
                         text = "Empty spool weight",
                         style = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp, lineHeight = 22.sp),
                         fontWeight = FontWeight.SemiBold,
-                        color = SpoolStudioColors.Ink
+                        color = SpoolStudioColors.OnGraphite
                     )
                     IconButton(onClick = onDismiss) {
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "Close",
-                            tint = SpoolStudioColors.Ink
+                            tint = SpoolStudioColors.OnGraphite
                         )
                     }
                 }
@@ -1023,7 +1052,24 @@ private fun EmptySpoolWeightDialog(
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .focusRequester(focusRequester)
+                        .focusRequester(focusRequester),
+                    shape = SpoolStudioShape.Field,
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(
+                        fontSize = 16.sp,
+                        lineHeight = 22.sp,
+                        fontWeight = FontWeight.SemiBold
+                    ),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = SpoolStudioColors.OnGraphite,
+                        unfocusedTextColor = SpoolStudioColors.OnGraphite,
+                        focusedLabelColor = SpoolStudioColors.AccentCyan,
+                        unfocusedLabelColor = SpoolStudioColors.OnGraphiteMuted,
+                        focusedBorderColor = SpoolStudioColors.AccentCyan,
+                        unfocusedBorderColor = SpoolStudioColors.GraphiteMuted,
+                        cursorColor = SpoolStudioColors.AccentCyan,
+                        focusedContainerColor = SpoolStudioColors.GraphiteRaised.copy(alpha = 0.48f),
+                        unfocusedContainerColor = SpoolStudioColors.GraphiteRaised.copy(alpha = 0.48f)
+                    )
                 )
 
                 if (suggestions.isNotEmpty()) {
@@ -1031,7 +1077,7 @@ private fun EmptySpoolWeightDialog(
                         text = "Used values",
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = SpoolStudioColors.InkMuted,
+                        color = SpoolStudioColors.OnGraphiteMuted,
                         modifier = Modifier.padding(top = 2.dp)
                     )
                     Column(
@@ -1045,18 +1091,25 @@ private fun EmptySpoolWeightDialog(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .clip(SpoolStudioShape.Field)
+                                    .background(SpoolStudioColors.GraphiteRaised.copy(alpha = 0.72f))
+                                    .border(
+                                        width = 1.dp,
+                                        color = SpoolStudioColors.GraphiteMuted.copy(alpha = 0.85f),
+                                        shape = SpoolStudioShape.Field
+                                    )
                                     .clickable {
                                         onValueChange(suggestion.weightText)
                                         onDismiss()
                                     }
-                                    .padding(vertical = 9.dp),
+                                    .padding(horizontal = 12.dp, vertical = 9.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
                                     text = suggestion.label,
                                     style = compactValueStyle(),
-                                    color = SpoolStudioColors.Ink,
+                                    color = SpoolStudioColors.OnGraphite,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.weight(1f)
@@ -1068,7 +1121,7 @@ private fun EmptySpoolWeightDialog(
                                     modifier = Modifier.size(16.dp)
                                 )
                             }
-                            CompactDivider()
+                            Spacer(modifier = Modifier.height(8.dp))
                         }
                     }
                 }
@@ -1081,11 +1134,12 @@ private fun EmptySpoolWeightDialog(
                     Text(
                         text = "Clear",
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                        color = SpoolStudioColors.GoldDark,
+                        color = SpoolStudioColors.GoldSoft,
                         textAlign = TextAlign.Center,
                         modifier = Modifier
                             .weight(1f)
                             .clip(SpoolStudioShape.Button)
+                            .border(1.dp, SpoolStudioColors.GoldSoft.copy(alpha = 0.72f), SpoolStudioShape.Button)
                             .clickable {
                                 onValueChange("")
                                 onDismiss()
@@ -1100,7 +1154,7 @@ private fun EmptySpoolWeightDialog(
                         modifier = Modifier
                             .weight(1f)
                             .clip(SpoolStudioShape.Button)
-                            .background(SpoolStudioColors.Gold)
+                            .background(SpoolStudioColors.AccentCyan)
                             .clickable {
                                 onValueChange(draft.text)
                                 onDismiss()

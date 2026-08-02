@@ -2,14 +2,14 @@
 
 ![Platform](https://img.shields.io/badge/Platform-Android-green)
 ![Kotlin](https://img.shields.io/badge/Kotlin-100%25-blue)
-![Version](https://img.shields.io/badge/Version-3.0.1--beta-cyan)
-![Status](https://img.shields.io/badge/Status-Beta-yellow)
+![Version](https://img.shields.io/badge/Version-3.0.2-cyan)
+![Status](https://img.shields.io/badge/Status-Active-brightgreen)
 
 Spool Studio is an Android app for managing 3D printer filament spools with Spoolman, NFC/RFID tags, and Snapmaker U1 printer integration.
 
-Version 3.0.1 beta continues the new Paxx12 SpoolLink workflow. Tags are linked to Spoolman by the physical NFC card UID instead of the old spool-id based logic. The app can convert older Spool Studio tags, prepare Spoolman for the new fields, write Paxx12-compatible OpenSpool tags, and show the toolhead status reported by the printer.
+Version 3.0.2 supports the new Paxx12 SpoolLink workflow. Tags are linked to Spoolman by the physical NFC card UID instead of the old spool-id based logic. The app can convert older Spool Studio tags, prepare Spoolman for the new fields, write Paxx12-compatible OpenSpool tags, and show or manually adjust the toolhead status reported by the printer.
 
-This beta was tested with **Paxx12 Extended Firmware v1.5.2-paxx12-21 beta**, based on PR #567.
+This release was tested with **Paxx12 Extended Firmware v1.5.2-paxx12-21**.
 
 This project started from the open-source project **SpoolPainter** by ni4223 and has since been heavily extended.
 
@@ -17,9 +17,9 @@ This project started from the open-source project **SpoolPainter** by ni4223 and
 
 ## Download
 
-[Download Spool Studio v3.0.1 beta](https://github.com/GeorgHo/SpoolStudio/releases/tag/v3.0.1-beta)
+[Download Spool Studio v3.0.2](https://github.com/GeorgHo/SpoolStudio/releases/tag/v3.0.2)
 
-If you still use the older Paxx12 firmware or the old Spool Studio tag workflow, use the latest stable v2 release instead:
+If you still use older Paxx12 firmware or the old Spool Studio tag workflow, use the latest v2 release instead:
 
 [Download latest stable release](https://github.com/GeorgHo/SpoolStudio/releases/latest)
 
@@ -28,16 +28,16 @@ If you still use the older Paxx12 firmware or the old Spool Studio tag workflow,
 ## Screenshots
 
 <p align="center">
-  <img src="docs/images/v3_beta_main.png" width="260" alt="Spool Studio v3 main screen"/>
-  <img src="docs/images/v3_beta_actions.png" width="260" alt="Spool Studio v3 action buttons"/>
-  <img src="docs/images/v3_beta_toolhead_status.png" width="260" alt="Spool Studio v3 toolhead status"/>
+  <img src="docs/images/v3_main.png" width="260" alt="Spool Studio v3 main screen"/>
+  <img src="docs/images/v3_toolhead_status.png" width="260" alt="Spool Studio v3 toolhead status"/>
+  <img src="docs/images/v3_settings.png" width="260" alt="Spool Studio v3 settings"/>
 </p>
 
 ---
 
 ## Important for v3
 
-Spool Studio v3 is a beta release for the new Paxx12 SpoolLink workflow.
+Spool Studio v3 is built for the new Paxx12 SpoolLink workflow.
 
 - v3 no longer writes legacy Spool Studio / spool-id based tags.
 - The physical NFC tag UID is used as the primary link between tag and Spoolman spool.
@@ -47,7 +47,7 @@ Spool Studio v3 is a beta release for the new Paxx12 SpoolLink workflow.
 
 Recommended migration workflow:
 
-1. Install Spool Studio v3 beta.
+1. Install Spool Studio v3.
 2. Check Spoolman and printer integration in Settings.
 3. Read one existing tag.
 4. Convert only one spool first.
@@ -64,9 +64,12 @@ Recommended migration workflow:
 - Legacy tag detection and guided conversion
 - Physical NFC card UID storage in Spoolman
 - Material, material modifier, and variant handled as separate fields
+- Guided Spoolman legacy material conversion for older v2 data
+- Checks for the required Paxx12 `SET_SPOOL_ID` command
 - Searchable dropdowns for spools, materials, variants, brands, colors, locations, and spool tare weights
 - Bambu Lab RFID import when a user-provided key is configured
-- Read-only Toolhead Status view for printer-reported spool assignments
+- Toolhead Status view for printer-reported spool assignments
+- Manual toolhead spool assignment with clear UID warnings
 - Modern dark UI designed for quick spool editing on a phone
 
 ---
@@ -75,7 +78,7 @@ Recommended migration workflow:
 
 ### 1. Install the App
 
-- Download the APK from the v3 beta release.
+- Download the APK from the v3 release.
 - Install it on your Android device.
 - Enable "Install unknown apps" for your browser or file manager if Android asks for it.
 
