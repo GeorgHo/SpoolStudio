@@ -20,6 +20,7 @@ class NfcController(private val activity: Activity) {
     
     var onTagDetected: ((String?) -> Unit)? = null
     var onStatusUpdate: ((String, Boolean) -> Unit)? = null
+    var onTagWritten: ((String) -> Unit)? = null
 
     fun initialize() {
         nfcAdapter = NfcAdapter.getDefaultAdapter(activity)
@@ -79,7 +80,9 @@ class NfcController(private val activity: Activity) {
                     if (pendingWriteData != null) {
                         clearOperationTimeout()
                         // Write mode - write the pending data
-                        if (nfcManager.writeTag(it, pendingWriteData!!)) {
+                        val writtenCardUid = nfcManager.writeTag(it, pendingWriteData!!)
+                        if (writtenCardUid != null) {
+                            onTagWritten?.invoke(writtenCardUid)
                             onStatusUpdate?.invoke("✅ Successfully wrote to tag!", false)
                             pendingWriteData = null
                         } else {

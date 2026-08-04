@@ -19,7 +19,7 @@ data class MoonrakerPrinterInfo(
     val hasSpoolmanComponent: Boolean?,
     val hasSpoolLinkComponent: Boolean?,
     val spoolmanIntegrationEnabled: Boolean?,
-    val setSpoolIdCommandAvailable: Boolean?
+    val assignmentCommandAvailable: Boolean?
 ) {
     val displayVersion: String?
         get() = firmwareVersion ?: softwareVersion
@@ -100,7 +100,7 @@ class MoonrakerService(private val baseUrl: String) {
             hasSpoolmanComponent = components?.hasSpoolman,
             hasSpoolLinkComponent = components?.hasSpoolLink,
             spoolmanIntegrationEnabled = components?.integrationEnabled,
-            setSpoolIdCommandAvailable = commandStatus?.setSpoolIdAvailable
+            assignmentCommandAvailable = commandStatus?.assignmentCommandAvailable
         )
     }
 
@@ -108,7 +108,11 @@ class MoonrakerService(private val baseUrl: String) {
         val response = api.getGcodeHelp()
         val commands = response.resultOrThrow("Moonraker gcode help query failed").keys
         return MoonrakerSpoolLinkCommandStatus(
-            setSpoolIdAvailable = commands.any { it.toString().equals("SET_SPOOL_ID", ignoreCase = true) }
+            assignmentCommandAvailable = commands.any { command ->
+                SpoolLinkAssignmentCommand.entries.any { supportedCommand ->
+                    command.toString().equals(supportedCommand.gcode, ignoreCase = true)
+                }
+            }
         )
     }
 
@@ -182,9 +186,14 @@ class MoonrakerService(private val baseUrl: String) {
     suspend fun setSpoolLinkToolSpool(toolheadIndex: Int, spoolId: Int?): Map<String, Int?> {
         require(toolheadIndex in 0..3) { "Toolhead index must be between 0 and 3" }
         val value = spoolId ?: 0
-        ensureGcodeCommand("SET_SPOOL_ID")
+        val command = getAvailableSpoolLinkAssignmentCommand()
 
-        val script = "SET_SPOOL_ID LANE=E$toolheadIndex SPOOL_ID=$value"
+        val script = when (command) {
+            SpoolLinkAssignmentCommand.PrintFilamentConfig ->
+                "${command.gcode} CONFIG_EXTRUDER=$toolheadIndex FILAMENT_SPOOL_ID=$value FORCE=1"
+            SpoolLinkAssignmentCommand.SetSpoolId ->
+                "${command.gcode} LANE=E$toolheadIndex SPOOL_ID=$value"
+        }
         val response = api.sendGcode(
             mapOf("script" to script)
         )
@@ -215,15 +224,14 @@ class MoonrakerService(private val baseUrl: String) {
         return latestMapping
     }
 
-    private suspend fun ensureGcodeCommand(command: String) {
+    private suspend fun getAvailableSpoolLinkAssignmentCommand(): SpoolLinkAssignmentCommand {
         val response = api.getGcodeHelp()
-        val commands = response.resultOrThrow("Moonraker gcode help query failed")
-        val exists = commands.keys.any { it.toString().equals(command, ignoreCase = true) }
-        if (!exists) {
-            throw IllegalStateException(
-                "$command is not available on the printer. Enable the Paxx12 AFC/SpoolLink firmware configuration and restart Klipper/Moonraker."
-            )
-        }
+        val commands = response.resultOrThrow("Moonraker gcode help query failed").keys
+        return SpoolLinkAssignmentCommand.entries.firstOrNull { supportedCommand ->
+            commands.any { it.toString().equals(supportedCommand.gcode, ignoreCase = true) }
+        } ?: throw IllegalStateException(
+            "No Paxx12 toolhead assignment command is available on the printer. Enable the printer Spoolman integration and restart Klipper/Moonraker."
+        )
     }
 
     private fun extractSpoolId(raw: Any?): Int? {
@@ -318,8 +326,13 @@ class MoonrakerService(private val baseUrl: String) {
 }
 
 data class MoonrakerSpoolLinkCommandStatus(
-    val setSpoolIdAvailable: Boolean
+    val assignmentCommandAvailable: Boolean
 )
+
+private enum class SpoolLinkAssignmentCommand(val gcode: String) {
+    PrintFilamentConfig("SET_PRINT_FILAMENT_CONFIG"),
+    SetSpoolId("SET_SPOOL_ID")
+}
 
 internal data class MoonrakerComponentState(
     val hasSpoolman: Boolean,

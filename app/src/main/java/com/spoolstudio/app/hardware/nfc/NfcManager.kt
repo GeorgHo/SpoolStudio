@@ -177,11 +177,12 @@ class NfcManager(private val context: android.content.Context) {
             this
         }
     
-    fun writeTag(tag: Tag, data: String): Boolean {
+    fun writeTag(tag: Tag, data: String): String? {
         return try {
-            val ndef = Ndef.get(tag) ?: return false
+            val ndef = Ndef.get(tag) ?: return null
+            val uid = tag.id.toHexString(separator = "")
             ndef.connect()
-            val payload = data.withCardUid(tag.id.toHexString(separator = ""))
+            val payload = data.withCardUid(uid)
             
             val record = NdefRecord(
                 NdefRecord.TNF_MIME_MEDIA,
@@ -193,9 +194,9 @@ class NfcManager(private val context: android.content.Context) {
             
             ndef.writeNdefMessage(message)
             ndef.close()
-            true
+            uid
         } catch (e: Exception) {
-            false
+            null
         }
     }
 }

@@ -31,6 +31,7 @@ class MainViewModel : ViewModel() {
     private val printerMappingUseCase = PrinterMappingUseCase()
     private val spoolmanCatalogRefreshIntervalMs = 30_000L
     private var lastSpoolmanCatalogRefreshMs = 0L
+    private var startupMoonrakerCheckStarted = false
 
     var readData by mutableStateOf<OpenSpoolData?>(null)
         private set
@@ -87,6 +88,7 @@ class MainViewModel : ViewModel() {
     val materialModifierFieldEnabled: Boolean
         get() = spoolmanMaterialModifierFieldAvailable == true && !materialModifierFieldDeclined
     private var pendingMaterialModifierSaveRequest: SpoolmanSaveRequest? = null
+    private var pendingTagWriteSpoolId: Int? = null
     var spoolMode by mutableStateOf(SpoolMode.CREATE)
         private set
     var isMoonrakerReachable by mutableStateOf(false)
@@ -140,7 +142,7 @@ class MainViewModel : ViewModel() {
         private set
     var moonrakerSpoolmanIntegrationEnabled by mutableStateOf<Boolean?>(null)
         private set
-    var moonrakerSetSpoolIdCommandAvailable by mutableStateOf<Boolean?>(null)
+    var moonrakerAssignmentCommandAvailable by mutableStateOf<Boolean?>(null)
         private set
     var moonrakerDetectedModeLabel by mutableStateOf<String?>(null)
         private set
@@ -188,6 +190,11 @@ class MainViewModel : ViewModel() {
 
         if (spoolmanUrl.isNotBlank()) {
             loadSpoolmanFilaments()
+        }
+
+        if (!startupMoonrakerCheckStarted && moonrakerUrl.isNotBlank()) {
+            startupMoonrakerCheckStarted = true
+            testMoonrakerConnection(moonrakerUrl)
         }
     }
     fun handleNfcTagDetected(data: String?) {
@@ -327,6 +334,47 @@ class MainViewModel : ViewModel() {
         showSnackbar = true
     }
 
+    fun preparePendingTagWriteLink() {
+        pendingTagWriteSpoolId = if (spoolMode == SpoolMode.UPDATE) selectedSpool?.id else null
+    }
+
+    fun handleNfcTagWritten(cardUid: String) {
+        val spoolId = pendingTagWriteSpoolId
+        pendingTagWriteSpoolId = null
+
+        val normalizedUid = normalizeCardUid(cardUid)
+        if (spoolId == null || normalizedUid.isBlank()) return
+
+        if (spoolmanUrl.isBlank()) {
+            showSnackbarMessage(
+                "Tag written, but Spoolman URL is missing. UID was not linked.",
+                autoDismiss = false
+            )
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                SpoolmanService(spoolmanUrl).assignCardUidToSpool(spoolId, normalizedUid)
+                val refreshed = spoolmanCatalogRepository.findBySpoolId(spoolmanUrl, spoolId)
+                if (refreshed != null) {
+                    selectedSpool = refreshed
+                    currentSpoolId = refreshed.id?.toString()
+                    readData = OpenSpoolData.toOpenSpoolData(refreshed).copy(cardUid = normalizedUid)
+                    spoolMode = SpoolMode.UPDATE
+                    dataVersion++
+                }
+                loadSpoolmanFilaments()
+                showSnackbarMessage("Tag written and linked to Spoolman ID #$spoolId")
+            } catch (e: Exception) {
+                showSnackbarMessage(
+                    "Tag written, but Spoolman UID update failed: ${e.message ?: "Unknown error"}",
+                    autoDismiss = false
+                )
+            }
+        }
+    }
+
     fun refreshSpools() {
         if (spoolmanUrl.isNotBlank()) {
             loadSpoolmanFilaments()
@@ -393,6 +441,9 @@ class MainViewModel : ViewModel() {
         )
 
         loadSpoolmanFilaments()
+        if (moonrakerUrl.isNotBlank()) {
+            testMoonrakerConnection(moonrakerUrl)
+        }
         showSettings = false
     }
 
@@ -635,7 +686,7 @@ class MainViewModel : ViewModel() {
         moonrakerHasSpoolmanComponent = null
         moonrakerHasSpoolLinkComponent = null
         moonrakerSpoolmanIntegrationEnabled = null
-        moonrakerSetSpoolIdCommandAvailable = null
+        moonrakerAssignmentCommandAvailable = null
         moonrakerDetectedModeLabel = null
 
         val validationError = connectionTestUseCase.validationError(inputUrl)
@@ -660,7 +711,7 @@ class MainViewModel : ViewModel() {
                         moonrakerHasSpoolmanComponent = result.hasSpoolmanComponent
                         moonrakerHasSpoolLinkComponent = result.hasSpoolLinkComponent
                         moonrakerSpoolmanIntegrationEnabled = result.spoolmanIntegrationEnabled
-                        moonrakerSetSpoolIdCommandAvailable = result.setSpoolIdCommandAvailable
+                        moonrakerAssignmentCommandAvailable = result.assignmentCommandAvailable
                         moonrakerDetectedModeLabel = result.detectedModeLabel
                     }
 
@@ -673,7 +724,7 @@ class MainViewModel : ViewModel() {
                         moonrakerHasSpoolmanComponent = null
                         moonrakerHasSpoolLinkComponent = null
                         moonrakerSpoolmanIntegrationEnabled = null
-                        moonrakerSetSpoolIdCommandAvailable = null
+                        moonrakerAssignmentCommandAvailable = null
                         moonrakerDetectedModeLabel = null
                     }
 
@@ -742,7 +793,7 @@ class MainViewModel : ViewModel() {
         moonrakerHasSpoolmanComponent = null
         moonrakerHasSpoolLinkComponent = null
         moonrakerSpoolmanIntegrationEnabled = null
-        moonrakerSetSpoolIdCommandAvailable = null
+        moonrakerAssignmentCommandAvailable = null
         moonrakerDetectedModeLabel = null
     }
 

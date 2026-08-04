@@ -67,7 +67,7 @@ fun MainScreenContent(
             moonrakerHasSpoolmanComponent = viewModel.moonrakerHasSpoolmanComponent,
             moonrakerHasSpoolLinkComponent = viewModel.moonrakerHasSpoolLinkComponent,
             moonrakerSpoolmanIntegrationEnabled = viewModel.moonrakerSpoolmanIntegrationEnabled,
-            moonrakerSetSpoolIdCommandAvailable = viewModel.moonrakerSetSpoolIdCommandAvailable,
+            moonrakerAssignmentCommandAvailable = viewModel.moonrakerAssignmentCommandAvailable,
             moonrakerDetectedModeLabel = viewModel.moonrakerDetectedModeLabel,
             legacyFilamentConversions = viewModel.legacyFilamentConversions,
             isScanningLegacyFilaments = viewModel.isScanningLegacyFilaments,
@@ -128,6 +128,7 @@ fun MainScreenContent(
     } else {
         SpoolStudioScreen(
             onWriteTag = { data ->
+                viewModel.preparePendingTagWriteLink()
                 viewModel.showSnackbarMessage("RFID write ready. Hold tag near the phone.")
                 onWriteTag(data)
             },
@@ -136,7 +137,7 @@ fun MainScreenContent(
                 viewModel.moonrakerHasSpoolmanComponent == true &&
                 viewModel.moonrakerHasSpoolLinkComponent == true &&
                 viewModel.moonrakerSpoolmanIntegrationEnabled == true &&
-                viewModel.moonrakerSetSpoolIdCommandAvailable == true,
+                viewModel.moonrakerAssignmentCommandAvailable == true,
             readData = viewModel.readData,
             rawReadText = viewModel.rawReadText,
             rawReadVersion = viewModel.rawReadVersion,

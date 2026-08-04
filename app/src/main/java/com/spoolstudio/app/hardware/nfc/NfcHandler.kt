@@ -8,6 +8,7 @@ class NfcHandler(private val activity: Activity) {
     
     var onTagDetected: ((String?) -> Unit)? = null
     var onStatusUpdate: ((String, Boolean) -> Unit)? = null
+    var onTagWritten: ((String) -> Unit)? = null
 
     fun initialize() {
         nfcController = NfcController(activity)
@@ -19,6 +20,10 @@ class NfcHandler(private val activity: Activity) {
         
         nfcController.onStatusUpdate = { status, active ->
             onStatusUpdate?.invoke(status, active)
+        }
+
+        nfcController.onTagWritten = { cardUid ->
+            onTagWritten?.invoke(cardUid)
         }
     }
 

@@ -89,10 +89,10 @@ class PrinterMappingRepository(
             printerInfo.hasSpoolmanComponent == false ||
             printerInfo.hasSpoolLinkComponent == false ||
             printerInfo.spoolmanIntegrationEnabled == false ||
-            printerInfo.setSpoolIdCommandAvailable != true
+            printerInfo.assignmentCommandAvailable != true
         ) {
             throw IllegalStateException(
-                "Printer Spoolman integration is not ready. Enable Spoolman Integration and AFC options in the printer config, then restart Klipper/Moonraker."
+                "Printer Spoolman integration is not ready. Enable Spoolman Integration in the printer config, then restart Klipper/Moonraker."
             )
         }
     }

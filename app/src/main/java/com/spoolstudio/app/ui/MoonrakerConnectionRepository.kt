@@ -15,7 +15,7 @@ data class MoonrakerConnectionResult(
     val hasSpoolmanComponent: Boolean? = null,
     val hasSpoolLinkComponent: Boolean? = null,
     val spoolmanIntegrationEnabled: Boolean? = null,
-    val setSpoolIdCommandAvailable: Boolean? = null,
+    val assignmentCommandAvailable: Boolean? = null,
     val detectedModeLabel: String? = null
 )
 
@@ -43,7 +43,7 @@ class MoonrakerConnectionRepository {
                     com.spoolstudio.app.data.remote.moonraker.MoonrakerService(baseUrl).getPrinterInfo()
                 }.getOrNull()
                 val supportsSpoolLink = printerInfo?.supportsSpoolLink
-                val setSpoolIdReady = printerInfo?.setSpoolIdCommandAvailable
+                val assignmentCommandReady = printerInfo?.assignmentCommandAvailable
 
                 MoonrakerConnectionResult(
                     reachable = true,
@@ -54,7 +54,7 @@ class MoonrakerConnectionRepository {
                     hasSpoolmanComponent = printerInfo?.hasSpoolmanComponent,
                     hasSpoolLinkComponent = printerInfo?.hasSpoolLinkComponent,
                     spoolmanIntegrationEnabled = printerInfo?.spoolmanIntegrationEnabled,
-                    setSpoolIdCommandAvailable = setSpoolIdReady,
+                    assignmentCommandAvailable = assignmentCommandReady,
                     detectedModeLabel = when (supportsSpoolLink) {
                         true -> "Firmware Spoolman integration"
                         false -> "Paxx12 1.5.0+ required"

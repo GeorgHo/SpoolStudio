@@ -101,7 +101,7 @@ fun SettingsScreen(
     moonrakerHasSpoolmanComponent: Boolean?,
     moonrakerHasSpoolLinkComponent: Boolean?,
     moonrakerSpoolmanIntegrationEnabled: Boolean?,
-    moonrakerSetSpoolIdCommandAvailable: Boolean?,
+    moonrakerAssignmentCommandAvailable: Boolean?,
     moonrakerDetectedModeLabel: String?,
     legacyFilamentConversions: List<SpoolmanLegacyFilamentConversion>,
     isScanningLegacyFilaments: Boolean,
@@ -357,7 +357,7 @@ fun SettingsScreen(
                         hasSpoolmanComponent = moonrakerHasSpoolmanComponent,
                         hasSpoolLinkComponent = moonrakerHasSpoolLinkComponent,
                         spoolmanIntegrationEnabled = moonrakerSpoolmanIntegrationEnabled,
-                        setSpoolIdCommandAvailable = moonrakerSetSpoolIdCommandAvailable,
+                        assignmentCommandAvailable = moonrakerAssignmentCommandAvailable,
                         detectedModeLabel = moonrakerDetectedModeLabel
                     )
                 }
@@ -705,7 +705,7 @@ private fun SettingsMoonrakerInfoSummary(
     hasSpoolmanComponent: Boolean?,
     hasSpoolLinkComponent: Boolean?,
     spoolmanIntegrationEnabled: Boolean?,
-    setSpoolIdCommandAvailable: Boolean?,
+    assignmentCommandAvailable: Boolean?,
     detectedModeLabel: String?
 ) {
     Column(
@@ -752,16 +752,16 @@ private fun SettingsMoonrakerInfoSummary(
         )
         SettingsInfoRow(
             label = "Assignment command",
-            value = when (setSpoolIdCommandAvailable) {
-                true -> "SET_SPOOL_ID loaded"
-                false -> "SET_SPOOL_ID missing"
+            value = when (assignmentCommandAvailable) {
+                true -> "Loaded"
+                false -> "Missing"
                 null -> "Not tested"
             }
         )
 
         val integrationText = when (spoolmanIntegrationEnabled) {
-            true -> if (setSpoolIdCommandAvailable == false) {
-                "Not ready: SET_SPOOL_ID is missing. Enable AFC/Spoolman options and restart Klipper/Moonraker."
+            true -> if (assignmentCommandAvailable == false) {
+                "Not ready: printer assignment command is missing. Enable the printer Spoolman options and restart Klipper/Moonraker."
             } else {
                 "Ready: printer Spoolman integration is active."
             }
@@ -772,7 +772,7 @@ private fun SettingsMoonrakerInfoSummary(
             text = integrationText,
             style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 14.sp),
             color = when (spoolmanIntegrationEnabled) {
-                true -> if (setSpoolIdCommandAvailable == false) SpoolStudioColors.Error else SpoolStudioColors.Success
+                true -> if (assignmentCommandAvailable == false) SpoolStudioColors.Error else SpoolStudioColors.Success
                 false -> SpoolStudioColors.Error
                 null -> SpoolStudioColors.OnGraphiteMuted
             }

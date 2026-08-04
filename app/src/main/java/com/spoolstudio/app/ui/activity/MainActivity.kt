@@ -52,6 +52,10 @@ class MainActivity : ComponentActivity() {
         nfcHandler.onStatusUpdate = { status, active ->
             viewModel.showSnackbarMessage(status, autoDismiss = !active)
         }
+
+        nfcHandler.onTagWritten = { cardUid ->
+            viewModel.handleNfcTagWritten(cardUid)
+        }
     }
 
     private fun setupUI() {
