@@ -847,6 +847,15 @@ class SpoolmanService(private val baseUrl: String) {
         cachedCatalog = null
     }
 
+    suspend fun archiveSpool(id: Int) {
+        val response = api.updateSpool(id, mapOf("archived" to true))
+        if (!response.isSuccessful) {
+            val errorText = response.errorBody()?.string()
+            throw IllegalStateException("Spool could not be archived (${response.code()}): $errorText")
+        }
+        cachedCatalog = null
+    }
+
     private fun defaultDensity(material: String): Float {
         return when (material.uppercase()) {
             "PLA" -> 1.24f

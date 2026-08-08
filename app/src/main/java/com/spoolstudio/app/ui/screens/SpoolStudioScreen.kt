@@ -101,7 +101,9 @@ fun SpoolStudioScreen(
     onCreateEmptySpool: () -> Unit = {},
     onCreateInSpoolman: (SpoolmanSaveRequest) -> Unit = {},
     isDeletingSpool: Boolean = false,
+    isArchivingSpool: Boolean = false,
     onDeleteSelectedSpool: () -> Unit = {},
+    onArchiveSelectedSpool: () -> Unit = {},
     pendingTagConversion: PendingTagConversion? = null,
     isConvertingTag: Boolean = false,
     onConfirmTagConversion: () -> Unit = {},
@@ -118,6 +120,7 @@ fun SpoolStudioScreen(
     val writeOpenSpoolTagUseCase = remember { WriteOpenSpoolTagUseCase() }
     var showPrinterMappingDialog by remember { mutableStateOf(false) }
     var showDeleteSpoolDialog by remember { mutableStateOf(false) }
+    var showArchiveSpoolDialog by remember { mutableStateOf(false) }
     var pendingTagWritePayload by remember { mutableStateOf<String?>(null) }
 
     val isWriteActionEnabled = isWriteActionEnabled(form)
@@ -310,9 +313,13 @@ fun SpoolStudioScreen(
                             onTestMoonrakerConnection()
                             onLoadCurrentPrinterMapping()
                         },
-                        isDeleteSpoolEnabled = selectedSpool?.id != null && !isDeletingSpool,
+                        isDeleteSpoolEnabled = selectedSpool?.id != null && !isDeletingSpool && !isArchivingSpool,
                         onDeleteSelectedSpool = {
                             showDeleteSpoolDialog = true
+                        },
+                        isArchiveSpoolEnabled = selectedSpool?.id != null && !isDeletingSpool && !isArchivingSpool,
+                        onArchiveSelectedSpool = {
+                            showArchiveSpoolDialog = true
                         }
                     )
                 }
@@ -470,6 +477,42 @@ fun SpoolStudioScreen(
                 },
                 dismissButton = {
                     TextButton(onClick = { showDeleteSpoolDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
+
+        val spoolToArchive = selectedSpool
+        if (showArchiveSpoolDialog && spoolToArchive?.id != null) {
+            AlertDialog(
+                onDismissRequest = { showArchiveSpoolDialog = false },
+                containerColor = SpoolStudioColors.Surface,
+                title = {
+                    Text(
+                        text = "Archive spool ID #${spoolToArchive.id}?",
+                        color = SpoolStudioColors.Ink
+                    )
+                },
+                text = {
+                    Text(
+                        text = "${spoolToArchive.brand} - ${spoolToArchive.spoolmanName ?: spoolToArchive.displayName} - ${spoolToArchive.displayName}\n\nThis archives the spool in Spoolman. RFID tags are not changed.",
+                        color = SpoolStudioColors.Ink
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showArchiveSpoolDialog = false
+                            onArchiveSelectedSpool()
+                        },
+                        colors = ButtonDefaults.textButtonColors(contentColor = SpoolStudioColors.Error)
+                    ) {
+                        Text("Archive")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showArchiveSpoolDialog = false }) {
                         Text("Cancel")
                     }
                 }

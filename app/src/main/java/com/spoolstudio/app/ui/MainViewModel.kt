@@ -61,6 +61,8 @@ class MainViewModel : ViewModel() {
         private set
     var isDeletingSpool by mutableStateOf(false)
         private set
+    var isArchivingSpool by mutableStateOf(false)
+        private set
     var spoolmanSortBy by mutableStateOf("")
         private set
     var showLotNumber by mutableStateOf(false)
@@ -654,7 +656,7 @@ class MainViewModel : ViewModel() {
                 showSnackbarMessage("No Spoolman spool selected")
                 return
             }
-            isDeletingSpool -> return
+            isDeletingSpool || isArchivingSpool -> return
         }
 
         showSnackbarMessage("Deleting spool ID #$spoolId from Spoolman...")
@@ -673,6 +675,41 @@ class MainViewModel : ViewModel() {
                 showSnackbarMessage("Delete failed: ${e.message ?: "Unknown error"}")
             } finally {
                 isDeletingSpool = false
+            }
+        }
+    }
+
+    fun archiveSelectedSpool() {
+        val spool = selectedSpool
+        val spoolId = spool?.id
+        when {
+            spoolmanUrl.isBlank() -> {
+                showSnackbarMessage("Please configure a Spoolman URL first")
+                return
+            }
+            spool == null || spoolId == null -> {
+                showSnackbarMessage("No Spoolman spool selected")
+                return
+            }
+            isDeletingSpool || isArchivingSpool -> return
+        }
+
+        showSnackbarMessage("Archiving spool ID #$spoolId in Spoolman...")
+        viewModelScope.launch {
+            isArchivingSpool = true
+            try {
+                SpoolmanService(spoolmanUrl).archiveSpool(spoolId)
+                selectedSpool = null
+                currentSpoolId = null
+                readData = null
+                spoolMode = SpoolMode.CREATE
+                dataVersion++
+                loadSpoolmanFilaments()
+                showSnackbarMessage("Spool ID #$spoolId archived in Spoolman")
+            } catch (e: Exception) {
+                showSnackbarMessage("Archive failed: ${e.message ?: "Unknown error"}")
+            } finally {
+                isArchivingSpool = false
             }
         }
     }

@@ -1,5 +1,6 @@
 package com.spoolstudio.app.ui.screens
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.BorderStroke
@@ -52,8 +53,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
@@ -377,6 +382,14 @@ private fun SpoolDataCard(
                     form.colorHexInput = sanitized ?: ""
                     form.isHexManuallySet = sanitized != null
                 }
+            )
+
+            val rgbValue = rgbFromHex(form.colorHex)
+            CompactCopyRow(
+                label = "RGB",
+                value = rgbValue?.displayValue ?: "",
+                placeholder = "-",
+                enabled = rgbValue != null
             )
 
             CompactWeightRow(
@@ -1172,6 +1185,89 @@ private fun EmptySpoolWeightDialog(
 }
 
 @Composable
+private fun CompactCopyRow(
+    label: String,
+    value: String,
+    placeholder: String = "",
+    enabled: Boolean = true,
+    showBottomDivider: Boolean = true
+) {
+    val clipboardManager = LocalClipboardManager.current
+    var copied by remember(value) { mutableStateOf(false) }
+
+    LaunchedEffect(copied) {
+        if (copied) {
+            delay(900)
+            copied = false
+        }
+    }
+
+    CompactDataRow(
+        label = label,
+        showBottomDivider = showBottomDivider
+    ) {
+        Text(
+            text = value.ifBlank { placeholder },
+            style = compactValueStyle(),
+            color = if (enabled) SpoolStudioColors.Ink else SpoolStudioColors.InkMuted,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
+        )
+        Box(
+            modifier = Modifier
+                .padding(start = 6.dp)
+                .size(24.dp)
+                .clip(CircleShape)
+                .clickable(enabled = enabled && value.isNotBlank()) {
+                    clipboardManager.setText(AnnotatedString(value))
+                    copied = true
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            if (copied) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = "RGB copied",
+                    tint = SpoolStudioColors.AccentCyan,
+                    modifier = Modifier.size(18.dp)
+                )
+            } else {
+                CopyGlyph(
+                    tint = if (enabled) SpoolStudioColors.GoldDark else SpoolStudioColors.InkMuted,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CopyGlyph(
+    tint: Color,
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier = modifier) {
+        val stroke = Stroke(width = 1.7.dp.toPx())
+        val radius = 2.5.dp.toPx()
+        drawRoundRect(
+            color = tint,
+            topLeft = Offset(size.width * 0.28f, size.height * 0.10f),
+            size = Size(size.width * 0.58f, size.height * 0.62f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(radius, radius),
+            style = stroke
+        )
+        drawRoundRect(
+            color = tint,
+            topLeft = Offset(size.width * 0.12f, size.height * 0.28f),
+            size = Size(size.width * 0.58f, size.height * 0.62f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(radius, radius),
+            style = stroke
+        )
+    }
+}
+
+@Composable
 private fun CompactTextRow(
     label: String,
     value: String,
@@ -1358,6 +1454,29 @@ private fun compactValueStyle(
         color = color,
         textAlign = textAlign
     )
+
+private data class RgbValue(
+    val red: Int,
+    val green: Int,
+    val blue: Int
+) {
+    val displayValue: String = "R: $red  G: $green  B: $blue"
+}
+
+private fun rgbFromHex(hex: String?): RgbValue? {
+    val normalized = hex
+        ?.trim()
+        ?.removePrefix("#")
+        ?.uppercase()
+        ?.takeIf { it.matches(Regex("^[0-9A-F]{6}$")) }
+        ?: return null
+
+    return RgbValue(
+        red = normalized.substring(0, 2).toInt(16),
+        green = normalized.substring(2, 4).toInt(16),
+        blue = normalized.substring(4, 6).toInt(16)
+    )
+}
 
 private fun prioritizedOptions(
     preferred: List<String>,

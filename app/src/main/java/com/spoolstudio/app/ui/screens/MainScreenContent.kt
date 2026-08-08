@@ -198,8 +198,12 @@ fun MainScreenContent(
                 viewModel.createEmptySpool()
             },
             isDeletingSpool = viewModel.isDeletingSpool,
+            isArchivingSpool = viewModel.isArchivingSpool,
             onDeleteSelectedSpool = {
                 viewModel.deleteSelectedSpool()
+            },
+            onArchiveSelectedSpool = {
+                viewModel.archiveSelectedSpool()
             },
             pendingTagConversion = viewModel.pendingTagConversion,
             isConvertingTag = viewModel.isConvertingTag,

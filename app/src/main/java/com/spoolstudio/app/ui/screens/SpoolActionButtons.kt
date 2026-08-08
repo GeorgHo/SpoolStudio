@@ -39,7 +39,9 @@ fun SpoolActionSection(
     onCreateEmptySpool: () -> Unit,
     onOpenPrinterMapping: () -> Unit,
     isDeleteSpoolEnabled: Boolean,
-    onDeleteSelectedSpool: () -> Unit
+    onDeleteSelectedSpool: () -> Unit,
+    isArchiveSpoolEnabled: Boolean,
+    onArchiveSelectedSpool: () -> Unit
 ) {
     val focusManager = LocalFocusManager.current
     fun clearThen(action: () -> Unit): () -> Unit = {
@@ -113,10 +115,24 @@ fun SpoolActionSection(
 
             PrinterMappingButton(onClick = clearThen(onOpenPrinterMapping))
 
-            DeleteSelectedSpoolButton(
-                enabled = isDeleteSpoolEnabled,
-                onClick = clearThen(onDeleteSelectedSpool)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                DestructiveSpoolButton(
+                    text = "Delete selected spool",
+                    enabled = isDeleteSpoolEnabled,
+                    onClick = clearThen(onDeleteSelectedSpool),
+                    modifier = Modifier.weight(1f)
+                )
+
+                DestructiveSpoolButton(
+                    text = "Archive selected spool",
+                    enabled = isArchiveSpoolEnabled,
+                    onClick = clearThen(onArchiveSelectedSpool),
+                    modifier = Modifier.weight(1f)
+                )
+            }
         }
     }
 }
@@ -227,7 +243,8 @@ fun PrinterMappingButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun DeleteSelectedSpoolButton(
+private fun DestructiveSpoolButton(
+    text: String,
     enabled: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -250,10 +267,10 @@ private fun DeleteSelectedSpoolButton(
         )
     ) {
         Text(
-            "Delete selected spool",
-            style = MaterialTheme.typography.labelLarge.copy(fontSize = 13.sp, lineHeight = 16.sp),
+            text,
+            style = MaterialTheme.typography.labelLarge.copy(fontSize = 12.sp, lineHeight = 14.sp),
             fontWeight = FontWeight.SemiBold,
-            maxLines = 1
+            maxLines = 2
         )
     }
 }
