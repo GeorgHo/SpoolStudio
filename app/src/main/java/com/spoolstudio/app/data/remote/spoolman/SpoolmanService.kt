@@ -22,7 +22,11 @@ import com.spoolstudio.app.domain.models.spoolLinkSpoolmanFields
 import com.spoolstudio.app.domain.models.splitLegacyMaterialAndVariant
 import com.spoolstudio.app.domain.models.stringValue
 import com.spoolstudio.app.domain.models.toRequestExtraMap
+import okhttp3.Credentials
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import okhttp3.Interceptor
 import okhttp3.OkHttpClient
+import okhttp3.Request
 import okhttp3.ResponseBody
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Response
@@ -161,9 +165,24 @@ class SpoolmanService(private val baseUrl: String) {
     private var cachedCatalog: SpoolmanCatalog? = null
     private var lastFetchTime = 0L
     private val cacheValidityMs = 30_000L
+    private val basicAuthInterceptor = Interceptor { chain ->
+        val request = chain.request()
+        val parsed = baseUrl.trim().toHttpUrlOrNull()
+        if (parsed == null || parsed.username.isBlank()) {
+            return@Interceptor chain.proceed(request)
+        }
+
+        val authenticatedRequest: Request = request.newBuilder()
+            .header("Authorization", Credentials.basic(parsed.username, parsed.password))
+            .build()
+
+        chain.proceed(authenticatedRequest)
+    }
+
     private val client = OkHttpClient.Builder()
         .connectTimeout(5, TimeUnit.SECONDS)
         .readTimeout(10, TimeUnit.SECONDS)
+        .addInterceptor(basicAuthInterceptor)
         .addInterceptor(HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BASIC
         })
