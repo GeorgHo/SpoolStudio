@@ -2,15 +2,15 @@
 
 ![Platform](https://img.shields.io/badge/Platform-Android-green)
 ![Kotlin](https://img.shields.io/badge/Kotlin-100%25-blue)
-![Version](https://img.shields.io/badge/Version-3.1.1-cyan)
+![Version](https://img.shields.io/badge/Version-3.1.2-cyan)
 ![Status](https://img.shields.io/badge/Status-Active-brightgreen)
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/georgho)
 
 Spool Studio is an Android app for managing 3D printer filament spools with Spoolman, NFC/RFID tags, and Snapmaker U1 printer integration.
 
-Version 3.1.1 preserves existing filament names when editing spools and separates clearing a printer assignment from unlinking a tag. Native Spoolman NFC/RFID tag support and Paxx12 SpoolLink compatibility remain available. A native tag owner always takes priority over an old `card_uids` entry. The app can convert older Spool Studio tags, write Paxx12-compatible OpenSpool tags, and show or manually adjust the toolhead status reported by the printer.
+Version 3.1.2 fixes low-contrast text in the NFC/RFID settings and aligns the related tag controls and dialogs with the dark UI. The filament-name preservation and separate printer-clear/tag-unlink actions from 3.1.1 remain available, along with native Spoolman tags and Paxx12 SpoolLink compatibility.
 
-The previous 3.0 series was tested with **Paxx12 Extended Firmware v1.6.0**. Version 3.1.1 has automated API and regression tests; physical NFC and printer verification is still required.
+The previous 3.0 series was tested with **Paxx12 Extended Firmware v1.6.0**. The app has automated API and regression tests; physical NFC and printer verification is still required.
 
 This project started from the open-source project **SpoolPainter** by ni4223 and has since been heavily extended.
 

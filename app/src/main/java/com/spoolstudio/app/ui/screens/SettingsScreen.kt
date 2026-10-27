@@ -821,7 +821,10 @@ private fun SettingsPanel(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = SpoolStudioShape.Dialog,
-        colors = CardDefaults.cardColors(containerColor = SpoolStudioColors.Graphite),
+        colors = CardDefaults.cardColors(
+            containerColor = SpoolStudioColors.Graphite,
+            contentColor = SpoolStudioColors.OnGraphite
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
         border = BorderStroke(1.dp, SpoolStudioColors.GraphiteMuted.copy(alpha = 0.85f))
     ) {
