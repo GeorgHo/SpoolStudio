@@ -36,6 +36,8 @@ fun TagStoragePanel(url: String, onChanged: () -> Unit) {
         Text("NFC / RFID tag storage", style = MaterialTheme.typography.titleSmall)
         Text("Native tags take priority. Compatibility mode also writes card_uids for older Paxx12 firmware. Changes apply immediately to this server.",
             style = MaterialTheme.typography.bodySmall)
+        Text("Paxx12 firmware 2.0.0-paxx12-24 still requires compatibility mode. Leave native-only off and retain legacy links when migrating.",
+            style = MaterialTheme.typography.bodySmall)
         Row {
             Checkbox(checked = nativeOnly, enabled = !busy && server.isNotBlank(), onCheckedChange = { value ->
                 runOperation {

@@ -293,10 +293,7 @@ class MoonrakerService(private val baseUrl: String) {
     }
 
     private suspend fun sendSpoolLinkAssignmentCommand(toolheadIndex: Int, spoolId: Int) {
-        val scripts = listOf(
-            "SET_PRINT_FILAMENT_CONFIG CONFIG_EXTRUDER=$toolheadIndex FILAMENT_SPOOL_ID=$spoolId FORCE=1",
-            "SET_SPOOL_ID LANE=E$toolheadIndex SPOOL_ID=$spoolId"
-        )
+        val scripts = spoolLinkAssignmentScripts(toolheadIndex, spoolId)
         val errors = mutableListOf<String>()
 
         for (script in scripts) {
@@ -324,7 +321,7 @@ class MoonrakerService(private val baseUrl: String) {
         }
 
         throw IllegalStateException(
-            "Moonraker SpoolLink assignment command failed. Tried SET_PRINT_FILAMENT_CONFIG and SET_SPOOL_ID. ${errors.joinToString(" | ")}"
+            "Moonraker SpoolLink assignment command failed. ${errors.joinToString(" | ")}"
         )
     }
 

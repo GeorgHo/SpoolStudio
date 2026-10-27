@@ -40,6 +40,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -89,12 +90,9 @@ import com.spoolstudio.app.ui.theme.SpoolStudioColors
 import com.spoolstudio.app.ui.theme.SpoolStudioDimens
 import com.spoolstudio.app.ui.theme.SpoolStudioShape
 import com.spoolstudio.app.ui.remainingWeightWarningThreshold
-import com.spoolstudio.app.ui.components.displayNameForSelectedColor
 import com.spoolstudio.app.ui.components.sanitizeHexColorInput
-import com.spoolstudio.app.utils.formatColorName
 import kotlinx.coroutines.delay
 import com.spoolstudio.app.utils.suggestColorName
-import com.spoolstudio.app.utils.suggestHexFromName
 
 @Composable
 fun SpoolFormCard(
@@ -221,22 +219,6 @@ private fun SpoolDataCard(
         }
     }
 
-    fun applyColorNameInput(input: String, finalize: Boolean = false) {
-        val rawName = input.take(40)
-        val formattedName = formatColorName(rawName)
-        val displayName = if (finalize) formattedName.ifBlank { "Unknown" } else rawName
-        val lookupName = formattedName.ifBlank { rawName }
-
-        form.colorName = displayName
-        form.colorNameWasManuallyEdited = displayName.isNotBlank() && displayName != "Unknown"
-
-        suggestHexFromName(lookupName)?.let { matchedHex ->
-            form.colorHex = matchedHex
-            form.colorHexInput = matchedHex
-            form.isHexManuallySet = false
-        }
-    }
-
     val remainingWarning = remainingWeightWarningThreshold(form.remainingWeight)
     val remainingColor = when {
         !isRemainingWeightValid -> MaterialTheme.colorScheme.error
@@ -342,7 +324,7 @@ private fun SpoolDataCard(
                     )
                 }
                 Text(
-                    text = displayNameForSelectedColor(form.colorHex, form.colorName),
+                    text = suggestColorName(form.colorHex).ifBlank { "No Color" },
                     style = compactValueStyle(),
                     color = SpoolStudioColors.Ink,
                     maxLines = 1,
@@ -360,17 +342,19 @@ private fun SpoolDataCard(
             }
 
             CompactTextRow(
-                label = "Color Name",
+                label = "Filament Name",
                 value = form.colorName,
                 placeholder = "Unknown",
                 showEditIcon = true,
                 onValueChange = { newName ->
-                    applyColorNameInput(newName)
-                },
-                onFocusLost = {
-                    applyColorNameInput(form.colorName, finalize = true)
+                    form.editFilamentName(newName)
                 }
             )
+
+            TextButton(
+                enabled = !form.colorHex.isNullOrBlank(),
+                onClick = { form.editFilamentName(suggestColorName(form.colorHex)) }
+            ) { Text("Use suggested color as filament name") }
 
             CompactTextRow(
                 label = "HEX",
@@ -517,22 +501,16 @@ private fun SpoolDataCard(
                     }
                     ColorSelector(
                         selectedColor = form.colorHex,
-                        colorName = form.colorName,
+                        colorName = suggestColorName(form.colorHex),
                         onColorSelected = { newHex ->
                             form.colorHex = newHex
                             form.colorHexInput = newHex ?: ""
                             form.isHexManuallySet = false
 
-                            if (!form.colorNameWasManuallyEdited) {
-                                val suggested = suggestColorName(newHex)
-                                if (suggested.isNotBlank()) {
-                                    form.colorName = suggested
-                                }
-                            }
+                            form.applyAutomaticFilamentName()
                         },
-                        onColorNameChange = { newName ->
-                            applyColorNameInput(newName)
-                        }
+                        // ColorSelector's automatic labels must not rename an existing product.
+                        onColorNameChange = { }
                     )
                 }
             }
@@ -2018,8 +1996,10 @@ private fun EditTray(content: @Composable ColumnScope.() -> Unit) {
 
 @Composable
 private fun FilamentSummaryList(form: SpoolFormState) {
-    val colorValue = form.colorName.ifBlank { form.colorHex?.let { "#$it" } ?: "No Color" }
+    val colorValue = suggestColorName(form.colorHex).ifBlank { "No Color" }
     Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+        SummaryRow("Filament Name", form.colorName.ifBlank { "Unknown" })
+        SummaryDivider()
         SummaryRow("Material", displayMaterialWithModifier(form.filamentType.ifBlank { "PLA" }, form.materialModifier))
         SummaryDivider()
         SummaryRow("Variant", form.variant.ifBlank { "Basic" })

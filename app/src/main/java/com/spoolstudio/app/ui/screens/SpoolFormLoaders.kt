@@ -2,7 +2,6 @@ package com.spoolstudio.app.ui.screens
 
 import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.ui.SpoolMode
-import com.spoolstudio.app.utils.formatColorName
 import com.spoolstudio.app.utils.suggestColorName
 
 fun SpoolFormState.applySpoolSource(
@@ -14,11 +13,9 @@ fun SpoolFormState.applySpoolSource(
     materialModifier = sourceSpool.materialModifier
     variant = sourceSpool.variant.ifBlank { "Basic" }
     colorHex = sourceSpool.colorHex
-    colorName = formatColorName(
-        sourceSpool.spoolmanName?.takeIf { it.isNotBlank() }
+    colorName = sourceSpool.spoolmanName?.takeIf { it.isNotBlank() }
             ?: sourceSpool.colorHex?.let(::suggestColorName)
             ?: ""
-    )
     brand = sourceSpool.brand
 
     val loadedLocation = sourceSpool.location.orEmpty().trim()
@@ -49,6 +46,7 @@ fun SpoolFormState.applySpoolSource(
     remainingWeight = formatLoadedRemainingWeight(sourceSpool.remainingWeight)
     emptySpoolWeight = formatLoadedEmptySpoolWeight(sourceSpool.emptySpoolWeight)
     colorHexInput = colorHex ?: ""
-    colorNameWasManuallyEdited = false
+    // Existing product names are not color suggestions, even if they happen to match one.
+    colorNameWasManuallyEdited = !sourceSpool.spoolmanName.isNullOrBlank()
     pendingCardUid = sourceSpool.cardUids.firstOrNull()
 }

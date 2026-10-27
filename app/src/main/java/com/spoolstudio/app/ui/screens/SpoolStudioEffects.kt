@@ -6,7 +6,6 @@ import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.domain.models.OpenSpoolData
 import com.spoolstudio.app.domain.models.normalizeCardUid
 import com.spoolstudio.app.ui.SpoolMode
-import com.spoolstudio.app.utils.suggestColorName
 import kotlinx.coroutines.delay
 
 @Composable
@@ -39,14 +38,7 @@ fun SpoolStudioFormEffects(
 
     LaunchedEffect(form.colorHex) {
         form.colorHexInput = form.colorHex ?: ""
-        if (!form.colorNameWasManuallyEdited) {
-            val suggested = suggestColorName(form.colorHex)
-            if (suggested.isNotBlank()) {
-                form.colorName = suggested
-            } else if (form.colorHex.isNullOrBlank()) {
-                form.colorName = ""
-            }
-        }
+        form.applyAutomaticFilamentName()
     }
 }
 

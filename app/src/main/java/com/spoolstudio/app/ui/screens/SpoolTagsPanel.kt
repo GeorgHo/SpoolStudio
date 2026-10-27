@@ -31,7 +31,7 @@ fun SpoolTagsPanel(url: String, spool: FilamentSpool, onRefresh: () -> Unit) {
     }
     pending?.let { uid ->
         AlertDialog(onDismissRequest = { if (!busy) pending = null }, title = { Text("Unlink tag?") },
-            text = { Text("Remove $uid from spool #${spool.id}, including its compatibility link. The physical tag is unchanged.") },
+            text = { Text("Remove $uid from spool #${spool.id} in both native and compatibility storage. This does not clear the printer's loaded-spool assignment. The physical tag is unchanged.") },
             confirmButton = { TextButton(enabled = !busy, onClick = {
                 scope.launch {
                     busy = true

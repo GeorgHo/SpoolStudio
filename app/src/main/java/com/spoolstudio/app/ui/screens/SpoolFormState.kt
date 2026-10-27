@@ -9,9 +9,11 @@ import com.spoolstudio.app.domain.models.OpenSpoolData
 import com.spoolstudio.app.domain.models.normalizeCardUid
 import com.spoolstudio.app.ui.SpoolMode
 import com.spoolstudio.app.ui.SpoolmanSaveRequest
+import com.spoolstudio.app.utils.suggestColorName
 
 class SpoolFormState(private val defaultMaterial: Material) {
     var colorHex by mutableStateOf<String?>(null)
+    // Backward-compatible request property: this is Spoolman's filament.name, not a color label.
     var colorName by mutableStateOf("")
     var filamentType by mutableStateOf("PLA")
     var customMaterial by mutableStateOf("")
@@ -33,6 +35,17 @@ class SpoolFormState(private val defaultMaterial: Material) {
     var colorNameWasManuallyEdited by mutableStateOf(false)
     var isHexManuallySet by mutableStateOf(false)
     var pendingCardUid by mutableStateOf<String?>(null)
+
+    fun editFilamentName(name: String) {
+        colorName = name
+        colorNameWasManuallyEdited = true
+    }
+
+    fun applyAutomaticFilamentName() {
+        if (!colorNameWasManuallyEdited) {
+            colorName = suggestColorName(colorHex)
+        }
+    }
 
     fun clearLocation() {
         location = ""
@@ -128,8 +141,9 @@ class SpoolFormState(private val defaultMaterial: Material) {
             colorHex = hex
             colorHexInput = hex
             isHexManuallySet = false
-            colorNameWasManuallyEdited = false
-            colorName = if (suggestedColorName.isNotBlank()) suggestedColorName else "#$hex"
+            if (!colorNameWasManuallyEdited) {
+                colorName = if (suggestedColorName.isNotBlank()) suggestedColorName else "#$hex"
+            }
         }
 
         brand = "Bambu Lab"

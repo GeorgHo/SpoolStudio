@@ -62,7 +62,7 @@ fun validateBeforeSave(
     if (!isValidSpoolmanUrl(spoolmanUrl)) return "Please configure a valid Spoolman URL first"
     if (material.trim().isBlank()) return "Material is required"
     if (brand.trim().isBlank()) return "Brand is required"
-    if (colorName.trim().isBlank()) return "Color name is required"
+    if (colorName.trim().isBlank()) return "Filament name is required"
 
     val cleanHex = normalizedColorHex(colorHex)
     if (colorHex != null && cleanHex == null) return "HEX color is invalid"

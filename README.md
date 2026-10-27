@@ -2,15 +2,15 @@
 
 ![Platform](https://img.shields.io/badge/Platform-Android-green)
 ![Kotlin](https://img.shields.io/badge/Kotlin-100%25-blue)
-![Version](https://img.shields.io/badge/Version-3.1.0-cyan)
+![Version](https://img.shields.io/badge/Version-3.1.1-cyan)
 ![Status](https://img.shields.io/badge/Status-Active-brightgreen)
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/georgho)
 
 Spool Studio is an Android app for managing 3D printer filament spools with Spoolman, NFC/RFID tags, and Snapmaker U1 printer integration.
 
-Version 3.1.0 adds Spoolman 0.27.0 native NFC/RFID tags while retaining the Paxx12 SpoolLink compatibility workflow. A native tag owner always takes priority over an old `card_uids` entry. The app can convert older Spool Studio tags, write Paxx12-compatible OpenSpool tags, and show or manually adjust the toolhead status reported by the printer.
+Version 3.1.1 preserves existing filament names when editing spools and separates clearing a printer assignment from unlinking a tag. Native Spoolman NFC/RFID tag support and Paxx12 SpoolLink compatibility remain available. A native tag owner always takes priority over an old `card_uids` entry. The app can convert older Spool Studio tags, write Paxx12-compatible OpenSpool tags, and show or manually adjust the toolhead status reported by the printer.
 
-The previous 3.0 series was tested with **Paxx12 Extended Firmware v1.6.0**. Version 3.1.0 has automated API and regression tests; physical NFC and printer verification is still required.
+The previous 3.0 series was tested with **Paxx12 Extended Firmware v1.6.0**. Version 3.1.1 has automated API and regression tests; physical NFC and printer verification is still required.
 
 This project started from the open-source project **SpoolPainter** by ni4223 and has since been heavily extended.
 
@@ -55,6 +55,13 @@ If you still use older Paxx12 firmware or the old Spool Studio tag workflow, use
 - A native filament tag identifies a product, not a particular spool. Scanning it displays a message instead of selecting a spool automatically.
 - **Manage tag links** lists native and legacy UIDs on the selected spool. Unlink requires confirmation and removes the compatibility mirror as well. **Link scanned UID** can explicitly move a native spool tag from its previous owner; ordinary saves do not silently move native tags.
 - The tag content format is unchanged. OpenTag3D encoding/decoding and external scanner subscriptions are not part of this release.
+
+### Filament names and clearing assignments
+
+- Existing filament names retain their spelling and full length when editing a spool or changing its color. The **Filament Name** field changes the product name explicitly; **Use suggested color as filament name** is an optional replacement.
+- **Clear printer assignment** clears the toolhead mapping and keeps tag links. A subsequent RFID scan may assign the spool again. This intentionally avoids firmware `2.0.0-paxx12-24`'s `SET_SPOOL_ID=0`, which also removes legacy UID links.
+- **Manage tag links → Unlink** removes the selected tag's native and compatibility links after confirmation. It does not clear an already loaded printer assignment.
+- Firmware `2.0.0-paxx12-24` still uses `card_uids`: retain compatibility mode and keep the legacy field when copying links to native tags.
 
 Spool Studio v3 is built for the new Paxx12 SpoolLink workflow.
 

@@ -427,8 +427,9 @@ private fun AssignToolheadSpoolDialog(
                     )
 
                     AssignSpoolRow(
-                        title = "Clear manual assignment",
-                        subtitle = "No spool assigned",
+                        title = "Clear printer assignment",
+                        subtitle = "Keeps tag links",
+                        warningText = "RFID scans can assign it again",
                         idText = "Empty",
                         accentColor = SpoolStudioColors.OnGraphiteMuted.copy(alpha = 0.35f),
                         onClick = { onSpoolSelected(null) }
