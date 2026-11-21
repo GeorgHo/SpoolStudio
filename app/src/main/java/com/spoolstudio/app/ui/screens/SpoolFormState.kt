@@ -10,6 +10,7 @@ import com.spoolstudio.app.domain.models.normalizeCardUid
 import com.spoolstudio.app.ui.SpoolMode
 import com.spoolstudio.app.ui.SpoolmanSaveRequest
 import com.spoolstudio.app.utils.suggestColorName
+import com.spoolstudio.app.utils.suggestHexFromName
 
 class SpoolFormState(private val defaultMaterial: Material) {
     var colorHex by mutableStateOf<String?>(null)
@@ -39,6 +40,14 @@ class SpoolFormState(private val defaultMaterial: Material) {
     fun editFilamentName(name: String) {
         colorName = name
         colorNameWasManuallyEdited = true
+    }
+
+    fun editFilamentNameWithColorLookup(name: String, originalHex: String?, originalHexWasManual: Boolean) {
+        editFilamentName(name)
+        val matchedHex = suggestHexFromName(name, exactOnly = true)
+        colorHex = matchedHex ?: originalHex
+        colorHexInput = colorHex.orEmpty()
+        isHexManuallySet = matchedHex == null && originalHexWasManual
     }
 
     fun applyAutomaticFilamentName() {

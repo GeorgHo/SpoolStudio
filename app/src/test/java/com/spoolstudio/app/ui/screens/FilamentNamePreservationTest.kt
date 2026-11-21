@@ -3,6 +3,7 @@ package com.spoolstudio.app.ui.screens
 import com.spoolstudio.app.data.local.MaterialDatabase
 import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.ui.SpoolMode
+import com.spoolstudio.app.utils.suggestColorName
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -46,6 +47,30 @@ class FilamentNamePreservationTest {
         form.colorHex = "FFFFFF"
         form.applyAutomaticFilamentName()
         assertEquals(name, form.colorName)
+    }
+
+    @Test fun typingColorNameUpdatesHexAndKeepsTheEnteredFilamentName() {
+        val form = form()
+        for (name in listOf("Cyan", "Cynan")) {
+            form.colorHex = "000000"
+            form.editFilamentNameWithColorLookup(name, "000000", false)
+            form.applyAutomaticFilamentName()
+            assertEquals("00FFFF", form.colorHex)
+            assertEquals("00FFFF", form.colorHexInput)
+            assertEquals("Cyan", suggestColorName(form.colorHex))
+            assertEquals(name, form.colorName)
+        }
+    }
+
+    @Test fun typingAProductNameDoesNotGuessHexFromPartOfTheName() {
+        val form = form()
+        form.colorHex = "123456"
+        form.editFilamentNameWithColorLookup("Black", "123456", true)
+        assertEquals("000000", form.colorHex)
+        form.editFilamentNameWithColorLookup("Black PETG", "123456", true)
+        assertEquals("123456", form.colorHex)
+        assertEquals("Black PETG", form.colorName)
+        assertTrue(form.isHexManuallySet)
     }
 
     @Test fun clearingNameDoesNotSilentlyInsertAnotherName() {

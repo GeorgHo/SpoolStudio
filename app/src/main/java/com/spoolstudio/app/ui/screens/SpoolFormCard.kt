@@ -342,14 +342,20 @@ private fun SpoolDataCard(
                 )
             }
 
+            var colorBeforeNameEdit by remember(selectedSpool) { mutableStateOf<Pair<String?, Boolean>?>(null) }
             CompactTextRow(
                 label = "Filament Name",
                 value = form.colorName,
                 placeholder = "Unknown",
                 showEditIcon = true,
                 onValueChange = { newName ->
-                    form.editFilamentName(newName)
-                }
+                    if (newName != form.colorName) {
+                        val original = colorBeforeNameEdit ?: (form.colorHex to form.isHexManuallySet)
+                        colorBeforeNameEdit = original
+                        form.editFilamentNameWithColorLookup(newName, original.first, original.second)
+                    }
+                },
+                onFocusLost = { colorBeforeNameEdit = null }
             )
 
             if (shouldOfferColorNameSuggestion(form.colorName, form.colorHex)) {

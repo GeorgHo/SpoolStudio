@@ -72,7 +72,7 @@ private val filamentColorAliases = mapOf(
     "pearl metallic silver" to "D9D9D6"
 )
 
-fun suggestHexFromName(name: String): String? {
+fun suggestHexFromName(name: String, exactOnly: Boolean = false): String? {
     val normalized = normalizedLookupKey(name)
     if (normalized.isBlank()) return null
 
@@ -82,7 +82,7 @@ fun suggestHexFromName(name: String): String? {
         normalizedLookupKey(color.name) == normalized ||
             color.aliases.any { alias -> normalizedLookupKey(alias) == normalized }
     }
-    if (exact != null) return exact.hex
+    if (exact != null || exactOnly) return exact?.hex
 
     val tokens = normalized.split(" ").filter { it.isNotBlank() }
     val contains = knownColors.firstOrNull { color ->

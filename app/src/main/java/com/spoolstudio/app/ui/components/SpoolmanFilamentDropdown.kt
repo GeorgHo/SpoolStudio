@@ -171,7 +171,7 @@ fun SpoolmanFilamentDropdown(
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = "Id#${selectedFilament.id}",
+                                    text = selectedSpoolIdLabel(selectedFilament),
                                     style = MaterialTheme.typography.labelMedium,
                                     color = trailingColor
                                 )
@@ -343,7 +343,7 @@ private fun DarkSpoolmanDropdown(
                 when {
                     isLoading -> CircularProgressIndicator(modifier = Modifier.size(16.dp))
                     showNewPill -> SelectorPill(text = "New", showDot = false)
-                    selectedFilament != null -> SelectorPill(text = "ID #${selectedFilament.id}", showDot = true)
+                    selectedFilament != null -> SelectorPill(text = selectedSpoolIdLabel(selectedFilament), showDot = true)
                 }
             }
         }
@@ -501,6 +501,14 @@ private fun SpoolmanDialogSpoolRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+            if (filament.archived) {
+                Text(
+                    text = "Archived",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = SpoolStudioColors.GoldSoft
+                )
+            }
         }
 
         Spacer(modifier = Modifier.width(10.dp))
@@ -525,6 +533,11 @@ private fun SpoolmanDialogSpoolRow(
             )
         }
     }
+}
+
+private fun selectedSpoolIdLabel(spool: FilamentSpool): String {
+    val idLabel = "ID #${spool.id}"
+    return if (spool.archived) "$idLabel / Archived" else idLabel
 }
 
 private fun dialogSpoolColor(colorHex: String?): Color {

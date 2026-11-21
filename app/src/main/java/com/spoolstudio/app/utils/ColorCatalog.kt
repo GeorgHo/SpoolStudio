@@ -101,7 +101,7 @@ val knownColors = listOf(
     NamedColor("Seafoam", "9FE2BF", listOf("Seafoam", "Sea Foam", "Meergrün", "Meergruen")),
     NamedColor("Teal", "008080", listOf("Teal", "Petrol", "Blue Green", "Blaugrün", "Blaugruen")),
     NamedColor("Turquoise", "40E0D0", listOf("Turquoise", "Türkis", "Tuerkis")),
-    NamedColor("Cyan", "00FFFF", listOf("Cyan", "Aqua")),
+    NamedColor("Cyan", "00FFFF", listOf("Cyan", "Aqua", "Cynan")),
     NamedColor("Aqua Blue", "7FDBFF", listOf("Aqua Blue", "Water Blue")),
 
     NamedColor("Blue", "0000FF", listOf("Blau", "Primary Blue", "Bright Blue")),

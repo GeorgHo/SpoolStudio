@@ -473,7 +473,11 @@ private fun AssignToolheadSpoolDialog(
                                 title = spool.spoolmanName?.takeIf(String::isNotBlank) ?: spool.displayName,
                                 subtitle = spoolmanDropdownListLabel(spool),
                                 idText = "ID #${spool.id}",
-                                warningText = warningText,
+                                warningText = if (spool.archived) {
+                                    listOfNotNull("Archived", warningText).joinToString(" / ")
+                                } else {
+                                    warningText
+                                },
                                 accentColor = resolveSpoolColor(spool.colorHex),
                                 onClick = { onSpoolSelected(spool.id) }
                             )
